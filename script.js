@@ -33,6 +33,118 @@ const tracked = [];
 const MAX_DIST = 120;
 const MAX_MISSING_TIME = 6000; // tiempo máximo en ms antes de olvidar (6s)
 
+// ======================================================
+// SISTEMA DE ALERTAS (versión completa multipersona)
+// ======================================================
+
+const ALERT_TIMEOUT = 10000; // 10 segundos sin verse
+
+// Estado de cada persona
+let peopleLastSeen = {};  // { "Kevin": timestamp }
+let activeAlerts = {};    // { "Kevin": true/false }
+let knownPeople = new Set(); // personas ya detectadas alguna vez
+
+// --- Crear una notificación visual ---
+function createNotification(message, type = 'warning') {
+  const container = document.getElementById('notificationContainer');
+
+  const notif = document.createElement('div');
+  notif.className = 'notification';
+  notif.innerHTML = `
+    <div style="
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: ${type === 'warning' ? '#ff4d4d' : '#4caf50'};
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+      min-width: 260px;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 15px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.4s ease;
+    ">
+      <span style="font-size: 20px;">${type === 'warning' ? '⚠️' : '✅'}</span>
+      <span>${message}</span>
+    </div>
+  `;
+  container.appendChild(notif);
+
+  // Animación de entrada
+  requestAnimationFrame(() => {
+    notif.firstElementChild.style.opacity = '1';
+    notif.firstElementChild.style.transform = 'translateY(0)';
+  });
+
+  // 🔔 Desaparecer automáticamente después de X segundos
+  const timeout = type === 'warning' ? 5000 : 3000; // 5s para rojo, 3s para verde
+  setTimeout(() => removeNotification(notif), timeout);
+}
+
+
+// --- Eliminar notificación ---
+function removeNotification(notif) {
+  if (!notif) return;
+  notif.firstElementChild.style.opacity = '0';
+  notif.firstElementChild.style.transform = 'translateY(10px)';
+  setTimeout(() => notif.remove(), 400);
+}
+
+// --- Mostrar tipos de alertas ---
+function showPersonAlert(personName) {
+  if (!activeAlerts[personName]) {
+    createNotification(`⚠️ ${personName} ha salido del cuarto`, 'warning');
+    activeAlerts[personName] = true;
+  }
+}
+
+function showPersonReturn(personName) {
+  createNotification(`✅ ${personName} ha vuelto`, 'success');
+  activeAlerts[personName] = false;
+}
+
+function showPersonEntry(personName) {
+  createNotification(`✅ ${personName} ha entrado al cuarto`, 'success');
+  activeAlerts[personName] = false;
+}
+
+// --- Actualizar detección ---
+function updatePersonDetection(label) {
+  const now = Date.now();
+
+  
+
+  if (label && label !== 'Desconocido') {
+    const seenBefore = knownPeople.has(label);
+
+    // Registrar nueva persona
+    if (!seenBefore) {
+      knownPeople.add(label);
+      showPersonEntry(label);
+    }
+
+    // Actualizar último tiempo visto
+    peopleLastSeen[label] = now;
+
+    // Si tenía una alerta activa (se había ido) y vuelve
+    if (activeAlerts[label]) {
+      showPersonReturn(label);
+    }
+  }
+
+  // Comprobar si alguien lleva más de X segundos sin verse
+  for (const person in peopleLastSeen) {
+    const timeSinceSeen = now - peopleLastSeen[person];
+    if (timeSinceSeen > ALERT_TIMEOUT && !activeAlerts[person]) {
+      showPersonAlert(person);
+    }
+  }
+}
+
+
 
 function resizeCanvasToVideo() {
   const videoWidth = video.videoWidth;
@@ -210,6 +322,9 @@ async function runDetectionLoop(){
   if (faceMatcher) {
     const best = faceMatcher.findBestMatch(res.descriptor);
     if (best && best.label !== 'unknown') label = best.label;
+
+     // 🔔 Actualizar alertas
+    updatePersonDetection(label);
   }
 
   // --- Rectángulo perfectamente alineado ---
