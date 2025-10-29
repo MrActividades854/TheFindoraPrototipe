@@ -14,8 +14,8 @@ const clearRefsBtn = document.getElementById('clearRefsBtn');
 const toggleDebugBtn = document.getElementById('toggleDebugBtn');
 
 toggleDebugBtn.addEventListener('click', () => {
-  showDebugPoint = !showDebugPoint;
-  toggleDebugBtn.textContent = showDebugPoint ? '⚪ Ocultar punto rojo' : '🔴 Mostrar punto rojo';
+    showDebugPoint = !showDebugPoint;
+    toggleDebugBtn.textContent = showDebugPoint ? '⚪ Ocultar punto rojo' : '🔴 Mostrar punto rojo';
 });
 
 const thresholdInput = document.getElementById('threshold');
@@ -46,179 +46,179 @@ let knownPeople = new Set(); // personas ya detectadas alguna vez
 
 // --- Crear una notificación visual ---
 function createNotification(message, type = 'warning') {
-  const container = document.getElementById('notificationContainer');
+    const container = document.getElementById('notificationContainer');
 
-  const notif = document.createElement('div');
-  notif.className = 'notification';
-  notif.innerHTML = `
-    <div style="
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: ${type === 'warning' ? '#ff4d4d' : '#4caf50'};
-      color: white;
-      padding: 12px 16px;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-      min-width: 260px;
-      font-family: 'Segoe UI', sans-serif;
-      font-size: 15px;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.4s ease;
-    ">
-      <span style="font-size: 20px;">${type === 'warning' ? '⚠️' : '✅'}</span>
-      <span>${message}</span>
-    </div>
-  `;
-  container.appendChild(notif);
+    const notif = document.createElement('div');
+    notif.className = 'notification';
+    notif.innerHTML = `
+        <div style="
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: ${type === 'warning' ? '#ff4d4d' : '#4caf50'};
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+        min-width: 260px;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 15px;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.4s ease;
+        ">
+        <span style="font-size: 20px;">${type === 'warning' ? '⚠️' : '✅'}</span>
+        <span>${message}</span>
+        </div>
+    `;
+    container.appendChild(notif);
 
-  // Animación de entrada
-  requestAnimationFrame(() => {
-    notif.firstElementChild.style.opacity = '1';
-    notif.firstElementChild.style.transform = 'translateY(0)';
-  });
+    // Animación de entrada
+    requestAnimationFrame(() => {
+        notif.firstElementChild.style.opacity = '1';
+        notif.firstElementChild.style.transform = 'translateY(0)';
+    });
 
-  // 🔔 Desaparecer automáticamente después de X segundos
-  const timeout = type === 'warning' ? 5000 : 3000; // 5s para rojo, 3s para verde
-  setTimeout(() => removeNotification(notif), timeout);
+    // 🔔 Desaparecer automáticamente después de X segundos
+    const timeout = type === 'warning' ? 5000 : 3000; // 5s para rojo, 3s para verde
+    setTimeout(() => removeNotification(notif), timeout);
 }
 
 
 // --- Eliminar notificación ---
 function removeNotification(notif) {
-  if (!notif) return;
-  notif.firstElementChild.style.opacity = '0';
-  notif.firstElementChild.style.transform = 'translateY(10px)';
-  setTimeout(() => notif.remove(), 400);
+    if (!notif) return;
+    notif.firstElementChild.style.opacity = '0';
+    notif.firstElementChild.style.transform = 'translateY(10px)';
+    setTimeout(() => notif.remove(), 400);
 }
 
 // --- Mostrar tipos de alertas ---
 function showPersonAlert(personName) {
-  if (!activeAlerts[personName]) {
-    createNotification(`⚠️ ${personName} ha salido del cuarto`, 'warning');
-    activeAlerts[personName] = true;
-  }
+    if (!activeAlerts[personName]) {
+        createNotification(`⚠️ ${personName} ha salido del cuarto`, 'warning');
+        activeAlerts[personName] = true;
+    }
 }
 
 function showPersonReturn(personName) {
-  createNotification(`✅ ${personName} ha vuelto`, 'success');
-  activeAlerts[personName] = false;
+    createNotification(`✅ ${personName} ha vuelto`, 'success');
+    activeAlerts[personName] = false;
 }
 
 function showPersonEntry(personName) {
-  createNotification(`✅ ${personName} ha entrado al cuarto`, 'success');
-  activeAlerts[personName] = false;
+    createNotification(`✅ ${personName} ha entrado al cuarto`, 'success');
+    activeAlerts[personName] = false;
 }
+
+
 
 // --- Actualizar detección ---
 function updatePersonDetection(label) {
-  const now = Date.now();
+    const now = Date.now();
 
-  
+    if (label && label !== 'Desconocido') {
+        const seenBefore = knownPeople.has(label);
 
-  if (label && label !== 'Desconocido') {
-    const seenBefore = knownPeople.has(label);
+        // Registrar nueva persona
+        if (!seenBefore) {
+            knownPeople.add(label);
+            showPersonEntry(label);
+        }
 
-    // Registrar nueva persona
-    if (!seenBefore) {
-      knownPeople.add(label);
-      showPersonEntry(label);
+        // Actualizar último tiempo visto
+        peopleLastSeen[label] = now;
+
+        // Si tenía una alerta activa (se había ido) y vuelve
+        if (activeAlerts[label]) {
+            showPersonReturn(label);
+        }
     }
 
-    // Actualizar último tiempo visto
-    peopleLastSeen[label] = now;
-
-    // Si tenía una alerta activa (se había ido) y vuelve
-    if (activeAlerts[label]) {
-      showPersonReturn(label);
+    // Comprobar si alguien lleva más de X segundos sin verse
+    for (const person in peopleLastSeen) {
+        const timeSinceSeen = now - peopleLastSeen[person];
+        if (timeSinceSeen > ALERT_TIMEOUT && !activeAlerts[person]) {
+            showPersonAlert(person);
+        }
     }
-  }
-
-  // Comprobar si alguien lleva más de X segundos sin verse
-  for (const person in peopleLastSeen) {
-    const timeSinceSeen = now - peopleLastSeen[person];
-    if (timeSinceSeen > ALERT_TIMEOUT && !activeAlerts[person]) {
-      showPersonAlert(person);
-    }
-  }
 }
 
 
 
 function resizeCanvasToVideo() {
-  const videoWidth = video.videoWidth;
-  const videoHeight = video.videoHeight;
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
 
-  // Ajusta el tamaño del canvas al tamaño visible del video (en píxeles reales en pantalla)
-  const rect = video.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
+    // Ajusta el tamaño del canvas al tamaño visible del video (en píxeles reales en pantalla)
+    const rect = video.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
 
-  // Guarda el factor de escala entre las dimensiones reales y las visuales
-  canvas._scaleX = rect.width / videoWidth;
-  canvas._scaleY = rect.height / videoHeight;
+    // Guarda el factor de escala entre las dimensiones reales y las visuales
+    canvas._scaleX = rect.width / videoWidth;
+    canvas._scaleY = rect.height / videoHeight;
 }
 
 
 function distance(a,b){
-  const dx = a.x - b.x; const dy = a.y - b.y;
-  return Math.sqrt(dx*dx+dy*dy);
+    const dx = a.x - b.x; const dy = a.y - b.y;
+    return Math.sqrt(dx*dx+dy*dy);
 }
 
 function assignTracked(x, y) {
-  // Buscar coincidencia cercana
-  for (const t of tracked) {
-    if (distance(t, { x, y }) < MAX_DIST) {
-      t.x = x;
-      t.y = y;
-      t.lastSeen = Date.now();
-      t.missing = false;
-      return t;
+    // Buscar coincidencia cercana
+    for (const t of tracked) {
+        if (distance(t, { x, y }) < MAX_DIST) {
+            t.x = x;
+            t.y = y;
+            t.lastSeen = Date.now();
+            t.missing = false;
+            return t;
+        }
     }
-  }
-  // Nueva persona
-  const color = colors[tracked.length % colors.length];
-  const newT = { x, y, color, lastSeen: Date.now(), missing: false };
-  tracked.push(newT);
-  return newT;
+    // Nueva persona
+    const color = colors[tracked.length % colors.length];
+    const newT = { x, y, color, lastSeen: Date.now(), missing: false };
+    tracked.push(newT);
+    return newT;
 }
 
 
 async function loadModels(){
-  statusEl.textContent = 'Cargando modelos...';
-  await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_PATH);
-  await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_PATH);
-  await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_PATH);
-  statusEl.textContent = 'Modelos cargados.';
+    statusEl.textContent = 'Cargando modelos...';
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_PATH);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_PATH);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_PATH);
+    statusEl.textContent = 'Modelos cargados.';
 }
 
 async function addReferenceImages(name, files){
-  const descriptors = [];
-  for(const f of files){
+    const descriptors = [];
+    for(const f of files){
     const img = await faceapi.bufferToImage(f);
     const detection = await faceapi
-      .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-      .withFaceLandmarks()
-      .withFaceDescriptor();
+        .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
     if(!detection){ console.warn('No se detectó cara en', f.name); continue; }
-    descriptors.push(detection.descriptor);
-  }
-  if(descriptors.length === 0) return null;
-  const labeled = new faceapi.LabeledFaceDescriptors(name, descriptors);
-  labeledDescriptors.push(labeled);
-  updateMatcher();
-  saveReferencesToLocalStorage();
-  return labeled;
+        descriptors.push(detection.descriptor);
+    }
+    if(descriptors.length === 0) return null;
+    const labeled = new faceapi.LabeledFaceDescriptors(name, descriptors);
+    labeledDescriptors.push(labeled);
+    updateMatcher();
+    saveReferencesToLocalStorage();
+    return labeled;
 }
 
 function updateMatcher(){
-  if(labeledDescriptors.length > 0){
-    const threshold = parseFloat(thresholdInput.value);
-    faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, threshold);
-  } else {
-    faceMatcher = null;
-  }
+    if(labeledDescriptors.length > 0){
+        const threshold = parseFloat(thresholdInput.value);
+        faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, threshold);
+    } else {
+        faceMatcher = null;
+    }
 }
 
 addRefForm.addEventListener('submit', async (e)=>{
