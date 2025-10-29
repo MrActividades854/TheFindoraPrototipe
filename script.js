@@ -112,15 +112,20 @@ function showPersonEntry(personName) {
 }
 
 
-
-// --- Actualizar detección ---
+// --- Actualizar detección de personas ---
 function updatePersonDetection(label) {
     const now = Date.now();
+
+    function getCurrentTime() {
+    const now = new Date();
+  return now.toLocaleTimeString('es-CO', { hour12: false }); // formato 24h
+}
+
 
     if (label && label !== 'Desconocido') {
         const seenBefore = knownPeople.has(label);
 
-        // Registrar nueva persona
+        // Si es nueva persona
         if (!seenBefore) {
             knownPeople.add(label);
             showPersonEntry(label);
@@ -129,20 +134,54 @@ function updatePersonDetection(label) {
         // Actualizar último tiempo visto
         peopleLastSeen[label] = now;
 
-        // Si tenía una alerta activa (se había ido) y vuelve
+        // Si tenía una alerta activa (se había ido) y volvió
         if (activeAlerts[label]) {
             showPersonReturn(label);
         }
     }
+}
 
-    // Comprobar si alguien lleva más de X segundos sin verse
+// --- Verificar si todos se han ido ---
+function checkAllGone() {
+    const now = Date.now();
+
+    // Si no hay personas registradas, no hay nada que verificar
+    if (Object.keys(peopleLastSeen).length === 0) return;
+
+    let allGone = true;
+    let someoneReturned = false;
+
     for (const person in peopleLastSeen) {
         const timeSinceSeen = now - peopleLastSeen[person];
+
         if (timeSinceSeen > ALERT_TIMEOUT && !activeAlerts[person]) {
             showPersonAlert(person);
         }
+
+        if (timeSinceSeen <= ALERT_TIMEOUT) {
+            allGone = false;
+            if (activeAlerts[person]) {
+                // si estaba marcado como ido y volvió, registrar regreso
+                someoneReturned = true;
+                activeAlerts[person] = false;
+            }
+        }
+    }
+
+    if (allGone) {
+        // Todos desaparecieron
+        const anyActive = Object.values(activeAlerts).some((v) => v);
+        if (!anyActive) {
+            createNotification(`⚠️ Todos se han ido del cuarto`, 'warning');
+            for (const p in peopleLastSeen) activeAlerts[p] = true;
+        }
+    } else if (someoneReturned) {
+        // Alguien regresó después de que todos se habían ido
+        createNotification(`✅ Alguien ha vuelto al cuarto`, 'success');
     }
 }
+
+
 
 
 
@@ -356,6 +395,8 @@ async function runDetectionLoop(){
             }
 
         }
+
+        checkAllGone();
 
 
 
