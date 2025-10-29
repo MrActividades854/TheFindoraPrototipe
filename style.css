@@ -1,0 +1,77 @@
+body {
+  font-family: system-ui, Segoe UI, Roboto, Arial;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+}
+
+h1 {
+  margin: 0;
+}
+
+#container {
+  position: relative;
+  max-width: 900px;
+  width: 100%;
+  display: inline-block;
+}
+
+video {
+  width: 100%;
+  border-radius: 10px;
+  background: #000;
+}
+
+canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  border-radius: 10px;
+}
+
+#refs, #camera {
+  width: 100%;
+  max-width: 900px;
+}
+
+#refList {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ref-item {
+  background: #f4f4f4;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ref-item img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+label {
+  font-size: 0.95rem;
+}
+
+#status {
+  color: #444;
+}

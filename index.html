@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reconocimiento facial local</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Reconocimiento facial (local)</h1>
+
+  <section id="refs">
+    <h2>Imágenes de referencia</h2>
+    <form id="addRefForm">
+      <input id="refName" placeholder="Nombre (ej: Juan)" required>
+      <input id="refFiles" type="file" accept="image/*" multiple required>
+      <button type="submit">Agregar referencia</button>
+    </form>
+    <button id="clearRefsBtn" style="margin-top:8px">Borrar referencias guardadas</button>
+    <div id="refList">No hay referencias aún.</div>
+  </section>
+
+  <section id="camera">
+    <h2>Cámara</h2>
+    <div id="container">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="overlay"></canvas>
+    </div>
+    <div class="controls">
+      <button id="startBtn">Iniciar cámara</button>
+      <button id="stopBtn" disabled>Detener</button>
+      <label for="threshold">Umbral reconocimiento: <span id="thVal">0.6</span></label>
+      <input id="threshold" type="range" min="0.3" max="0.8" step="0.01" value="0.6">
+      <button id="toggleDebugBtn">🔴 Mostrar punto rojo</button>
+    </div>
+    <p id="status">Cargando modelos...</p>
+  </section>
+
+<!-- Zona de alertas -->
+<div id="alertZone" style="
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(30, 30, 30, 0.95);
+  color: #fff;
+  text-align: center;
+  font-family: sans-serif;
+  font-size: 18px;
+  padding: 12px;
+  display: none;
+  z-index: 9999;
+  border-top: 2px solid #ff4d4d;
+">
+</div>
+
+<!-- Barra de notificaciones -->
+<div id="notificationContainer" style="
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+"></div>
+
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
