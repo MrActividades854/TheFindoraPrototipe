@@ -222,190 +222,189 @@ function updateMatcher(){
 }
 
 addRefForm.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const name = refNameInput.value.trim();
-  const files = [...refFilesInput.files];
-  if(!name || files.length===0){
-    alert('Pon un nombre y elige al menos una imagen.');
-    return;
-  }
-  statusEl.textContent = `Procesando referencias para ${name}...`;
-  const labeled = await addReferenceImages(name, files);
-  if(labeled){
-    renderRefItem(name, files[0]);
-    statusEl.textContent = `Referencia "${name}" agregada.`;
-  } else {
-    statusEl.textContent = `No se pudo generar descriptor para "${name}".`;
-  }
-  refNameInput.value = '';
-  refFilesInput.value = null;
+    e.preventDefault();
+    const name = refNameInput.value.trim();
+    const files = [...refFilesInput.files];
+    if(!name || files.length===0){
+        alert('Pon un nombre y elige al menos una imagen.');
+        return;
+    }
+    statusEl.textContent = `Procesando referencias para ${name}...`;
+    const labeled = await addReferenceImages(name, files);
+    if(labeled){
+        renderRefItem(name, files[0]);
+        statusEl.textContent = `Referencia "${name}" agregada.`;
+    } else {
+        statusEl.textContent = `No se pudo generar descriptor para "${name}".`;
+    }
+    refNameInput.value = '';
+    refFilesInput.value = null;
 });
 
 function renderRefItem(name, file){
-  let div = document.createElement('div');
-  div.className = 'ref-item';
-  if(file){
-    const url = URL.createObjectURL(file);
-    const img = document.createElement('img');
-    img.src = url;
-    div.appendChild(img);
-  }
-  const span = document.createElement('span');
-  span.textContent = name;
-  div.appendChild(span);
-  if(refList.textContent.trim() === 'No hay referencias aún.') refList.textContent='';
-  refList.appendChild(div);
+    let div = document.createElement('div');
+    div.className = 'ref-item';
+    if(file){
+        const url = URL.createObjectURL(file);
+        const img = document.createElement('img');
+        img.src = url;
+        div.appendChild(img);
+    }
+    const span = document.createElement('span');
+    span.textContent = name;
+    div.appendChild(span);
+    if(refList.textContent.trim() === 'No hay referencias aún.') refList.textContent='';
+    refList.appendChild(div);
 }
 
 startBtn.addEventListener('click', async ()=>{
-  try{
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
-    video.srcObject = stream;
-    await video.play();
-    resizeCanvasToVideo();
-    window.addEventListener('resize', resizeCanvasToVideo);
-    detecting = true;
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-    runDetectionLoop();
-  }catch(err){
-    alert('Error al acceder a la cámara: ' + err.message);
-  }
+    try{
+        stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
+        video.srcObject = stream;
+        await video.play();
+        resizeCanvasToVideo();
+        window.addEventListener('resize', resizeCanvasToVideo);
+        detecting = true;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        runDetectionLoop();
+    }catch(err){
+        alert('Error al acceder a la cámara: ' + err.message);
+    }
 });
 
 stopBtn.addEventListener('click', ()=>{
-  detecting = false;
-  startBtn.disabled=false;
-  stopBtn.disabled=true;
-  if(stream) stream.getTracks().forEach(t=>t.stop());
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+    detecting = false;
+    startBtn.disabled=false;
+    stopBtn.disabled=true;
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 });
 
 thresholdInput.addEventListener('input', ()=>{
-  thVal.textContent = thresholdInput.value;
-  updateMatcher();
+    thVal.textContent = thresholdInput.value;
+    updateMatcher();
 });
 
 async function runDetectionLoop(){
-  const options = new faceapi.TinyFaceDetectorOptions({inputSize: 320, scoreThreshold: 0.5});
-  while(detecting){
-    const results = await faceapi.detectAllFaces(video, options)
-      .withFaceLandmarks()
-      .withFaceDescriptors();
-
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    const now = Date.now();
+    const options = new faceapi.TinyFaceDetectorOptions({inputSize: 320, scoreThreshold: 0.5});
+    while(detecting){
+        const results = await faceapi.detectAllFaces(video, options)
+            .withFaceLandmarks()
+            .withFaceDescriptors();
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        const now = Date.now();
     
-    for(let i=tracked.length-1;i>=0;i--)
-      if(now - tracked[i].lastSeen > 3000) tracked.splice(i,1);
+        for(let i=tracked.length-1;i>=0;i--)
+        if(now - tracked[i].lastSeen > 3000) tracked.splice(i,1);
 
-    for (const res of results) {
-  // Coordenadas reales del rostro (sin redimensionar con faceapi)
-  const box = res.detection.box;
+        for (const res of results) {
+        // Coordenadas reales del rostro (sin redimensionar con faceapi)
+            const box = res.detection.box;
 
-  // Convertir coordenadas al tamaño visible del video
-  const scaleX = canvas._scaleX || 1;
-  const scaleY = canvas._scaleY || 1;
+            // Convertir coordenadas al tamaño visible del video
+            const scaleX = canvas._scaleX || 1;
+            const scaleY = canvas._scaleY || 1;
 
-  const x = box.x * scaleX;
-  const y = box.y * scaleY;
-  const width = box.width * scaleX;
-  const height = box.height * scaleY;
-  const xCenter = x + width / 2;
-  const yCenter = y + height / 2;
+            const x = box.x * scaleX;
+            const y = box.y * scaleY;
+            const width = box.width * scaleX;
+            const height = box.height * scaleY;
+            const xCenter = x + width / 2;
+            const yCenter = y + height / 2;
 
-  // Seguimiento persistente
-  const t = assignTracked(xCenter, yCenter);
+            // Seguimiento persistente
+            const t = assignTracked(xCenter, yCenter);
 
-  // Coincidencia de persona
-  let label = 'Desconocido';
-  if (faceMatcher) {
-    const best = faceMatcher.findBestMatch(res.descriptor);
-    if (best && best.label !== 'unknown') label = best.label;
+            // Coincidencia de persona
+            let label = 'Desconocido';
+            if (faceMatcher) {
+                const best = faceMatcher.findBestMatch(res.descriptor);
+                if (best && best.label !== 'unknown') label = best.label;
 
-     // 🔔 Actualizar alertas
-    updatePersonDetection(label);
-  }
+                // 🔔 Actualizar alertas
+                updatePersonDetection(label);
+            }
 
-  // --- Rectángulo perfectamente alineado ---
-  ctx.lineWidth = Math.max(2, width / 100);
-  ctx.strokeStyle = t.color;
-  ctx.strokeRect(x, y, width, height);
+            // --- Rectángulo perfectamente alineado ---
+            ctx.lineWidth = Math.max(2, width / 100);
+            ctx.strokeStyle = t.color;
+            ctx.strokeRect(x, y, width, height);
 
-  // --- Etiqueta debajo ---
-  const padding = 6;
-  ctx.font = `${Math.max(14, width / 18)}px sans-serif`;
-  const text = label;
-  const textW = ctx.measureText(text).width + padding * 2;
-  const textH = Math.max(26, height / 9);
+            // --- Etiqueta debajo ---
+            const padding = 6;
+            ctx.font = `${Math.max(14, width / 18)}px sans-serif`;
+            const text = label;
+            const textW = ctx.measureText(text).width + padding * 2;
+            const textH = Math.max(26, height / 9);
 
-  let tagX = x;
-  let tagY = y + height + textH + 4;
-  if (tagY > canvas.height - 5) tagY = y - 10;
+            let tagX = x;
+            let tagY = y + height + textH + 4;
+            if (tagY > canvas.height - 5) tagY = y - 10;
 
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-  ctx.fillRect(tagX - 2, tagY - textH, textW + 4, textH);
-  ctx.fillStyle = '#fff';
-  ctx.fillText(text, tagX + padding, tagY - textH / 3);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+            ctx.fillRect(tagX - 2, tagY - textH, textW + 4, textH);
+            ctx.fillStyle = '#fff';
+            ctx.fillText(text, tagX + padding, tagY - textH / 3);
 
-  // --- DEPURACIÓN: punto rojo en el centro del rostro (solo si está activado) ---
-if (showDebugPoint) {
-  ctx.beginPath();
-  ctx.arc(xCenter, yCenter, 4, 0, 2 * Math.PI);
-  ctx.fillStyle = 'red';
-  ctx.fill();
-}
+            // --- DEPURACIÓN: punto rojo en el centro del rostro (solo si está activado) ---
+            if (showDebugPoint) {
+            ctx.beginPath();
+            ctx.arc(xCenter, yCenter, 4, 0, 2 * Math.PI);
+            ctx.fillStyle = 'red';
+            ctx.fill();
+            }
 
-}
-
-
+        }
 
 
-    await new Promise(r=>setTimeout(r,100));
-  }
+
+
+        await new Promise(r=>setTimeout(r,100));
+    }
 }
 
 // --- Guardado en localStorage ---
 function saveReferencesToLocalStorage() {
-  try {
-    const data = labeledDescriptors.map(ld => ({
-      label: ld.label,
-      descriptors: ld.descriptors.map(d => Array.from(d))
-    }));
-    localStorage.setItem('faceRefs', JSON.stringify(data));
-    statusEl.textContent = 'Referencias guardadas localmente.';
-  } catch (err) {
-    console.error('Error guardando referencias:', err);
-  }
+    try {
+        const data = labeledDescriptors.map(ld => ({
+            label: ld.label,
+            descriptors: ld.descriptors.map(d => Array.from(d))
+        }));
+        localStorage.setItem('faceRefs', JSON.stringify(data));
+        statusEl.textContent = 'Referencias guardadas localmente.';
+    } catch (err) {
+        console.error('Error guardando referencias:', err);
+    }
 }
 
 async function loadReferencesFromLocalStorage() {
-  const saved = localStorage.getItem('faceRefs');
-  if (!saved) return;
-  try {
-    const parsed = JSON.parse(saved);
-    labeledDescriptors = parsed.map(p =>
-      new faceapi.LabeledFaceDescriptors(p.label, p.descriptors.map(d => new Float32Array(d)))
-    );
-    updateMatcher();
-    for (const ref of parsed) renderRefItem(ref.label, null);
-    statusEl.textContent = 'Referencias cargadas desde almacenamiento local.';
-  } catch (err) {
-    console.error('Error cargando referencias:', err);
-  }
+    const saved = localStorage.getItem('faceRefs');
+    if (!saved) return;
+    try {
+        const parsed = JSON.parse(saved);
+        labeledDescriptors = parsed.map(p =>
+        new faceapi.LabeledFaceDescriptors(p.label, p.descriptors.map(d => new Float32Array(d)))
+        );
+        updateMatcher();
+        for (const ref of parsed) renderRefItem(ref.label, null);
+        statusEl.textContent = 'Referencias cargadas desde almacenamiento local.';
+    } catch (err) {
+        console.error('Error cargando referencias:', err);
+    }
 }
 
 clearRefsBtn.addEventListener('click', () => {
-  localStorage.removeItem('faceRefs');
-  labeledDescriptors = [];
-  refList.textContent = 'No hay referencias aún.';
-  updateMatcher();
-  statusEl.textContent = 'Referencias locales eliminadas.';
+    localStorage.removeItem('faceRefs');
+    labeledDescriptors = [];
+    refList.textContent = 'No hay referencias aún.';
+    updateMatcher();
+    statusEl.textContent = 'Referencias locales eliminadas.';
 });
 
 // init
 (async ()=>{
-  await loadModels();
-  await loadReferencesFromLocalStorage();
-  statusEl.textContent = 'Modelos listos. Puedes agregar o usar las referencias guardadas.';
+    await loadModels();
+    await loadReferencesFromLocalStorage();
+    statusEl.textContent = 'Modelos listos. Puedes agregar o usar las referencias guardadas.';
 })();
