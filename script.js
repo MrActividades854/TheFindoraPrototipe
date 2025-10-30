@@ -293,6 +293,50 @@ async function loadModels(){
     statusEl.textContent = 'Modelos cargados.';
 }
 
+(async ()=>{
+    await loadModels();
+    await loadReferencesFromLocalStorage();
+    await loadReferencesFromFolder(); // 👈 añade esto
+    statusEl.textContent = 'Modelos y referencias listos.';
+  })();
+  
+
+async function loadReferencesFromFolder() {
+    try {
+      const res = await fetch('./references/references.json');
+      if (!res.ok) throw new Error('No se pudo cargar references.json');
+      const data = await res.json();
+  
+      statusEl.textContent = 'Cargando referencias desde carpeta...';
+  
+      for (const [name, files] of Object.entries(data)) {
+        const descriptors = [];
+        for (const file of files) {
+          const url = `./references/${name}/${file}`;
+          const img = await faceapi.fetchImage(url);
+          const detection = await faceapi
+            .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+          if (detection) descriptors.push(detection.descriptor);
+          else console.warn(`No se detectó rostro en ${url}`);
+        }
+        if (descriptors.length) {
+          labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(name, descriptors));
+          renderRefItem(name, null);
+        }
+      }
+  
+      updateMatcher();
+      saveReferencesToLocalStorage();
+      statusEl.textContent = '✅ Referencias cargadas automáticamente desde carpeta.';
+    } catch (err) {
+      console.error('Error cargando referencias desde carpeta:', err);
+      statusEl.textContent = '⚠️ Error al cargar referencias desde carpeta.';
+    }
+  }
+  
+
 async function addReferenceImages(name, files){
     const descriptors = [];
     for(const f of files){
