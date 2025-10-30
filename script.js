@@ -46,14 +46,20 @@ let peopleLastSeen = {};  // { "Kevin": timestamp }
 let activeAlerts = {};    // { "Kevin": true/false }
 let knownPeople = new Set(); // personas ya detectadas alguna vez
 
-// --- Crear una notificación visual con hora ---
+// --- Crear una notificación visual con hora, guardado e intercambio en tiempo real ---
+const bc = new BroadcastChannel("canal_notificaciones");
+
 function createNotification(message, type = 'warning') {
     const container = document.getElementById('notificationContainer');
 
-    // 🕒 Obtener la hora actual en formato HH:MM:SS
+    // 🕒 Hora actual
     const now = new Date();
     const timeString = now.toLocaleTimeString('es-CO', { hour12: false });
 
+    // 🆔 Generar ID único
+    const id = `notif-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    // Crear notificación visual
     const notif = document.createElement('div');
     notif.className = 'notification';
     notif.innerHTML = `
@@ -90,21 +96,33 @@ function createNotification(message, type = 'warning') {
         notif.firstElementChild.style.transform = 'translateY(0)';
     });
 
-    // 🔔 Desaparecer automáticamente después de X segundos
-    const timeout = type === 'warning' ? 5000 : 3000; // 5s para rojo, 3s para verde
+    // Auto eliminar
+    const timeout = type === 'warning' ? 5000 : 3000;
     setTimeout(() => removeNotification(notif), timeout);
-// --- Enviar notificación al otro documento en tiempo real ---
-try {
-  bc.postMessage({
-    message,
-    type,
-    time: new Date().toLocaleTimeString("es-CO", { hour12: false })
-  });
-} catch (e) {
-  console.error("Error enviando notificación:", e);
+
+    // --- 💾 Guardar en localStorage ---
+    try {
+        const logs = JSON.parse(localStorage.getItem("notificationLog")) || [];
+        if (!logs.some(l => l.id === id)) {
+            logs.push({ id, message, type, time: timeString });
+            if (logs.length > 100) logs.shift();
+            localStorage.setItem("notificationLog", JSON.stringify(logs));
+        }
+    } catch (err) {
+        console.error("Error guardando notificación:", err);
+    }
+
+    // --- 📡 Enviar en tiempo real por BroadcastChannel ---
+    try {
+        bc.postMessage({ id, message, type, time: timeString });
+    } catch (err) {
+        console.error("Error enviando por canal:", err);
+    }
+
+    // --- 🔄 Trigger para compatibilidad antigua ---
+    localStorage.setItem("notificationPing", Date.now());
 }
 
-}
 
 
 

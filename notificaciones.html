@@ -100,14 +100,11 @@
   <script>
   const bc = new BroadcastChannel("canal_notificaciones");
   const list = document.getElementById("logList");
+  const shownIDs = new Set();
 
   function addLog(log) {
-    // Evita duplicados si el último mensaje es igual
-    const last = list.firstElementChild;
-    if (last && last.querySelector(".message")?.textContent === log.message &&
-        last.querySelector(".time")?.textContent.includes(log.time)) {
-      return; // ya se mostró
-    }
+    if (shownIDs.has(log.id)) return; // Evita duplicados exactos
+    shownIDs.add(log.id);
 
     const li = document.createElement("li");
     li.className = log.type === 'warning' ? 'warning' : 'success';
@@ -116,38 +113,39 @@
       <div class="time">🕒 ${log.time}</div>
     `;
     list.insertBefore(li, list.firstChild);
-
-    const container = document.getElementById("logContainer");
-    container.scrollTop = 0;
+    document.getElementById("logContainer").scrollTop = 0;
   }
 
-  // Cargar historial inicial (persistente)
+  // Cargar historial guardado (una sola vez al abrir)
   function loadLogs() {
     const logs = JSON.parse(localStorage.getItem("notificationLog")) || [];
-    list.innerHTML = "";
-    logs.slice().reverse().forEach(addLog);
+    logs.forEach(log => {
+      addLog(log);
+    });
   }
 
-  // 📡 Escuchar mensajes en tiempo real
+  // Escuchar mensajes en tiempo real
   bc.onmessage = (e) => {
     const log = e.data;
     addLog(log);
-    // Guardar también en historial
-    const logs = JSON.parse(localStorage.getItem("notificationLog")) || [];
-    logs.push(log);
-    if (logs.length > 100) logs.shift();
-    localStorage.setItem("notificationLog", JSON.stringify(logs));
-  };
 
-  // 🚫 Ya no escuchamos 'storage' (evita duplicados)
-  // Si quieres mantener compatibilidad, puedes dejarlo, pero no necesario
+    // Guardar también en localStorage si no existe
+    const logs = JSON.parse(localStorage.getItem("notificationLog")) || [];
+    if (!logs.some(l => l.id === log.id)) {
+      logs.push(log);
+      if (logs.length > 100) logs.shift();
+      localStorage.setItem("notificationLog", JSON.stringify(logs));
+    }
+  };
 
   function clearLog() {
     localStorage.removeItem("notificationLog");
     list.innerHTML = "";
+    shownIDs.clear();
   }
 
   loadLogs();
 </script>
+
 
 
