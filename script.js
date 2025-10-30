@@ -341,21 +341,62 @@ addRefForm.addEventListener('submit', async (e)=>{
     refFilesInput.value = null;
 });
 
-function renderRefItem(name, file){
-    let div = document.createElement('div');
+function renderRefItem(name, file) {
+    const div = document.createElement('div');
     div.className = 'ref-item';
-    if(file){
-        const url = URL.createObjectURL(file);
-        const img = document.createElement('img');
-        img.src = url;
-        div.appendChild(img);
+    div.dataset.name = name;
+  
+    if (file) {
+      const url = URL.createObjectURL(file);
+      const img = document.createElement('img');
+      img.src = url;
+      div.appendChild(img);
     }
+  
     const span = document.createElement('span');
     span.textContent = name;
     div.appendChild(span);
-    if(refList.textContent.trim() === 'No hay referencias aún.') refList.textContent='';
+  
+    if (refList.textContent.trim() === 'No hay referencias aún.') refList.textContent = '';
     refList.appendChild(div);
-}
+  
+    // === 👇 Nuevo comportamiento: al hacer clic se pueden añadir más imágenes ===
+    div.addEventListener('click', async () => {
+      const addMoreInput = document.getElementById('addMoreFiles');
+      addMoreInput.value = ''; // limpiar selección previa
+      addMoreInput.click();
+  
+      addMoreInput.onchange = async (e) => {
+        const files = [...e.target.files];
+        if (!files.length) return;
+        statusEl.textContent = `Agregando más referencias para ${name}...`;
+  
+        // Procesar cada imagen nueva
+        const descriptors = [];
+        for (const f of files) {
+          const img = await faceapi.bufferToImage(f);
+          const detection = await faceapi
+            .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+          if (detection) descriptors.push(detection.descriptor);
+          else console.warn(`No se detectó rostro en ${f.name}`);
+        }
+  
+        // Agregar los nuevos descriptores al objeto ya existente
+        const existing = labeledDescriptors.find(ld => ld.label === name);
+        if (existing && descriptors.length) {
+          existing.descriptors.push(...descriptors);
+          updateMatcher();
+          saveReferencesToLocalStorage();
+          statusEl.textContent = `✅ ${files.length} nuevas imágenes añadidas a "${name}".`;
+        } else {
+          statusEl.textContent = `⚠️ No se pudieron añadir referencias a "${name}".`;
+        }
+      };
+    });
+  }
+  
 
 startBtn.addEventListener('click', async ()=>{
     try{
