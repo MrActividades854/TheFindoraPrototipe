@@ -1,3 +1,7 @@
+// Canal de comunicación en tiempo real con otras pestañas
+const bc = new BroadcastChannel("canal_notificaciones");
+
+
 const MODEL_PATH = '/models';
 
 const video = document.getElementById('video');
@@ -91,6 +95,17 @@ function createNotification(message, type = 'warning') {
     // 🔔 Desaparecer automáticamente después de X segundos
     const timeout = type === 'warning' ? 5000 : 3000; // 5s para rojo, 3s para verde
     setTimeout(() => removeNotification(notif), timeout);
+// --- Enviar notificación al otro documento en tiempo real ---
+try {
+  bc.postMessage({
+    message,
+    type,
+    time: new Date().toLocaleTimeString("es-CO", { hour12: false })
+  });
+} catch (e) {
+  console.error("Error enviando notificación:", e);
+}
+
 }
 
 
