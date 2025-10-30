@@ -44,31 +44,40 @@ let peopleLastSeen = {};  // { "Kevin": timestamp }
 let activeAlerts = {};    // { "Kevin": true/false }
 let knownPeople = new Set(); // personas ya detectadas alguna vez
 
-// --- Crear una notificación visual ---
+// --- Crear una notificación visual con hora ---
 function createNotification(message, type = 'warning') {
     const container = document.getElementById('notificationContainer');
+
+    // 🕒 Obtener la hora actual en formato HH:MM:SS
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-CO', { hour12: false });
 
     const notif = document.createElement('div');
     notif.className = 'notification';
     notif.innerHTML = `
         <div style="
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: ${type === 'warning' ? '#ff4d4d' : '#4caf50'};
-        color: white;
-        padding: 12px 16px;
-        border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-        min-width: 260px;
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 15px;
-        opacity: 0;
-        transform: translateY(10px);
-        transition: all 0.4s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            background: ${type === 'warning' ? '#ff4d4d' : '#4caf50'};
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+            min-width: 260px;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 15px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease;
         ">
-        <span style="font-size: 20px;">${type === 'warning' ? '⚠️' : '✅'}</span>
-        <span>${message}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 20px;">${type === 'warning' ? '⚠️' : '✅'}</span>
+                <span>${message}</span>
+            </div>
+            <div style="text-align: right; font-size: 13px; opacity: 0.85;">
+                🕒 ${timeString}
+            </div>
         </div>
     `;
     container.appendChild(notif);
@@ -83,6 +92,7 @@ function createNotification(message, type = 'warning') {
     const timeout = type === 'warning' ? 5000 : 3000; // 5s para rojo, 3s para verde
     setTimeout(() => removeNotification(notif), timeout);
 }
+
 
 
 // --- Eliminar notificación ---
@@ -112,20 +122,15 @@ function showPersonEntry(personName) {
 }
 
 
-// --- Actualizar detección de personas ---
+// --- Actualizar detección de personas (incluye desconocidos) ---
 function updatePersonDetection(label) {
     const now = Date.now();
 
-    function getCurrentTime() {
-    const now = new Date();
-  return now.toLocaleTimeString('es-CO', { hour12: false }); // formato 24h
-}
-
-
+    // Si es una persona conocida
     if (label && label !== 'Desconocido') {
         const seenBefore = knownPeople.has(label);
 
-        // Si es nueva persona
+        // Si es nueva persona conocida
         if (!seenBefore) {
             knownPeople.add(label);
             showPersonEntry(label);
@@ -139,13 +144,33 @@ function updatePersonDetection(label) {
             showPersonReturn(label);
         }
     }
+
+    // Si es un desconocido
+    if (label === 'Desconocido') {
+        const name = 'Desconocido';
+        const seenBefore = knownPeople.has(name);
+
+        if (!seenBefore) {
+            knownPeople.add(name);
+            createNotification('⚠️ Un desconocido ha entrado al cuarto', 'warning');
+        }
+
+        peopleLastSeen[name] = now;
+
+        // Si tenía una alerta activa (ya no se veía) y volvió a aparecer
+        if (activeAlerts[name]) {
+            createNotification('⚠️ Un desconocido ha vuelto a aparecer', 'warning');
+            activeAlerts[name] = false;
+        }
+    }
 }
 
+
 // --- Verificar si todos se han ido ---
+// --- Verificar si todos se han ido (incluye desconocidos) ---
 function checkAllGone() {
     const now = Date.now();
 
-    // Si no hay personas registradas, no hay nada que verificar
     if (Object.keys(peopleLastSeen).length === 0) return;
 
     let allGone = true;
@@ -154,14 +179,20 @@ function checkAllGone() {
     for (const person in peopleLastSeen) {
         const timeSinceSeen = now - peopleLastSeen[person];
 
+        // Persona se fue
         if (timeSinceSeen > ALERT_TIMEOUT && !activeAlerts[person]) {
-            showPersonAlert(person);
+            if (person === 'Desconocido') {
+                createNotification('⚠️ Un desconocido ha salido del cuarto', 'warning');
+            } else {
+                showPersonAlert(person);
+            }
+            activeAlerts[person] = true;
         }
 
+        // Persona sigue presente o ha vuelto
         if (timeSinceSeen <= ALERT_TIMEOUT) {
             allGone = false;
             if (activeAlerts[person]) {
-                // si estaba marcado como ido y volvió, registrar regreso
                 someoneReturned = true;
                 activeAlerts[person] = false;
             }
@@ -169,17 +200,16 @@ function checkAllGone() {
     }
 
     if (allGone) {
-        // Todos desaparecieron
         const anyActive = Object.values(activeAlerts).some((v) => v);
         if (!anyActive) {
             createNotification(`⚠️ Todos se han ido del cuarto`, 'warning');
             for (const p in peopleLastSeen) activeAlerts[p] = true;
         }
     } else if (someoneReturned) {
-        // Alguien regresó después de que todos se habían ido
         createNotification(`✅ Alguien ha vuelto al cuarto`, 'success');
     }
 }
+
 
 
 
@@ -407,17 +437,18 @@ async function runDetectionLoop(){
 
 // --- Guardado en localStorage ---
 function saveReferencesToLocalStorage() {
-    try {
-        const data = labeledDescriptors.map(ld => ({
-            label: ld.label,
-            descriptors: ld.descriptors.map(d => Array.from(d))
-        }));
-        localStorage.setItem('faceRefs', JSON.stringify(data));
-        statusEl.textContent = 'Referencias guardadas localmente.';
-    } catch (err) {
-        console.error('Error guardando referencias:', err);
-    }
+  try {
+    const data = labeledDescriptors.map(ld => ({
+      label: ld.label,
+      descriptors: ld.descriptors.map(d => Array.from(new Float32Array(d)))
+    }));
+    localStorage.setItem('faceRefs', JSON.stringify(data));
+    statusEl.textContent = 'Referencias guardadas localmente.';
+  } catch (err) {
+    console.error('Error guardando referencias:', err);
+  }
 }
+
 
 async function loadReferencesFromLocalStorage() {
     const saved = localStorage.getItem('faceRefs');
