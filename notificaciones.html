@@ -102,6 +102,13 @@
   const list = document.getElementById("logList");
 
   function addLog(log) {
+    // Evita duplicados si el último mensaje es igual
+    const last = list.firstElementChild;
+    if (last && last.querySelector(".message")?.textContent === log.message &&
+        last.querySelector(".time")?.textContent.includes(log.time)) {
+      return; // ya se mostró
+    }
+
     const li = document.createElement("li");
     li.className = log.type === 'warning' ? 'warning' : 'success';
     li.innerHTML = `
@@ -114,14 +121,33 @@
     container.scrollTop = 0;
   }
 
-  // Escuchar mensajes del canal
+  // Cargar historial inicial (persistente)
+  function loadLogs() {
+    const logs = JSON.parse(localStorage.getItem("notificationLog")) || [];
+    list.innerHTML = "";
+    logs.slice().reverse().forEach(addLog);
+  }
+
+  // 📡 Escuchar mensajes en tiempo real
   bc.onmessage = (e) => {
     const log = e.data;
     addLog(log);
+    // Guardar también en historial
+    const logs = JSON.parse(localStorage.getItem("notificationLog")) || [];
+    logs.push(log);
+    if (logs.length > 100) logs.shift();
+    localStorage.setItem("notificationLog", JSON.stringify(logs));
   };
 
-  // Botón para limpiar lista
+  // 🚫 Ya no escuchamos 'storage' (evita duplicados)
+  // Si quieres mantener compatibilidad, puedes dejarlo, pero no necesario
+
   function clearLog() {
+    localStorage.removeItem("notificationLog");
     list.innerHTML = "";
   }
+
+  loadLogs();
 </script>
+
+

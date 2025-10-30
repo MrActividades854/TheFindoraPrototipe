@@ -1,5 +1,3 @@
-// Canal de comunicación en tiempo real con otras pestañas
-const bc = new BroadcastChannel("canal_notificaciones");
 
 
 const MODEL_PATH = '/models';
