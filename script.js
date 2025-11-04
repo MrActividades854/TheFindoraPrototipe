@@ -293,15 +293,26 @@ async function loadModels(){
     statusEl.textContent = 'Modelos cargados.';
 }
 
-(async ()=>{
+(async () => {
     await loadModels();
+  
+    // Primero intenta cargar desde localStorage
     await loadReferencesFromLocalStorage();
-    await loadReferencesFromFolder(); // 👈 añade esto
-    statusEl.textContent = 'Modelos y referencias listos.';
-  })();
+  
+    // Si no hay referencias guardadas, carga desde la carpeta del proyecto
+    if (labeledDescriptors.length === 0) {
+      statusEl.textContent = 'No hay referencias locales. Cargando desde carpeta...';
+      await loadReferencesFromFolder();
+    } else {
+      console.log('🟢 Referencias ya cargadas desde localStorage, se omite carpeta.');
+    }
+  
+    statusEl.textContent = '✅ Modelos y referencias listos.';
+  })();  
+  
   
 
-async function loadReferencesFromFolder() {
+  async function loadReferencesFromFolder() {
     try {
       const res = await fetch('./references/references.json');
       if (!res.ok) throw new Error('No se pudo cargar references.json');
@@ -310,6 +321,13 @@ async function loadReferencesFromFolder() {
       statusEl.textContent = 'Cargando referencias desde carpeta...';
   
       for (const [name, files] of Object.entries(data)) {
+        // 👇 Evita duplicados: si ya existe esta persona, la salta
+        const alreadyLoaded = labeledDescriptors.some(ld => ld.label === name);
+        if (alreadyLoaded) {
+          console.log(`⏭️ ${name} ya existe, se omite carga desde carpeta.`);
+          continue;
+        }
+  
         const descriptors = [];
         for (const file of files) {
           const url = `./references/${name}/${file}`;
@@ -321,6 +339,7 @@ async function loadReferencesFromFolder() {
           if (detection) descriptors.push(detection.descriptor);
           else console.warn(`No se detectó rostro en ${url}`);
         }
+  
         if (descriptors.length) {
           labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(name, descriptors));
           renderRefItem(name, null);
@@ -335,6 +354,7 @@ async function loadReferencesFromFolder() {
       statusEl.textContent = '⚠️ Error al cargar referencias desde carpeta.';
     }
   }
+  
   
 
 async function addReferenceImages(name, files){
@@ -589,10 +609,3 @@ clearRefsBtn.addEventListener('click', () => {
     updateMatcher();
     statusEl.textContent = 'Referencias locales eliminadas.';
 });
-
-// init
-(async ()=>{
-    await loadModels();
-    await loadReferencesFromLocalStorage();
-    statusEl.textContent = 'Modelos listos. Puedes agregar o usar las referencias guardadas.';
-})();
