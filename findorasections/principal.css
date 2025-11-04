@@ -1,30 +1,281 @@
-body {
-    background-color: white;
-}
-
-nav {
-float: left;
-background-color: blue;
-}
-
-nav ul {
-    list-style: none;
-    overflow: hidden;
-}
-
-nav ul li {
-    float: left;
-    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-    font-size: 20px;
-}
-
-nav ul li a {
-    display: block;
-    padding: 20px;
-    color: white;
+/* --- CONFIGURACIÓN GENERAL --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Inter", "Poppins", sans-serif;
+  }
+  
+  body {
+    background: #f5f7fb;
+    color: #0b0f28;
+    scroll-behavior: smooth;
+  }
+  
+  /* --- NAVBAR --- */
+  header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 60px;
+    z-index: 100;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .logo {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #0b0f28;
+  }
+  
+  .logo span {
+    color: #007aff;
+  }
+  
+  nav a {
     text-decoration: none;
-}
-
-nav ul li:hover {
-    background: green;
-}
+    color: #333;
+    margin: 0 15px;
+    font-weight: 500;
+    transition: color 0.3s;
+  }
+  
+  nav a:hover {
+    color: #007aff;
+  }
+  
+  /* --- SECCIÓN HERO --- */
+  .hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    padding: 140px 60px 100px;
+    background: linear-gradient(120deg, #e9edf7, #f5f7fb);
+  }
+  
+  .text {
+    max-width: 520px;
+  }
+  
+  .text h1 {
+    font-size: 2.8rem;
+    color: #0b0f28;
+    line-height: 1.3;
+  }
+  
+  .text h1 span {
+    color: #007aff;
+  }
+  
+  .text p {
+    margin: 20px 0 30px;
+    font-size: 1.1rem;
+    color: #444;
+    line-height: 1.6;
+  }
+  
+  .btn {
+    display: inline-block;
+    background: #007aff;
+    color: #fff;
+    padding: 12px 30px;
+    border-radius: 30px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.3s, transform 0.3s;
+  }
+  
+  .btn:hover {
+    background: #0064cc;
+    transform: translateY(-2px);
+  }
+  
+  /* --- CÁMARA ANIMADA --- */
+  .camera-scene {
+    position: relative;
+    width: 300px;
+    height: 300px;
+  }
+  
+  .camera-body {
+    position: relative;
+    width: 180px;
+    height: 120px;
+    background: linear-gradient(145deg, #0e132f, #1e2b4f);
+    border-radius: 20px;
+    margin: 60px auto 0;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .lens {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, #003f91 10%, #000c1f 80%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 20px #007aff, 0 0 25px rgba(0, 122, 255, 0.4);
+    animation: pulse 3s infinite ease-in-out;
+  }
+  
+  .ring {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border: 2px solid rgba(0, 122, 255, 0.6);
+    border-radius: 50%;
+    animation: rotate 6s linear infinite;
+  }
+  
+  .light {
+    width: 8px;
+    height: 8px;
+    background: #00b7ff;
+    border-radius: 50%;
+    box-shadow: 0 0 15px #00b7ff;
+  }
+  
+  .beam {
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 120px;
+    background: linear-gradient(180deg, rgba(0, 183, 255, 0.7), transparent);
+    border-radius: 2px;
+    animation: scan-beam 2.8s infinite ease-in-out;
+    filter: blur(1px);
+  }
+  
+  /* --- ANIMACIONES DE CÁMARA --- */
+  @keyframes pulse {
+    0%, 100% { box-shadow: inset 0 0 20px #007aff, 0 0 25px rgba(0, 122, 255, 0.4); }
+    50% { box-shadow: inset 0 0 30px #00b7ff, 0 0 40px rgba(0, 183, 255, 0.7); }
+  }
+  
+  @keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  @keyframes scan-beam {
+    0%, 100% { height: 120px; opacity: 0.6; }
+    50% { height: 160px; opacity: 1; }
+  }
+  
+  /* --- FORMULARIOS --- */
+  .form-section {
+    padding: 100px 20px;
+    display: flex;
+    justify-content: center;
+    background: #fff;
+  }
+  
+  .form-card {
+    background: #f9fbff;
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+  }
+  
+  .form-card h2 {
+    color: #007aff;
+    margin-bottom: 25px;
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  form input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border 0.3s;
+  }
+  
+  form input:focus {
+    border: 1px solid #007aff;
+  }
+  
+  form button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #007aff;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.3s, transform 0.3s;
+  }
+  
+  form button:hover {
+    background: #0064cc;
+    transform: translateY(-2px);
+  }
+  
+  /* --- FOOTER --- */
+  footer {
+    text-align: center;
+    padding: 40px 20px;
+    background: #f4f6fa;
+    color: #666;
+    font-size: 0.9rem;
+    border-top: 1px solid #e0e0e0;
+  }
+  
+  /* --- RESPONSIVE --- */
+  @media (max-width: 768px) {
+    header {
+      flex-direction: column;
+      padding: 15px;
+    }
+  
+    nav {
+      margin-top: 10px;
+    }
+  
+    .hero {
+      flex-direction: column;
+      text-align: center;
+      padding: 140px 20px 60px;
+    }
+  
+    .text h1 {
+      font-size: 2.2rem;
+    }
+  
+    .camera-scene {
+      margin-top: 40px;
+    }
+  
+    .form-card {
+      width: 90%;
+    }
+  }
+  

@@ -15,6 +15,11 @@ const stopBtn = document.getElementById('stopBtn');
 const clearRefsBtn = document.getElementById('clearRefsBtn');
 const toggleDebugBtn = document.getElementById('toggleDebugBtn');
 
+document.getElementById('forceReloadBtn').addEventListener('click', async () => {
+    await loadReferencesFromFolder(true); // fuerza recarga completa
+  });
+  
+
 toggleDebugBtn.addEventListener('click', () => {
     showDebugPoint = !showDebugPoint;
     toggleDebugBtn.textContent = showDebugPoint ? '⚪ Ocultar punto rojo' : '🔴 Mostrar punto rojo';
@@ -295,42 +300,39 @@ async function loadModels(){
 
 (async () => {
     await loadModels();
-  
-    // Primero intenta cargar desde localStorage
     await loadReferencesFromLocalStorage();
   
-    // Si no hay referencias guardadas, carga desde la carpeta del proyecto
-    if (labeledDescriptors.length === 0) {
-      statusEl.textContent = 'No hay referencias locales. Cargando desde carpeta...';
-      await loadReferencesFromFolder();
-    } else {
-      console.log('🟢 Referencias ya cargadas desde localStorage, se omite carpeta.');
-    }
+    // Siempre revisar si hay nuevas carpetas o imágenes
+    await loadReferencesFromFolder(false); // no recarga todo, solo nuevas
   
     statusEl.textContent = '✅ Modelos y referencias listos.';
-  })();  
+  })();
+  
   
   
 
-  async function loadReferencesFromFolder() {
+  async function loadReferencesFromFolder(forceReload = false) {
     try {
-      const res = await fetch('./references/references.json');
+      const res = await fetch('./references/references.json?_=' + Date.now());
       if (!res.ok) throw new Error('No se pudo cargar references.json');
       const data = await res.json();
   
-      statusEl.textContent = 'Cargando referencias desde carpeta...';
+      statusEl.textContent = '🔍 Revisando referencias en carpeta...';
+  
+      let newRefsCount = 0;
   
       for (const [name, files] of Object.entries(data)) {
-        // 👇 Evita duplicados: si ya existe esta persona, la salta
-        const alreadyLoaded = labeledDescriptors.some(ld => ld.label === name);
-        if (alreadyLoaded) {
-          console.log(`⏭️ ${name} ya existe, se omite carga desde carpeta.`);
+        const existing = labeledDescriptors.find(ld => ld.label === name);
+  
+        // Si ya existe la persona y no queremos forzar, saltar
+        if (existing && !forceReload) {
+          console.log(`⏭️ ${name} ya está en memoria, se omite.`);
           continue;
         }
   
         const descriptors = [];
         for (const file of files) {
-          const url = `./references/${name}/${file}`;
+          const url = `./references/${name}/${file}?_=${Date.now()}`;
           const img = await faceapi.fetchImage(url);
           const detection = await faceapi
             .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
@@ -341,19 +343,32 @@ async function loadModels(){
         }
   
         if (descriptors.length) {
-          labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(name, descriptors));
-          renderRefItem(name, null);
+          if (existing) {
+            // Si la persona ya existía, añadimos más imágenes
+            existing.descriptors.push(...descriptors);
+            console.log(`🔄 Se añadieron ${descriptors.length} nuevas imágenes a ${name}`);
+          } else {
+            labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(name, descriptors));
+            renderRefItem(name, null);
+            console.log(`🆕 Nueva referencia añadida: ${name}`);
+          }
+          newRefsCount++;
         }
       }
   
-      updateMatcher();
-      saveReferencesToLocalStorage();
-      statusEl.textContent = '✅ Referencias cargadas automáticamente desde carpeta.';
+      if (newRefsCount > 0) {
+        updateMatcher();
+        saveReferencesToLocalStorage();
+        statusEl.textContent = `✅ ${newRefsCount} nuevas referencias cargadas desde carpeta.`;
+      } else {
+        statusEl.textContent = '📁 No se encontraron nuevas referencias.';
+      }
     } catch (err) {
       console.error('Error cargando referencias desde carpeta:', err);
       statusEl.textContent = '⚠️ Error al cargar referencias desde carpeta.';
     }
   }
+  
   
   
 
