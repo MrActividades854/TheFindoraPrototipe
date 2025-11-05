@@ -12,6 +12,8 @@ const refFilesInput = document.getElementById('refFiles');
 const refList = document.getElementById('refList');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
+const cameraSelect = document.getElementById('cameraSelect');
+let currentDeviceId = null;
 const clearRefsBtn = document.getElementById('clearRefsBtn');
 const toggleDebugBtn = document.getElementById('toggleDebugBtn');
 
@@ -296,6 +298,8 @@ async function loadModels(){
     await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_PATH);
     await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_PATH);
     statusEl.textContent = 'Modelos cargados.';
+
+    await loadCameras();
 }
 
 (async () => {
@@ -476,22 +480,72 @@ function renderRefItem(name, file) {
     });
   }
   
+  // --- Obtener cámaras disponibles y llenar el selector ---
+async function loadCameras() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(d => d.kind === 'videoinput');
 
-startBtn.addEventListener('click', async ()=>{
-    try{
-        stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
-        video.srcObject = stream;
-        await video.play();
-        resizeCanvasToVideo();
-        window.addEventListener('resize', resizeCanvasToVideo);
-        detecting = true;
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-        runDetectionLoop();
-    }catch(err){
-        alert('Error al acceder a la cámara: ' + err.message);
+    cameraSelect.innerHTML = '';
+    videoDevices.forEach((device, i) => {
+      const option = document.createElement('option');
+      option.value = device.deviceId;
+      option.textContent = device.label || `Cámara ${i + 1}`;
+      cameraSelect.appendChild(option);
+    });
+
+    if (videoDevices.length > 0) {
+      currentDeviceId = videoDevices[0].deviceId;
+      cameraSelect.value = currentDeviceId;
     }
+
+  } catch (err) {
+    console.error('Error listando cámaras:', err);
+  }
+}
+
+cameraSelect.addEventListener('change', async () => {
+  if (!detecting) return; // Solo cambia si está en uso
+  try {
+    const newDeviceId = cameraSelect.value;
+    if (newDeviceId === currentDeviceId) return;
+
+    // Detiene cámara actual y arranca la nueva
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: newDeviceId } } });
+    video.srcObject = stream;
+    await video.play();
+    resizeCanvasToVideo();
+
+    currentDeviceId = newDeviceId;
+  } catch (err) {
+    console.error('Error cambiando de cámara:', err);
+  }
 });
+
+
+startBtn.addEventListener('click', async () => {
+  try {
+    const deviceId = cameraSelect.value;
+    const constraints = { video: { deviceId: { exact: deviceId } } };
+
+    if (stream) stream.getTracks().forEach(t => t.stop()); // Detener cámara anterior
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+    video.srcObject = stream;
+    await video.play();
+    resizeCanvasToVideo();
+
+    window.addEventListener('resize', resizeCanvasToVideo);
+    detecting = true;
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    runDetectionLoop();
+  } catch (err) {
+    alert('Error al acceder a la cámara: ' + err.message);
+  }
+});
+
 
 stopBtn.addEventListener('click', ()=>{
     detecting = false;
