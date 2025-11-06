@@ -12,7 +12,13 @@ const refFilesInput = document.getElementById('refFiles');
 const refList = document.getElementById('refList');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
-const cameraSelect = document.getElementById('cameraSelect');
+const prevCamBtn = document.getElementById('prevCamBtn');
+const nextCamBtn = document.getElementById('nextCamBtn');
+const camName = document.getElementById('camName');
+
+let videoDevices = [];
+let currentCamIndex = 0;
+
 let currentDeviceId = null;
 const clearRefsBtn = document.getElementById('clearRefsBtn');
 const toggleDebugBtn = document.getElementById('toggleDebugBtn');
@@ -481,70 +487,83 @@ function renderRefItem(name, file) {
   }
   
   // --- Obtener cámaras disponibles y llenar el selector ---
-async function loadCameras() {
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter(d => d.kind === 'videoinput');
+  async function loadCameras() {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      videoDevices = devices.filter(d => d.kind === 'videoinput');
+  
+      if (videoDevices.length === 0) {
+        statusEl.textContent = '❌ No se encontraron cámaras.';
+        prevCamBtn.disabled = true;
+        nextCamBtn.disabled = true;
+        return;
+      }
+  
+      currentCamIndex = 0;
+      currentDeviceId = videoDevices[currentCamIndex].deviceId;
+      const camLabel = videoDevices[currentCamIndex].label || `Cámara ${currentCamIndex + 1}`;
+    camName.textContent = `🎥 ${camLabel} (${currentCamIndex + 1} de ${videoDevices.length})`;
 
-    cameraSelect.innerHTML = '';
-    videoDevices.forEach((device, i) => {
-      const option = document.createElement('option');
-      option.value = device.deviceId;
-      option.textContent = device.label || `Cámara ${i + 1}`;
-      cameraSelect.appendChild(option);
-    });
-
-    if (videoDevices.length > 0) {
-      currentDeviceId = videoDevices[0].deviceId;
-      cameraSelect.value = currentDeviceId;
+  
+      prevCamBtn.disabled = videoDevices.length <= 1;
+      nextCamBtn.disabled = videoDevices.length <= 1;
+    } catch (err) {
+      console.error('Error listando cámaras:', err);
+      statusEl.textContent = '⚠️ Error al listar cámaras.';
     }
-
-  } catch (err) {
-    console.error('Error listando cámaras:', err);
   }
-}
 
-cameraSelect.addEventListener('change', async () => {
-  if (!detecting) return; // Solo cambia si está en uso
-  try {
-    const newDeviceId = cameraSelect.value;
-    if (newDeviceId === currentDeviceId) return;
-
-    // Detiene cámara actual y arranca la nueva
-    if (stream) stream.getTracks().forEach(t => t.stop());
-    stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: newDeviceId } } });
-    video.srcObject = stream;
-    await video.play();
-    resizeCanvasToVideo();
-
-    currentDeviceId = newDeviceId;
-  } catch (err) {
-    console.error('Error cambiando de cámara:', err);
+  async function switchCamera(indexChange) {
+    if (videoDevices.length === 0) return;
+  
+    currentCamIndex = (currentCamIndex + indexChange + videoDevices.length) % videoDevices.length;
+    const newDevice = videoDevices[currentCamIndex];
+  
+    try {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: newDevice.deviceId } } });
+      video.srcObject = stream;
+      await video.play();
+      resizeCanvasToVideo();
+  
+      currentDeviceId = newDevice.deviceId;
+      const camLabel = newDevice.label || `Cámara ${currentCamIndex + 1}`;
+      camName.textContent = `🎥 ${camLabel} (${currentCamIndex + 1} de ${videoDevices.length})`;
+    } catch (err) {
+      console.error('Error cambiando de cámara:', err);
+      statusEl.textContent = '⚠️ No se pudo cambiar de cámara.';
+    }
   }
-});
+  
+  // Botones para cambiar
+  prevCamBtn.addEventListener('click', () => switchCamera(-1));
+  nextCamBtn.addEventListener('click', () => switchCamera(1));
+  
 
 
-startBtn.addEventListener('click', async () => {
-  try {
-    const deviceId = cameraSelect.value;
-    const constraints = { video: { deviceId: { exact: deviceId } } };
 
-    if (stream) stream.getTracks().forEach(t => t.stop()); // Detener cámara anterior
-    stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-    video.srcObject = stream;
-    await video.play();
-    resizeCanvasToVideo();
-
-    window.addEventListener('resize', resizeCanvasToVideo);
-    detecting = true;
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-    runDetectionLoop();
-  } catch (err) {
-    alert('Error al acceder a la cámara: ' + err.message);
-  }
-});
+  startBtn.addEventListener('click', async () => {
+    try {
+      const deviceId = currentDeviceId;
+      const constraints = { video: { deviceId: { exact: deviceId } } };
+  
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+  
+      video.srcObject = stream;
+      await video.play();
+      resizeCanvasToVideo();
+  
+      window.addEventListener('resize', resizeCanvasToVideo);
+      detecting = true;
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      runDetectionLoop();
+    } catch (err) {
+      alert('Error al acceder a la cámara: ' + err.message);
+    }
+  });
+  
 
 
 stopBtn.addEventListener('click', ()=>{
