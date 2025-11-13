@@ -12,7 +12,6 @@ const refFilesInput = document.getElementById('refFiles');
 const refList = document.getElementById('refList');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
-const cameraSelect = document.getElementById('cameraSelect');
 let currentDeviceId = null;
 const clearRefsBtn = document.getElementById('clearRefsBtn');
 const toggleDebugBtn = document.getElementById('toggleDebugBtn');
@@ -479,55 +478,85 @@ function renderRefItem(name, file) {
       };
     });
   }
-  
-  // --- Obtener cámaras disponibles y llenar el selector ---
+
+let videoDevices = [];
+let currentCamIndex = 0;
+
+// --- Cargar cámaras locales ---
 async function loadCameras() {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter(d => d.kind === 'videoinput');
+    videoDevices = devices.filter(d => d.kind === 'videoinput');
 
-    cameraSelect.innerHTML = '';
-    videoDevices.forEach((device, i) => {
-      const option = document.createElement('option');
-      option.value = device.deviceId;
-      option.textContent = device.label || `Cámara ${i + 1}`;
-      cameraSelect.appendChild(option);
-    });
+    // Agregamos un "dispositivo virtual" para el feed remoto
+    videoDevices.push({ deviceId: 'remote-feed', label: 'Cámara remota' });
 
-    if (videoDevices.length > 0) {
-      currentDeviceId = videoDevices[0].deviceId;
-      cameraSelect.value = currentDeviceId;
+    if (videoDevices.length === 0) {
+      statusEl.textContent = '❌ No se encontraron cámaras.';
+      return;
     }
 
+    currentCamIndex = 0;
+    currentDeviceId = videoDevices[currentCamIndex].deviceId;
+    updateCamName();
   } catch (err) {
     console.error('Error listando cámaras:', err);
   }
 }
 
-cameraSelect.addEventListener('change', async () => {
-  if (!detecting) return; // Solo cambia si está en uso
-  try {
-    const newDeviceId = cameraSelect.value;
-    if (newDeviceId === currentDeviceId) return;
+// --- Actualizar etiqueta de cámara ---
+function updateCamName() {
+  const camLabel = videoDevices[currentCamIndex].label || `Cámara ${currentCamIndex + 1}`;
+  camName.textContent = `🎥 ${camLabel} (${currentCamIndex + 1} de ${videoDevices.length})`;
+}
 
-    // Detiene cámara actual y arranca la nueva
+// --- Cambiar de cámara ---
+async function switchCamera(indexChange) {
+  if (videoDevices.length === 0) return;
+  currentCamIndex = (currentCamIndex + indexChange + videoDevices.length) % videoDevices.length;
+  const selectedDevice = videoDevices[currentCamIndex];
+  updateCamName();
+
+  // Si es la cámara remota
+  if (selectedDevice.deviceId === 'remote-feed') {
+    if (remoteVideo && remoteVideo.srcObject) {
+      video.style.display = 'none';
+      remoteVideo.style.display = 'block';
+      overlay.width = remoteVideo.videoWidth;
+      overlay.height = remoteVideo.videoHeight;
+      console.log('🎥 Mostrando feed remoto');
+    } else {
+      console.warn('⚠️ Aún no hay feed remoto disponible');
+    }
+    return;
+  }
+
+  // Si es una cámara local
+  try {
+    remoteVideo.style.display = 'none';
+    video.style.display = 'block';
     if (stream) stream.getTracks().forEach(t => t.stop());
-    stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: newDeviceId } } });
+    stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: selectedDevice.deviceId } } });
     video.srcObject = stream;
     await video.play();
     resizeCanvasToVideo();
-
-    currentDeviceId = newDeviceId;
   } catch (err) {
     console.error('Error cambiando de cámara:', err);
   }
-});
+}
+
+// --- Botones de control ---
+prevCamBtn.addEventListener('click', () => switchCamera(-1));
+nextCamBtn.addEventListener('click', () => switchCamera(1));
+
+
 
 
 startBtn.addEventListener('click', async () => {
   try {
-    const deviceId = cameraSelect.value;
+    const deviceId = currentDeviceId;
     const constraints = { video: { deviceId: { exact: deviceId } } };
+
 
     if (stream) stream.getTracks().forEach(t => t.stop()); // Detener cámara anterior
     stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -568,6 +597,21 @@ async function runDetectionLoop(){
             .withFaceDescriptors();
         ctx.clearRect(0,0,canvas.width,canvas.height);
         const now = Date.now();
+
+if (remoteVideo && remoteVideo.srcObject) {
+  const remoteResults = await faceapi.detectAllFaces(remoteVideo, options)
+    .withFaceLandmarks()
+    .withFaceDescriptors();
+
+  for (const res of remoteResults) {
+    const box = res.detection.box;
+    ctx.strokeStyle = "#00FFFF";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(box.x, box.y, box.width, box.height);
+  }
+}
+
+
     
         for(let i=tracked.length-1;i>=0;i--)
         if(now - tracked[i].lastSeen > 3000) tracked.splice(i,1);
@@ -678,3 +722,37 @@ clearRefsBtn.addEventListener('click', () => {
     updateMatcher();
     statusEl.textContent = 'Referencias locales eliminadas.';
 });
+
+// === WebRTC automático con BroadcastChannel ===
+const bcRTC = new BroadcastChannel("webrtc-signal");
+const remoteVideo = document.getElementById("remoteVideo");
+let receiverPC = null;
+
+bcRTC.onmessage = async (event) => {
+  const { type, offer } = event.data || {};
+  if (type === "offer") {
+    console.log("🎥 Recibiendo offer de emisor remoto...");
+    receiverPC = new RTCPeerConnection();
+
+    receiverPC.ontrack = (e) => {
+  console.log("✅ Feed remoto conectado");
+  remoteVideo.srcObject = e.streams[0];
+  remoteVideo.style.display = "block";
+
+  // ⚙️ Actualizar lista de cámaras para permitir mostrar el feed remoto
+  const remoteEntry = videoDevices.find(d => d.deviceId === "remote-feed");
+  if (!remoteEntry) {
+    videoDevices.push({ deviceId: "remote-feed", label: "Cámara remota" });
+  }
+
+  // ✅ Si actualmente estás en el feed remoto, actívalo en pantalla
+  if (videoDevices[currentCamIndex]?.deviceId === "remote-feed") {
+    video.style.display = "none";
+    remoteVideo.style.display = "block";
+    overlay.width = remoteVideo.videoWidth;
+    overlay.height = remoteVideo.videoHeight;
+    console.log("🎥 Mostrando feed remoto (actualizado)");
+  }
+};
+  }
+  };

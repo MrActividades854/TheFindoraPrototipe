@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Feed remoto (emisor)</title>
+<style>
+  body {
+    background: #0d1117;
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+  }
+  video {
+    width: 80%;
+    border-radius: 10px;
+    margin-top: 10px;
+  }
+  button {
+    background: #238636;
+    border: none;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.2s ease;
+  }
+  button:hover { background: #2ea043; }
+</style>
+</head>
+<body>
+  <h2>📡 Enviar mi cámara a la PC receptora</h2>
+  <video id="localVideo" autoplay muted playsinline></video>
+  <button id="startBtn">Iniciar y compartir cámara</button>
+
+<script>
+const bc = new BroadcastChannel("webrtc-signal");
+let pc = new RTCPeerConnection();
+
+document.getElementById("startBtn").onclick = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    const video = document.getElementById("localVideo");
+    video.srcObject = stream;
+
+    // Añadir tracks al peer connection
+    for (const track of stream.getTracks()) {
+      pc.addTrack(track, stream);
+    }
+
+    // Crear y enviar offer
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    bc.postMessage({ type: "offer", offer: offer.toJSON() });
+  } catch (err) {
+    alert("Error al acceder a la cámara: " + err.message);
+  }
+};
+
+// Escuchar respuesta
+bc.onmessage = async (event) => {
+  const { type, answer } = event.data || {};
+  if (type === "answer") {
+  await pc.setRemoteDescription(new RTCSessionDescription(answer));
+  console.log("✅ Conexión establecida con receptor");
+}
+};
+</script>
+</body>
+</html>
