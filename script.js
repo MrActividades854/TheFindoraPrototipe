@@ -296,6 +296,9 @@ async function loadModels(){
     await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_PATH);
     await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_PATH);
     await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_PATH);
+
+    await faceapi.nets.ssdMobilenetv1.loadFromUri('./models');
+    
     statusEl.textContent = 'Modelos cargados.';
 
     await loadCameras();
@@ -321,33 +324,47 @@ async function loadModels(){
       const data = await res.json();
   
       statusEl.textContent = '🔍 Revisando referencias en carpeta...';
-  
       let newRefsCount = 0;
   
       for (const [name, files] of Object.entries(data)) {
         const existing = labeledDescriptors.find(ld => ld.label === name);
   
-        // Si ya existe la persona y no queremos forzar, saltar
+        // Si ya existe y no forzamos, saltar
         if (existing && !forceReload) {
           console.log(`⏭️ ${name} ya está en memoria, se omite.`);
           continue;
         }
   
         const descriptors = [];
+  
         for (const file of files) {
           const url = `./references/${name}/${file}?_=${Date.now()}`;
-          const img = await faceapi.fetchImage(url);
-          const detection = await faceapi
-            .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-          if (detection) descriptors.push(detection.descriptor);
-          else console.warn(`No se detectó rostro en ${url}`);
+  
+          try {
+            const img = await faceapi.fetchImage(url);
+  
+            // ⚙️ Usamos SSD Mobilenet para mejor precisión (aunque sea más lento)
+            const detection = await faceapi
+              .detectSingleFace(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+              .withFaceLandmarks()
+              .withFaceDescriptor();
+  
+            if (detection) {
+              descriptors.push(detection.descriptor);
+              console.log(`✅ Rostro detectado en ${name}/${file}`);
+            } else {
+              console.warn(`❌ No se detectó rostro en ${name}/${file}`);
+              createNotification(`No se detectó rostro en ${name}/${file}`, 'warning');
+            }
+          } catch (err) {
+            console.error(`⚠️ Error procesando ${name}/${file}:`, err);
+            createNotification(`Error leyendo ${name}/${file}`, 'warning');
+          }
         }
   
         if (descriptors.length) {
+          createNotification(`✅ ${name}: ${descriptors.length} imagen(es) procesada(s) correctamente.`, 'success');
           if (existing) {
-            // Si la persona ya existía, añadimos más imágenes
             existing.descriptors.push(...descriptors);
             console.log(`🔄 Se añadieron ${descriptors.length} nuevas imágenes a ${name}`);
           } else {
@@ -371,6 +388,7 @@ async function loadModels(){
       statusEl.textContent = '⚠️ Error al cargar referencias desde carpeta.';
     }
   }
+  
   
   
   
@@ -502,7 +520,6 @@ async function loadCameras() {
   } catch (err) {
     console.error('Error listando cámaras:', err);
   }
-}
 
 // --- Actualizar etiqueta de cámara ---
 function updateCamName() {
@@ -754,5 +771,6 @@ bcRTC.onmessage = async (event) => {
     console.log("🎥 Mostrando feed remoto (actualizado)");
   }
 };
-  }
+}
+}
   };
