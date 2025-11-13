@@ -304,18 +304,6 @@ async function loadModels(){
     await loadCameras();
 }
 
-(async () => {
-    await loadModels();
-    await loadReferencesFromLocalStorage();
-  
-    // Siempre revisar si hay nuevas carpetas o imágenes
-    await loadReferencesFromFolder(false); // no recarga todo, solo nuevas
-  
-    statusEl.textContent = '✅ Modelos y referencias listos.';
-  })();
-  
-  
-  
 
   async function loadReferencesFromFolder(forceReload = false) {
     try {
@@ -520,7 +508,7 @@ async function loadCameras() {
   } catch (err) {
     console.error('Error listando cámaras:', err);
   }
-
+}
 // --- Actualizar etiqueta de cámara ---
 function updateCamName() {
   const camLabel = videoDevices[currentCamIndex].label || `Cámara ${currentCamIndex + 1}`;
@@ -732,6 +720,16 @@ async function loadReferencesFromLocalStorage() {
     }
 }
 
+(async () => {
+  await loadModels();
+  await loadReferencesFromLocalStorage();
+
+  // Siempre revisar si hay nuevas carpetas o imágenes
+  await loadReferencesFromFolder(false); // no recarga todo, solo nuevas
+
+  statusEl.textContent = '✅ Modelos y referencias listos.';
+})();
+
 clearRefsBtn.addEventListener('click', () => {
     localStorage.removeItem('faceRefs');
     labeledDescriptors = [];
@@ -772,5 +770,4 @@ bcRTC.onmessage = async (event) => {
   }
 };
 }
-}
-  };
+};
