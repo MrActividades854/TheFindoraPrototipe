@@ -42,85 +42,84 @@
   <p id="log" style="color:#ddd;"></p>
 
 <script>
-const bc = new BroadcastChannel("webrtc-signal");
+const ws = new WebSocket("ws://localhost:8080");
 
-// Generar senderId único por pestaña (simple)
-const senderId = Math.random().toString(36).slice(2,9);
+const senderId = Math.random().toString(36).slice(2, 9);
 let pc = null;
 let localStream = null;
-const logEl = document.getElementById('log');
 
-function log(msg) { console.log(msg); logEl.textContent = msg; }
+ws.onopen = () => console.log("WebSocket conectado");
+
+function log(msg) {
+    console.log(msg);
+    document.getElementById("log").textContent = msg;
+}
 
 document.getElementById("startBtn").onclick = async () => {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-    const video = document.getElementById("localVideo");
-    video.srcObject = localStream;
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        document.getElementById("localVideo").srcObject = localStream;
 
-    pc = new RTCPeerConnection();
+        pc = new RTCPeerConnection();
 
-    pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        bc.postMessage({ type: "ice", from: senderId, ice: e.candidate && { candidate: e.candidate.candidate, sdpMid: e.candidate.sdpMid, sdpMLineIndex: e.candidate.sdpMLineIndex } });
-      }
-    };
+        pc.onicecandidate = (e) => {
+            if (e.candidate) {
+                ws.send(JSON.stringify({
+                    type: "ice",
+                    from: senderId,
+                    ice: {
+                        candidate: e.candidate.candidate,
+                        sdpMid: e.candidate.sdpMid,
+                        sdpMLineIndex: e.candidate.sdpMLineIndex
+                    }
+                }));
+            }
+        };
 
-    // Añadir tracks al peer connection
-    for (const track of localStream.getTracks()) {
-      pc.addTrack(track, localStream);
+        for (const track of localStream.getTracks()) {
+            pc.addTrack(track, localStream);
+        }
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        ws.send(JSON.stringify({
+            type: "offer",
+            from: senderId,
+            offer: { type: offer.type, sdp: offer.sdp }
+        }));
+
+        log("Offer enviada. Esperando answer...");
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+
+    } catch (err) {
+        alert("Error accediendo a la cámara: " + err.message);
     }
-
-    const offer = await pc.createOffer();
-await pc.setLocalDescription(offer);
-
-// Enviar objeto plano con type y sdp (portable)
-bc.postMessage({ type: "offer", from: senderId, offer: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
-
-    log('Offer enviada. Esperando answer...');
-    document.getElementById("startBtn").disabled = true;
-    document.getElementById("stopBtn").disabled = false;
-  } catch (err) {
-    alert("Error al acceder a la cámara: " + err.message);
-  }
 };
 
-document.getElementById("stopBtn").onclick = async () => {
-  if (localStream) localStream.getTracks().forEach(t => t.stop());
-  if (pc) pc.close();
-  pc = null;
-  localStream = null;
-  log('Compartición detenida');
-  document.getElementById("startBtn").disabled = false;
-  document.getElementById("stopBtn").disabled = true;
+document.getElementById("stopBtn").onclick = () => {
+    if (localStream) localStream.getTracks().forEach(t => t.stop());
+    if (pc) pc.close();
+    pc = null;
+    localStream = null;
+    log("Compartición detenida");
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
 };
 
-bc.onmessage = async (event) => {
-  const data = event.data || {};
-  const { type } = data;
-  if (type === "answer") {
-    // answer destinado a este sender?
-    if (data.to === senderId && data.answer) {
-      if (!pc) {
-        console.warn("No hay pc para procesar answer");
-        return;
-      }
-      await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-      log('Answer recibida y aplicada. Conexión establecida.');
+ws.onmessage = async (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.type === "answer" && data.to === senderId) {
+        if (!pc) return;
+        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        log("Answer recibida. Conexión establecida.");
     }
-  } else if (type === 'ice') {
-    // ICE candidate: si viene from == receiver maybe; solo añadimos si pc existe
-    if (data.to === senderId && data.ice && pc) {
-      try {
+
+    if (data.type === "ice" && data.to === senderId && pc) {
         await pc.addIceCandidate(new RTCIceCandidate(data.ice));
-      } catch(e){ console.warn(e); }
-    } else if (data.from === 'receiver' && data.ice && pc) {
-      // por si el receptor manda con from=receiver
-      try { await pc.addIceCandidate(new RTCIceCandidate(data.ice)); } catch(e){ console.warn(e); }
-    } else if (data.from === senderId) {
-      // ignore our own ice
     }
-  }
 };
 </script>
 </body>
