@@ -610,7 +610,8 @@ bc.onmessage = async (ev) => {
             await pc.setRemoteDescription(new RTCSessionDescription(offer));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
-            bc.postMessage({ type: 'answer', to: from, answer: pc.localDescription.toJSON() });
+            bc.postMessage({ type: 'answer', to: from, answer: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
+
         } catch (err) {
             console.error("Error procesando offer:", err);
         }
