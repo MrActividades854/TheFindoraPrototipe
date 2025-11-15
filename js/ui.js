@@ -6,7 +6,7 @@ import WebRTCManager from './webrtc.js';
 import FaceRecognitionManager from './face-recognition.js';
 
 export default class UIManager {
-  constructor({ wsUrl = 'ws://localhost:8080', modelPath = '/models' } = {}) {
+  constructor({ wsUrl = 'ws://192.168.101.10:8080', modelPath = '/models' } = {}) {
     // DOM
     this.video = document.getElementById('video');
     this.canvas = document.getElementById('overlay');
@@ -39,6 +39,7 @@ export default class UIManager {
     this.videoDevices = [];
     this.currentCamIndex = 0;
     this.stream = null;
+    
 
     // instances
     this.webrtc = new WebRTCManager({
@@ -59,6 +60,8 @@ export default class UIManager {
     this.bc = new BroadcastChannel("canal_notificaciones");
 
   }
+
+
 
   // -------------------------
   // Initialization
@@ -200,6 +203,8 @@ _createNotification(message, type = 'warning') {
       this._resizeCanvasToVideoElement(rv);
       return;
     }
+
+    Object.values(this.webrtc.remoteVideos).forEach(v => v.style.display = 'none');
 
     // local
     if (this.stream) this.stream.getTracks().forEach(t => t.stop());
@@ -476,15 +481,32 @@ _createNotification(message, type = 'warning') {
     let videoEl = this.webrtc.remoteVideos[senderId];
     if (!videoEl) {
       videoEl = document.createElement('video');
-      videoEl.autoplay = true;
-      videoEl.muted = true;
-      videoEl.playsInline = true;
-      videoEl.className = 'remote-video';
-      videoEl.id = `remote-${senderId}`;
-      document.body.appendChild(videoEl);
+videoEl.autoplay = true;
+videoEl.muted = true;
+videoEl.playsInline = true;
+videoEl.className = 'remote-video';
+videoEl.id = `remote-${senderId}`;
+
+const container = document.getElementById('container');
+container.appendChild(videoEl);
+
+videoEl.style.position = 'absolute';
+videoEl.style.top = '0';
+videoEl.style.left = '0';
+videoEl.style.width = '100%';
+videoEl.style.height = '100%';
+videoEl.style.objectFit = 'cover';
+videoEl.style.display = 'none'; // se mostrará al seleccionarlo
+videoEl.style.zIndex = '1';
+
       this.webrtc.remoteVideos[senderId] = videoEl;
     }
     videoEl.srcObject = stream;
+
+    videoEl.onloadedmetadata = () => {
+  videoEl.play().catch(err => console.error("Error play remoto:", err));
+};
+
 
     // thumbnail
     const thumbWrap = document.createElement('div');

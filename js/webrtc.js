@@ -2,12 +2,12 @@
 // Clase encargada de la señalización (WebSocket) y de manejar RTCPeerConnections entrantes (senders).
 export default class WebRTCManager {
   /**
-   * @param {string} wsUrl - URL del servidor WebSocket (ej: ws://localhost:8080)
+   * @param {string} wsUrl - URL del servidor WebSocket (ej: ws://192.168.101.10:8080)
    * @param {function(senderId:string, MediaStream):void} onRemoteFeed - callback cuando llega un feed remoto
    * @param {function(string):void} onLog - callback para logs
    * @param {number} maxFeeds - máximo feeds remotos permitidos
    */
-  constructor({ wsUrl = 'ws://localhost:8080', onRemoteFeed = ()=>{}, onLog = ()=>{}, maxFeeds = 5 } = {}) {
+  constructor({ wsUrl = 'ws://192.168.101.10:8080', onRemoteFeed = ()=>{}, onLog = ()=>{}, maxFeeds = 5 } = {}) {
     this.wsUrl = wsUrl;
     this.onRemoteFeed = onRemoteFeed;
     this.onLog = onLog;
@@ -22,8 +22,10 @@ export default class WebRTCManager {
     this.ws = null;
   }
 
-  init() {
-    return new Promise((resolve, reject) => {
+init() {
+  return new Promise((resolve, reject) => {
+
+    const connect = () => {
       this.ws = new WebSocket(this.wsUrl);
 
       this.ws.onopen = () => {
@@ -33,19 +35,44 @@ export default class WebRTCManager {
 
       this.ws.onerror = (e) => {
         this.onLog('WebSocket error: ' + (e?.message || 'error'));
-        reject(e);
       };
 
-      this.ws.onmessage = (ev) => {
-        try {
-          const data = JSON.parse(ev.data);
-          this._handleMessage(data);
-        } catch (err) {
-          this.onLog('Error parseando mensaje WS: ' + err);
-        }
+      this.ws.onclose = () => {
+        this.onLog('WebSocket cerrado, reintentando en 1s...');
+        setTimeout(connect, 1000);
       };
-    });
-  }
+
+this.ws.onmessage = async (ev) => {
+    try {
+        let text;
+
+        // Si es Blob
+        if (ev.data instanceof Blob) {
+            text = await ev.data.text();
+        }
+        // Si es ArrayBuffer
+        else if (ev.data instanceof ArrayBuffer) {
+            text = new TextDecoder().decode(ev.data);
+        }
+        // Si ya es string
+        else {
+            text = ev.data;
+        }
+
+        const data = JSON.parse(text);
+        this._handleMessage(data);
+    } catch (err) {
+        this.onLog("Error parseando mensaje WS: " + err);
+        console.error("Contenido recibido:", ev.data);
+    }
+};
+
+    };
+
+    connect();
+  });
+}
+
 
   send(data) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
@@ -84,7 +111,12 @@ export default class WebRTCManager {
       return;
     }
 
-    const pc = new RTCPeerConnection();
+    pc = new RTCPeerConnection({
+    iceServers: [
+        { urls: "stun:stun.l.google.com:19302" }
+    ]
+});
+
     this.receiverPCs[from] = pc;
 
     pc.onicecandidate = (e) => {
@@ -100,9 +132,15 @@ export default class WebRTCManager {
     };
 
     try {
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
+      this._createReceiverPC(senderId);
+
+await this.receiverPCs[senderId].setRemoteDescription(
+    new RTCSessionDescription(msg.offer)
+);
+
+      const answer = await this.receiverPCs[senderId].createAnswer();
+await this.receiverPCs[senderId].setLocalDescription(answer);
+
 
       this.send({ type: 'answer', to: from, answer: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
       this.onLog('Answer enviada a ' + from);
@@ -129,32 +167,54 @@ export default class WebRTCManager {
     // en general ignorar
   }
 
-  _registerRemoteFeed(senderId, stream) {
-    // si ya existe, reemplazar stream
+_registerRemoteFeed(senderId, stream) {
+    // si ya existe, actualizar stream
     if (this.remoteVideos[senderId]) {
-      this.remoteVideos[senderId].srcObject = stream;
-      this.onRemoteFeed(senderId, stream);
-      return;
+        const v = this.remoteVideos[senderId];
+        v.srcObject = stream;
+
+        if (this.onRemoteFeed) {
+            this.onRemoteFeed(senderId, stream);
+        }
+
+        return;
     }
 
-    // crear elemento video oculto (el UI puede moverlo a donde quiera)
+    // crear elemento video remoto
     const videoEl = document.createElement('video');
     videoEl.autoplay = true;
-    videoEl.playsInline = true;
     videoEl.muted = true;
-    videoEl.className = 'remote-video';
+    videoEl.playsInline = true;
+    videoEl.classList.add('remote-video');
     videoEl.id = `remote-${senderId}`;
     videoEl.srcObject = stream;
 
-    // mantener referencias
+    // agregarlo al contenedor principal, debajo del canvas
+    const container = document.getElementById('container');
+    if (container) {
+        videoEl.style.position = 'absolute';
+        videoEl.style.top = '0';
+        videoEl.style.left = '0';
+        videoEl.style.width = '100%';
+        videoEl.style.height = '100%';
+        videoEl.style.objectFit = 'cover';
+        videoEl.style.display = 'none'; // UI decide cuándo mostrarlo
+        videoEl.style.zIndex = '1';
+        container.appendChild(videoEl);
+    } else {
+        // fallback
+        document.body.appendChild(videoEl);
+    }
+
+    // guardar referencia
     this.remoteVideos[senderId] = videoEl;
 
-    // notificar al UI
-    this.onRemoteFeed(senderId, stream);
+    // ahora sí: notificar al UI
+    if (this.onRemoteFeed) {
+        this.onRemoteFeed(senderId, stream);
+    }
+}
 
-    // dejar elemento en body (oculto) para que pueda reproducirse
-    document.body.appendChild(videoEl);
-  }
 
   // Permite cerrar y limpiar resources de un sender
   closeRemote(senderId) {

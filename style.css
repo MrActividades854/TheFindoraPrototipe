@@ -7,71 +7,90 @@ body {
   align-items: center;
 }
 
+h1 {
+  margin: 0;
+}
+
 #container {
   position: relative;
+  max-width: 900px;
+  width: 100%;
+  display: inline-block;
+}
+
+video {
+  width: 100%;
+  border-radius: 10px;
+  background: #000;
+}
+
+canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  border-radius: 10px;
+}
+
+#refs, #camera {
   width: 100%;
   max-width: 900px;
 }
-
-#container video {
-  width: 100%;
-  border-radius: 10px;
-  display: block;
-}
-
-#overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 5;
-  border-radius: 10px;
-}
-
-/* referncias */
 
 #refList {
   margin-top: 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .ref-item {
-  background: #f2f2f2;
-  padding: 8px 12px;
+  background: #f4f4f4;
+  padding: 6px 8px;
   border-radius: 6px;
+  border: 1px solid #e0e0e0;
   display: flex;
   align-items: center;
-  gap: 10px;
-  border: 1px solid #ddd;
+  gap: 8px;
 }
 
 .ref-item img {
   width: 48px;
   height: 48px;
-  border-radius: 6px;
   object-fit: cover;
+  border-radius: 6px;
 }
 
-/* thumbnails remotos */
-
-.thumb {
-  background: #1a1a1a;
-  padding: 6px;
-  border-radius: 8px;
-  cursor: pointer;
+.controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
 }
 
-.thumb video {
-  border-radius: 8px;
+label {
+  font-size: 0.95rem;
 }
 
-/* botones cam */
+#status {
+  color: #444;
+}
+
+.camera-controls {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
 
 .cam-btn {
   pointer-events: auto;
-  background: rgba(0, 0, 0, .4);
+  background: rgba(0, 0, 0, 0.4);
   color: white;
   border: none;
   font-size: 2rem;
@@ -82,37 +101,28 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all .25s ease;
+  transition: all 0.25s ease;
   backdrop-filter: blur(3px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .cam-btn:hover {
-  background: rgba(255, 255, 255, .15);
-  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.1);
 }
-
-/* nombre de cámara */
 
 #camName {
   margin-top: 10px;
   text-align: center;
-  background: rgba(0,0,0,0.6);
-  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  display: inline-block;
   padding: 10px 20px;
   border-radius: 10px;
   font-size: 1rem;
+  font-family: 'Segoe UI', sans-serif;
   backdrop-filter: blur(3px);
-}
-
-/* notificaciones */
-
-#notificationContainer > div {
-  width: 100%;
-  max-width: 360px;
-  animation: fadeIn .15s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  letter-spacing: 0.3px;
+  transition: all 0.3s ease;
 }

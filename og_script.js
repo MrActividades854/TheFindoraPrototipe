@@ -207,6 +207,10 @@ async function switchCamera(indexChange){
         if (rv && rv.srcObject) {
             // Esconder local y mostrar remoto (el canvas se ajustará al remoto)
             video.style.display = 'none';
+            rv.style.zIndex = '1';
+this.video.style.zIndex = '1';
+this.canvas.style.zIndex = '2';
+
             rv.style.display = 'block';
             resizeCanvasToVideoElement(rv);
         } else {
