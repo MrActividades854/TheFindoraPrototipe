@@ -1,14 +1,11 @@
-// face-recognition.js
-// Clase que carga modelos de face-api, mantiene labeledDescriptors y ejecuta el loop de detección.
-// Recibe una función getActiveVideoElement() proporcionada por UI para saber sobre qué video detectar.
+// face-recognition.js (versión corregida y optimizada)
+// Mejoras:
+// - Anti-falsos positivos
+// - Confirmación multi-frame para desconocido
+// - Ignora detecciones pequeñas y arranque inicial
+// - Mantiene alertas de entrada, salida y regreso
 
 export default class FaceRecognitionManager {
-  /**
-   * constructor options:
-   * - modelPath: carpeta con modelos face-api
-   * - getActiveVideo: () => HTMLVideoElement (UI debe proporcionar)
-   * - onNotification: function(string, 'warning'|'success') para mensajes UI
-   */
   constructor({ modelPath = '/models', getActiveVideo = ()=>null, onNotification = ()=>{} } = {}) {
     this.modelPath = modelPath;
     this.getActiveVideo = getActiveVideo;
@@ -16,26 +13,33 @@ export default class FaceRecognitionManager {
 
     this.labeledDescriptors = [];
     this.faceMatcher = null;
+
     this.detecting = false;
     this.showDebugPoint = false;
 
     this.tracked = [];
     this.MAX_DIST = 120;
     this.ALERT_TIMEOUT = 10000;
+
     this.peopleLastSeen = {};
     this.activeAlerts = {};
     this.knownPeople = new Set();
 
     this.threshold = 0.6;
+
+    // NUEVO: sistema anti falsos positivos
+    this.detectionStartedAt = 0;
+    this.unconfirmedUnknownFrames = 0;
+    this.confirmUnknownAfter = 3; // número de frames para confirmar desconocido
+    this.lastBoxWidth = 0;
+    this.lastBoxHeight = 0;
   }
 
   async loadModels() {
-    // carga modelos
     await faceapi.nets.tinyFaceDetector.loadFromUri(this.modelPath);
     await faceapi.nets.faceLandmark68Net.loadFromUri(this.modelPath);
     await faceapi.nets.faceRecognitionNet.loadFromUri(this.modelPath);
     await faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelPath);
-    return;
   }
 
   setThreshold(val) {
@@ -51,19 +55,26 @@ export default class FaceRecognitionManager {
     }
   }
 
-  // Añadir referencias desde FileList
+  // Guardado
   async addReferenceImages(name, files) {
     const descriptors = [];
     for (const f of files) {
       const img = await faceapi.bufferToImage(f);
-      const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+      const detection = await faceapi
+        .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
       if (!detection) {
         this.onNotification(`No se detectó cara en ${f.name}`, 'warning');
         continue;
       }
+
       descriptors.push(detection.descriptor);
     }
+
     if (!descriptors.length) return null;
+
     const labeled = new faceapi.LabeledFaceDescriptors(name, descriptors);
     this.labeledDescriptors.push(labeled);
     this.updateMatcher();
@@ -73,166 +84,231 @@ export default class FaceRecognitionManager {
 
   saveReferencesToLocalStorage() {
     try {
-      const data = this.labeledDescriptors.map(ld => ({ label: ld.label, descriptors: ld.descriptors.map(d => Array.from(new Float32Array(d))) }));
+      const data = this.labeledDescriptors.map(ld => ({
+        label: ld.label,
+        descriptors: ld.descriptors.map(d => Array.from(new Float32Array(d)))
+      }));
       localStorage.setItem('faceRefs', JSON.stringify(data));
       this.onNotification('Referencias guardadas localmente', 'success');
-    } catch (e) {
-      console.error('Error guardando refs', e);
-    }
+    } catch (e) { console.error('Error guardando', e); }
   }
 
   loadReferencesFromLocalStorage() {
     const raw = localStorage.getItem('faceRefs');
     if (!raw) return;
+
     try {
       const parsed = JSON.parse(raw);
-      this.labeledDescriptors = parsed.map(p => new faceapi.LabeledFaceDescriptors(p.label, p.descriptors.map(d => new Float32Array(d))));
+      this.labeledDescriptors = parsed.map(p =>
+        new faceapi.LabeledFaceDescriptors(
+          p.label,
+          p.descriptors.map(d => new Float32Array(d))
+        )
+      );
       this.updateMatcher();
-    } catch (e) { console.error('Error cargando refs', e); }
+    } catch (e) {
+      console.error('Error cargando refs', e);
+    }
   }
 
-  // ---------- Tracking helpers ----------
-  distance(a,b) { const dx=a.x-b.x, dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy); }
-  assignTracked(x, y, width, height) {
-    for (const t of this.tracked) {
-      const dist = this.distance({x: t.smoothedX || t.x, y: t.smoothedY || t.y}, {x,y});
-      if (dist < this.MAX_DIST) {
-        // Apply smoothing to position and size
-        const smoothingFactor = 0.7; // Further increased for more smoothing
-        t.smoothedX = t.smoothedX ? t.smoothedX * (1 - smoothingFactor) + x * smoothingFactor : x;
-        t.smoothedY = t.smoothedY ? t.smoothedY * (1 - smoothingFactor) + y * smoothingFactor : y;
-        t.smoothedWidth = t.smoothedWidth ? t.smoothedWidth * (1 - smoothingFactor) + width * smoothingFactor : width;
-        t.smoothedHeight = t.smoothedHeight ? t.smoothedHeight * (1 - smoothingFactor) + height * smoothingFactor : height;
-        t.lastSeen = Date.now();
-        t.missing = false;
+  // Tracking helpers
+  distance(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy); }
+
+  assignTracked(x,y,w,h){
+    for(const t of this.tracked){
+      const dist=this.distance({x:t.smoothedX||t.x,y:t.smoothedY||t.y},{x,y});
+      if(dist < this.MAX_DIST){
+        const f=0.7;
+        t.smoothedX = t.smoothedX*(1-f) + x*f;
+        t.smoothedY = t.smoothedY*(1-f) + y*f;
+        t.smoothedWidth = t.smoothedWidth*(1-f) + w*f;
+        t.smoothedHeight = t.smoothedHeight*(1-f) + h*f;
+        t.lastSeen=Date.now();
+        t.missing=false;
         return t;
       }
     }
-    const color = ['#00FF00','#FF3B30','#007AFF','#FF9500','#AF52DE','#FFCC00','#00C7BE'][this.tracked.length % 7];
-    const newT = {
-      x, y, width, height,
-      smoothedX: x, smoothedY: y, smoothedWidth: width, smoothedHeight: height,
-      color, lastSeen: Date.now(), missing: false
+
+    const colors=['#00FF00','#FF3B30','#007AFF','#FF9500','#AF52DE','#FFCC00','#00C7BE'];
+    const newT={
+      x,y,width:w,height:h,
+      smoothedX:x,smoothedY:y,smoothedWidth:w,smoothedHeight:h,
+      color:colors[this.tracked.length % colors.length],
+      lastSeen:Date.now(),missing:false
     };
     this.tracked.push(newT);
     return newT;
   }
 
-  // ---------- Alert helpers ----------
-  showPersonAlert(name) { this.onNotification(`${name} ha salido del cuarto`, 'warning'); this.activeAlerts[name]=true; }
-  showPersonReturn(name) { this.onNotification(`${name} ha vuelto`, 'success'); this.activeAlerts[name]=false; }
-  showPersonEntry(name) { this.onNotification(`${name} ha entrado al cuarto`, 'success'); this.activeAlerts[name]=false; }
+  // Alert helpers
+  showPersonEntry(name){ this.onNotification(`${name} ha entrado al cuarto`,'success'); this.activeAlerts[name]=false; }
+  showPersonReturn(name){ this.onNotification(`${name} ha vuelto`,'success'); this.activeAlerts[name]=false; }
+  showPersonExit(name){
+    if(name === 'Desconocido')
+      this.onNotification('Un desconocido ha salido del cuarto','warning');
+    else
+      this.onNotification(`${name} ha salido del cuarto`,'warning');
 
-  updatePersonDetection(label) {
+    this.activeAlerts[name]=true;
+  }
+
+  updatePersonDetection(label){
     const now = Date.now();
-    if (label && label !== 'Desconocido') {
-      if (!this.knownPeople.has(label)) { this.knownPeople.add(label); this.showPersonEntry(label); }
+
+    // ---- ANTI-FALSOS POSITIVOS ----
+    // muy pequeño → ruido
+    if (this.lastBoxWidth < 40 || this.lastBoxHeight < 40) return;
+
+    // ignore detecciones en los primeros 1.5s
+    if (now - this.detectionStartedAt < 1500) return;
+
+    // ---- LÓGICA DE PERSONAS CONOCIDAS ----
+    if (label !== 'Desconocido'){
+      this.unconfirmedUnknownFrames = 0; // reset
+
+      if (!this.knownPeople.has(label)){
+        this.knownPeople.add(label);
+        this.showPersonEntry(label);
+      }
+
       this.peopleLastSeen[label] = now;
+
       if (this.activeAlerts[label]) this.showPersonReturn(label);
-    } else if (label === 'Desconocido') {
-      const name = 'Desconocido';
-      if (!this.knownPeople.has(name)) { this.knownPeople.add(name); this.onNotification('Un desconocido ha entrado al cuarto','warning'); }
-      this.peopleLastSeen[name] = now;
-      if (this.activeAlerts[name]) { this.onNotification('Un desconocido ha vuelto a aparecer', 'warning'); this.activeAlerts[name]=false; }
+      return;
+    }
+
+    // ---- DESCONOCIDO (solo confirmar después de varios frames reales) ----
+    this.unconfirmedUnknownFrames++;
+
+    if (this.unconfirmedUnknownFrames >= this.confirmUnknownAfter){
+      if (!this.knownPeople.has('Desconocido')){
+        this.knownPeople.add('Desconocido');
+        this.onNotification('Un desconocido ha entrado al cuarto','warning');
+      }
+      this.peopleLastSeen['Desconocido'] = now;
+
+      if (this.activeAlerts['Desconocido'])
+        this.showPersonReturn('Desconocido');
     }
   }
 
-  checkAllGone() {
+  checkAllGone(){
     const now = Date.now();
     if (Object.keys(this.peopleLastSeen).length === 0) return;
-    let allGone = true, someoneReturned = false;
-    for (const p in this.peopleLastSeen) {
+
+    for (const p in this.peopleLastSeen){
       const t = now - this.peopleLastSeen[p];
-      if (t > this.ALERT_TIMEOUT && !this.activeAlerts[p]) {
-        if (p === 'Desconocido') this.onNotification('Un desconocido ha salido del cuarto','warning'); else this.showPersonAlert(p);
+
+      if (t > this.ALERT_TIMEOUT && !this.activeAlerts[p]){
+        this.showPersonExit(p);
       }
-      if (t <= this.ALERT_TIMEOUT) { allGone = false; if (this.activeAlerts[p]) { someoneReturned = true; this.activeAlerts[p]=false; } }
-    }
-    if (allGone) {
-      if (!Object.values(this.activeAlerts).some(v=>v)) { this.onNotification('Todos se han ido del cuarto','warning'); for (const p in this.peopleLastSeen) this.activeAlerts[p]=true; }
-    } else if (someoneReturned) {
-      this.onNotification('Alguien ha vuelto al cuarto','success');
     }
   }
 
-  // ---------- Detección ----------
-  startDetection({ canvasCtx, resizeCanvasToVideoElement, getActiveVideo } = {}) {
+  // Detección principal
+  startDetection({canvasCtx,resizeCanvasToVideoElement,getActiveVideo}={}){
     if (this.detecting) return;
-    if (!canvasCtx || !resizeCanvasToVideoElement || !getActiveVideo) throw new Error('Se requieren canvasCtx / resize / getActiveVideo');
+
     this.detecting = true;
-    this._detectionLoop({ canvasCtx, resizeCanvasToVideoElement, getActiveVideo });
+    this.detectionStartedAt = Date.now();
+    this.unconfirmedUnknownFrames = 0;
+
+    this._detectionLoop({canvasCtx,resizeCanvasToVideoElement,getActiveVideo});
   }
 
-  stopDetection() {
+  stopDetection(){
     this.detecting = false;
     this.tracked = [];
-    // reset people timers?
     this.peopleLastSeen = {};
     this.activeAlerts = {};
     this.knownPeople = new Set();
+    this.unconfirmedUnknownFrames = 0;
   }
 
-  async _detectionLoop({ canvasCtx, resizeCanvasToVideoElement, getActiveVideo }) {
-    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
-    while (this.detecting) {
+  async _detectionLoop({canvasCtx,resizeCanvasToVideoElement,getActiveVideo}){
+    const options=new faceapi.TinyFaceDetectorOptions({
+      inputSize:320, scoreThreshold:0.7
+    });
+
+    while(this.detecting){
       const vid = getActiveVideo();
-      if (!vid || vid.readyState < 2) { await this._sleep(100); continue; }
+      if(!vid || vid.readyState < 2){
+        await this._sleep(80);
+        continue;
+      }
+
       resizeCanvasToVideoElement(vid);
-      const results = await faceapi.detectAllFaces(vid, options).withFaceLandmarks().withFaceDescriptors();
-      // limpiar canvas
-      canvasCtx.clearRect(0,0,canvasCtx.canvas.width, canvasCtx.canvas.height);
-      const now = Date.now();
-      for (let i=this.tracked.length-1;i>=0;i--) if (now - this.tracked[i].lastSeen > 3000) this.tracked.splice(i,1);
 
-      for (const res of results) {
-        const box = res.detection.box;
-        const scaleX = canvasCtx.canvas._scaleX || 1;
-        const scaleY = canvasCtx.canvas._scaleY || 1;
-        const x = box.x * scaleX, y = box.y * scaleY, width = box.width * scaleX, height = box.height * scaleY;
-        const xCenter = x + width/2, yCenter = y + height/2;
-        const t = this.assignTracked(xCenter, yCenter, width, height);
+      const results = await faceapi
+        .detectAllFaces(vid, options)
+        .withFaceLandmarks()
+        .withFaceDescriptors();
 
-        // matching
-        let label = 'Desconocido';
-        if (this.faceMatcher) {
-          const best = this.faceMatcher.findBestMatch(res.descriptor);
-          if (best && best.label !== 'unknown') label = best.label;
-          this.updatePersonDetection(label);
+      canvasCtx.clearRect(0,0,canvasCtx.canvas.width,canvasCtx.canvas.height);
+
+      const now=Date.now();
+      for(let i=this.tracked.length-1;i>=0;i--)
+        if (now - this.tracked[i].lastSeen > 3000)
+          this.tracked.splice(i,1);
+
+      for(const res of results){
+        const b=res.detection.box;
+        const scaleX=canvasCtx.canvas._scaleX||1;
+        const scaleY=canvasCtx.canvas._scaleY||1;
+
+        const x=b.x*scaleX, y=b.y*scaleY;
+        const w=b.width*scaleX, h=b.height*scaleY;
+
+        // guardar tamaño real para anti-ruido
+        this.lastBoxWidth = w;
+        this.lastBoxHeight = h;
+
+        const t=this.assignTracked(x+w/2,y+h/2,w,h);
+
+        let label='Desconocido';
+        if(this.faceMatcher){
+          const best=this.faceMatcher.findBestMatch(res.descriptor);
+          if(best && best.label!=='unknown') label=best.label;
         }
 
-        // Use smoothed values for drawing
-        const smoothedX = t.smoothedX - t.smoothedWidth / 2;
-        const smoothedY = t.smoothedY - t.smoothedHeight / 2;
-        const smoothedWidth = t.smoothedWidth;
-        const smoothedHeight = t.smoothedHeight;
+        this.updatePersonDetection(label);
 
-        // dibujar
-        canvasCtx.lineWidth = Math.max(2, smoothedWidth/100);
-        canvasCtx.strokeStyle = t.color;
-        canvasCtx.strokeRect(smoothedX, smoothedY, smoothedWidth, smoothedHeight);
+        // dibujo
+        const sx=t.smoothedX-t.smoothedWidth/2;
+        const sy=t.smoothedY-t.smoothedHeight/2;
 
-        const padding = 6;
-        canvasCtx.font = `${Math.max(14, smoothedWidth/18)}px sans-serif`;
-        const text = label;
-        const textW = canvasCtx.measureText(text).width + padding*2;
-        const textH = Math.max(26, smoothedHeight/9);
-        let tagX = smoothedX, tagY = smoothedY + smoothedHeight + textH + 4;
-        if (tagY > canvasCtx.canvas.height - 5) tagY = smoothedY - 10;
-        canvasCtx.fillStyle = 'rgba(0,0,0,0.65)';
-        canvasCtx.fillRect(tagX - 2, tagY - textH, textW + 4, textH);
-        canvasCtx.fillStyle = '#fff';
-        canvasCtx.fillText(text, tagX + padding, tagY - textH/3);
+        canvasCtx.lineWidth=Math.max(2,t.smoothedWidth/100);
+        canvasCtx.strokeStyle=t.color;
+        canvasCtx.strokeRect(sx,sy,t.smoothedWidth,t.smoothedHeight);
 
-        if (this.showDebugPoint) {
+        const text=label;
+        const pad=6;
+        canvasCtx.font=`${Math.max(14,t.smoothedWidth/18)}px sans-serif`;
+
+        const tw=canvasCtx.measureText(text).width + pad*2;
+        const th=Math.max(26,t.smoothedHeight/9);
+
+        let tx=sx, ty=sy+t.smoothedHeight+th+4;
+        if(ty > canvasCtx.canvas.height - 5)
+          ty = sy - 10;
+
+        canvasCtx.fillStyle='rgba(0,0,0,0.65)';
+        canvasCtx.fillRect(tx-2,ty-th,tw+4,th);
+
+        canvasCtx.fillStyle='#fff';
+        canvasCtx.fillText(text,tx+pad,ty-th/3);
+
+        if (this.showDebugPoint){
           canvasCtx.beginPath();
-          canvasCtx.arc(t.smoothedX, t.smoothedY, 4, 0, Math.PI*2);
-          canvasCtx.fillStyle = 'red';
+          canvasCtx.arc(t.smoothedX,t.smoothedY,4,0,Math.PI*2);
+          canvasCtx.fillStyle='red';
           canvasCtx.fill();
         }
       }
 
       this.checkAllGone();
-      await this._sleep(100);
+
+      await this._sleep(80);
     }
   }
 

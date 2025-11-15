@@ -55,6 +55,9 @@ export default class UIManager {
 
     // bind
     this._onStartClick = this._onStartClick.bind(this);
+
+    this.bc = new BroadcastChannel("canal_notificaciones");
+
   }
 
   // -------------------------
@@ -97,38 +100,51 @@ export default class UIManager {
   }
 
   // Reusa el sistema bonito de notificaciones del script original
-  _createNotification(message, type = 'warning') {
-    const container = this.notificationContainer || document.getElementById('notificationContainer');
-    if (!container) return;
+_createNotification(message, type = 'warning') {
+  const container = this.notificationContainer || document.getElementById('notificationContainer');
+  if (!container) return;
 
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('es-CO', { hour12: false });
-    const notif = document.createElement('div');
-    notif.className = 'notification';
-    notif.style.marginTop = '8px';
+  const now = new Date();
+  const timeString = now.toLocaleTimeString('es-CO', { hour12: false });
 
-    notif.innerHTML = `
-      <div style="
-        display:flex;
-        flex-direction:column;
-        gap:6px;
-        background:${type === 'warning' ? '#ff4d4d' : '#4caf50'};
-        color:white;
-        padding:12px;
-        border-radius:8px;
-        box-shadow:0 6px 18px rgba(0,0,0,0.25);
-        min-width:220px;
-        ">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <div style="font-size:18px">${type === 'warning' ? '⚠️' : '✅'}</div>
-          <div style="flex:1">${message}</div>
-        </div>
-        <div style="text-align:right; font-size:12px; opacity:0.9;">🕒 ${timeString}</div>
+  // ---- NUEVO: enviar al BroadcastChannel ----
+  const log = {
+    id: Date.now() + Math.random(),
+    message,
+    type,
+    time: timeString
+  };
+  if (this.bc) this.bc.postMessage(log);
+  // --------------------------------------------
+
+  const notif = document.createElement('div');
+  notif.className = 'notification';
+  notif.style.marginTop = '8px';
+
+  notif.innerHTML = `
+    <div style="
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      background:${type === 'warning' ? '#ff4d4d' : '#4caf50'};
+      color:white;
+      padding:12px;
+      border-radius:8px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.25);
+      min-width:220px;
+      ">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="font-size:18px">${type === 'warning' ? '⚠️' : '✅'}</div>
+        <div style="flex:1">${message}</div>
       </div>
-    `;
-    container.appendChild(notif);
-    setTimeout(() => notif.remove(), type === 'warning' ? 5000 : 3000);
-  }
+      <div style="text-align:right; font-size:12px; opacity:0.9;">🕒 ${timeString}</div>
+    </div>
+  `;
+
+  container.appendChild(notif);
+  setTimeout(() => notif.remove(), type === 'warning' ? 5000 : 3000);
+}
+
 
   // -------------------------
   // Cameras
