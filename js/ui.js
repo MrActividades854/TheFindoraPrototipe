@@ -43,21 +43,37 @@ export default class UIManager {
     this._onStartClick = this._onStartClick.bind(this);
   }
 
-  async init() {
-    this.statusEl.textContent = 'Cargando modelos...';
-    try {
-      await this.faceRec.loadModels();
-      this.faceRec.loadReferencesFromLocalStorage();
-      this.statusEl.textContent = 'Modelos cargados. Inicializando WebSocket...';
-      await this.webrtc.init();
-      await this._loadCameras();
-      this._bindUI();
-      this.statusEl.textContent = '✅ Listo';
-    } catch (e) {
-      console.error(e);
-      this.statusEl.textContent = 'Error inicializando: ' + e.message;
-    }
+async init() {
+  this.statusEl.textContent = 'Cargando modelos...';
+  try {
+    // 1. Modelos
+    await this.faceRec.loadModels();
+
+    // 2. Cargar referencias desde storage
+    this.faceRec.loadReferencesFromLocalStorage();
+
+    // 3. Inicializar WebSocket + WebRTC
+    this.statusEl.textContent = 'Inicializando WebSocket...';
+    await this.webrtc.init();
+
+    // 4. Cargar cámaras locales
+    await this._loadCameras();
+
+    // 5. UI
+    this._bindUI();
+
+    // 6. "Seleccionar" la primera cámara local o remota
+    //    IMPORTANTE: si no haces esto, no tienes video listo para detectar
+    await this.switchCamera(0);
+
+    this.statusEl.textContent = '✅ Listo';
+
+  } catch (e) {
+    console.error(e);
+    this.statusEl.textContent = 'Error inicializando: ' + e.message;
   }
+}
+
 
   _log(msg) { console.log('[UI]', msg); this.statusEl.textContent = msg; }
 
@@ -172,13 +188,16 @@ export default class UIManager {
     this.forceReloadBtn.addEventListener('click', async ()=>{ await this._loadReferencesFromFolder(true); });
 
     // populate saved refs UI
-    try {
-      const raw = localStorage.getItem('faceRefs');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        for (const r of parsed) this._renderRefItem(r.label, null);
-      }
-    } catch(e){}
+    // populate saved refs UI
+try {
+  const raw = localStorage.getItem('faceRefs');
+  if (raw) {
+    this.refList.innerHTML = ""; // <<< FIX
+    const parsed = JSON.parse(raw);
+    for (const r of parsed) this._renderRefItem(r.label, null);
+  }
+} catch(e){}
+
   }
 
   _renderRefItem(name, file) {
