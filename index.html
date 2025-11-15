@@ -5,16 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Reconocimiento facial (local) — Demo</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    body { font-family: "Segoe UI", sans-serif; background:#0f1720; color:#e6eef6; padding:18px; }
-    #container { position: relative; display:inline-block; }
-    #video { background:#111; border-radius:8px; max-width:100%; }
-    #overlay { position:absolute; left:0; top:0; pointer-events:none; }
-    .remote-video { display:none; }
-    #remoteList { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-    .thumb { cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px; }
-    .ref-item img { width:64px; height:64px; object-fit:cover; border-radius:6px; margin-right:8px; }
-  </style>
 </head>
 <body>
   <h1>Reconocimiento facial (Demo)</h1>
@@ -63,17 +53,9 @@
 
   <!-- face-api -->
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script type="module" src="main.js"></script>
 
-  <!-- Módulos ES6 -->
-  <script type="module">
-    import UIManager from './js/ui.js';
-    (async () => {
-      const ui = new UIManager({
-        wsUrl: 'ws://localhost:8080',   // cambiar si tu WS está en otra URL
-        modelPath: '/models'            // carpeta con los modelos de face-api
-      });
-      await ui.init(); // carga modelos, init WS, UI
-    })();
-  </script>
+  <!-- <script src="og_script.js"></script> -->
+
 </body>
 </html>

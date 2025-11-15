@@ -1,5 +1,7 @@
 // ui.js
-// Clase que orquesta UI, cámaras locales y conecta WebRTCManager y FaceRecognitionManager (clases).
+// UI manager completo — integra WebRTCManager y FaceRecognitionManager
+// Incluye: notificaciones, referencias, loadFromFolder, start/stop, thumbnails remotos, forceReload, etc.
+
 import WebRTCManager from './webrtc.js';
 import FaceRecognitionManager from './face-recognition.js';
 
@@ -10,150 +12,207 @@ export default class UIManager {
     this.canvas = document.getElementById('overlay');
     this.ctx = this.canvas.getContext('2d');
     this.statusEl = document.getElementById('status');
+
     this.addRefForm = document.getElementById('addRefForm');
     this.refNameInput = document.getElementById('refName');
     this.refFilesInput = document.getElementById('refFiles');
     this.refList = document.getElementById('refList');
+    this.addMoreFiles = document.getElementById('addMoreFiles') || this._createHiddenFileInput();
+
     this.startBtn = document.getElementById('startBtn');
     this.stopBtn = document.getElementById('stopBtn');
     this.prevCamBtn = document.getElementById('prevCamBtn');
     this.nextCamBtn = document.getElementById('nextCamBtn');
     this.camNameEl = document.getElementById('camName');
+
     this.remoteList = document.getElementById('remoteList');
     this.clearRefsBtn = document.getElementById('clearRefsBtn');
     this.toggleDebugBtn = document.getElementById('toggleDebugBtn');
     this.thresholdInput = document.getElementById('threshold');
     this.thVal = document.getElementById('thVal');
     this.forceReloadBtn = document.getElementById('forceReloadBtn');
+    this.notificationContainer = document.getElementById('notificationContainer');
 
-    // config
+    // config/state
     this.wsUrl = wsUrl;
     this.modelPath = modelPath;
-
-    // state
     this.videoDevices = [];
     this.currentCamIndex = 0;
     this.stream = null;
 
     // instances
-    this.webrtc = new WebRTCManager({ wsUrl: this.wsUrl, onRemoteFeed: (id, stream)=>this._onRemoteFeed(id, stream), onLog: (m)=>this._log(m) });
-    this.faceRec = new FaceRecognitionManager({ modelPath: this.modelPath, getActiveVideo: ()=>this.getActiveVideo(), onNotification: (msg, type)=>this._notify(msg, type) });
+    this.webrtc = new WebRTCManager({
+      wsUrl: this.wsUrl,
+      onRemoteFeed: (id, stream) => this._onRemoteFeed(id, stream),
+      onLog: (m) => this._log(m)
+    });
+
+    this.faceRec = new FaceRecognitionManager({
+      modelPath: this.modelPath,
+      getActiveVideo: () => this.getActiveVideo(),
+      onNotification: (msg, type) => this._createNotification(msg, type)
+    });
 
     // bind
     this._onStartClick = this._onStartClick.bind(this);
   }
 
-async init() {
-  this.statusEl.textContent = 'Cargando modelos...';
-  try {
-    // 1. Modelos
-    await this.faceRec.loadModels();
+  // -------------------------
+  // Initialization
+  // -------------------------
+  async init() {
+    try {
+      this.statusEl.textContent = 'Cargando modelos...';
+      await this.faceRec.loadModels();
 
-    // 2. Cargar referencias desde storage
-    this.faceRec.loadReferencesFromLocalStorage();
+      // load local references and render UI list
+      this.faceRec.loadReferencesFromLocalStorage();
+      this._renderSavedReferences();
 
-    // 3. Inicializar WebSocket + WebRTC
-    this.statusEl.textContent = 'Inicializando WebSocket...';
-    await this.webrtc.init();
+      this.statusEl.textContent = 'Conectando señalización (WebSocket)...';
+      await this.webrtc.init();
 
-    // 4. Cargar cámaras locales
-    await this._loadCameras();
+      // load cameras
+      await this._loadCameras();
 
-    // 5. UI
-    this._bindUI();
+      // bind ui handlers
+      this._bindUI();
 
-    // 6. "Seleccionar" la primera cámara local o remota
-    //    IMPORTANTE: si no haces esto, no tienes video listo para detectar
-    await this.switchCamera(0);
+      // pick first camera (important)
+      await this.switchCamera(0);
 
-    this.statusEl.textContent = '✅ Listo';
-
-  } catch (e) {
-    console.error(e);
-    this.statusEl.textContent = 'Error inicializando: ' + e.message;
-  }
-}
-
-
-  _log(msg) { console.log('[UI]', msg); this.statusEl.textContent = msg; }
-
-  _notify(msg, type='warning') {
-    // simple toast
-    const container = document.getElementById('notificationContainer');
-    const div = document.createElement('div');
-    div.style.background = type==='warning' ? '#ff4d4d' : '#2ea043';
-    div.style.color = '#fff';
-    div.style.padding = '10px 14px';
-    div.style.borderRadius = '8px';
-    div.style.marginTop = '6px';
-    div.textContent = msg;
-    container.appendChild(div);
-    setTimeout(()=>div.remove(), 4000);
-  }
-
-  // ---------- cameras ----------
-  async _loadCameras() {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    this.videoDevices = devices.filter(d => d.kind === 'videoinput').map((d,i)=>({ deviceId: d.deviceId, label: d.label || `Cámara ${i+1}` }));
-    // add any remote placeholders already registered by WebRTCManager
-    for (const sid in this.webrtc.remoteVideos) {
-      if (!this.videoDevices.some(v=>v.deviceId===`remote-${sid}`)) this.videoDevices.push({ deviceId: `remote-${sid}`, label: `Cámara remota ${sid}`});
+      this.statusEl.textContent = '✅ Listo';
+    } catch (err) {
+      console.error(err);
+      this.statusEl.textContent = 'Error inicializando: ' + (err.message || err);
     }
-    if (!this.videoDevices.length) this.statusEl.textContent = '❌ No se encontraron cámaras.';
-    this.currentCamIndex = 0;
-    this._updateCamName();
+  }
+
+  // -------------------------
+  // Logging & Notifications
+  // -------------------------
+  _log(msg) {
+    console.log('[UI]', msg);
+    if (this.statusEl) this.statusEl.textContent = msg;
+  }
+
+  // Reusa el sistema bonito de notificaciones del script original
+  _createNotification(message, type = 'warning') {
+    const container = this.notificationContainer || document.getElementById('notificationContainer');
+    if (!container) return;
+
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-CO', { hour12: false });
+    const notif = document.createElement('div');
+    notif.className = 'notification';
+    notif.style.marginTop = '8px';
+
+    notif.innerHTML = `
+      <div style="
+        display:flex;
+        flex-direction:column;
+        gap:6px;
+        background:${type === 'warning' ? '#ff4d4d' : '#4caf50'};
+        color:white;
+        padding:12px;
+        border-radius:8px;
+        box-shadow:0 6px 18px rgba(0,0,0,0.25);
+        min-width:220px;
+        ">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="font-size:18px">${type === 'warning' ? '⚠️' : '✅'}</div>
+          <div style="flex:1">${message}</div>
+        </div>
+        <div style="text-align:right; font-size:12px; opacity:0.9;">🕒 ${timeString}</div>
+      </div>
+    `;
+    container.appendChild(notif);
+    setTimeout(() => notif.remove(), type === 'warning' ? 5000 : 3000);
+  }
+
+  // -------------------------
+  // Cameras
+  // -------------------------
+  async _loadCameras() {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      this.videoDevices = devices
+        .filter(d => d.kind === 'videoinput')
+        .map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Cámara ${i + 1}` }));
+
+      // include remote placeholders
+      for (const sid in this.webrtc.remoteVideos) {
+        if (!this.videoDevices.some(v => v.deviceId === `remote-${sid}`)) {
+          this.videoDevices.push({ deviceId: `remote-${sid}`, label: `Cámara remota ${sid}` });
+        }
+      }
+
+      if (!this.videoDevices.length) this._log('❌ No se detectaron cámaras');
+      this.currentCamIndex = 0;
+      this._updateCamName();
+    } catch (err) {
+      console.error('Error listando cámaras', err);
+      this._log('Error listando cámaras: ' + err.message);
+    }
   }
 
   _updateCamName() {
     const cam = this.videoDevices[this.currentCamIndex];
-    this.camNameEl.textContent = `🎥 ${cam?.label || '—'} (${this.currentCamIndex+1} de ${this.videoDevices.length})`;
+    this.camNameEl.textContent = cam ? `🎥 ${cam.label} (${this.currentCamIndex + 1} de ${this.videoDevices.length})` : '–';
   }
 
-  async switchCamera(indexChange=0) {
+  async switchCamera(delta = 0) {
     if (!this.videoDevices.length) return;
-    this.currentCamIndex = (this.currentCamIndex + indexChange + this.videoDevices.length) % this.videoDevices.length;
+
+    this.currentCamIndex = (this.currentCamIndex + delta + this.videoDevices.length) % this.videoDevices.length;
     this._updateCamName();
+
     const selected = this.videoDevices[this.currentCamIndex];
     if (!selected) return;
 
+    // remote
     if (selected.deviceId.startsWith('remote-')) {
-      const sid = selected.deviceId.replace('remote-','');
+      const sid = selected.deviceId.replace('remote-', '');
       const rv = this.webrtc.remoteVideos[sid];
-      if (rv && rv.srcObject) {
-        // hide local video
-        this.video.style.display = 'none';
-        rv.style.display = 'block';
-        this._resizeCanvasToVideoElement(rv);
-      } else {
-        this._notify('Feed remoto no disponible aún', 'warning');
+      if (!rv || !rv.srcObject) {
+        this._createNotification('⚠️ Feed remoto no disponible (aún).', 'warning');
+        return;
       }
+      // hide local, show remote
+      this.video.style.display = 'none';
+      rv.style.display = 'block';
+      this._resizeCanvasToVideoElement(rv);
       return;
     }
 
-    // local camera
+    // local
+    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
     try {
-      if (this.stream) this.stream.getTracks().forEach(t=>t.stop());
       this.stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: selected.deviceId } }, audio: false });
       this.video.srcObject = this.stream;
+      // hide remotes
+      Object.values(this.webrtc.remoteVideos).forEach(v => v.style.display = 'none');
       this.video.style.display = 'block';
-      for (const rv of Object.values(this.webrtc.remoteVideos)) rv.style.display = 'none';
       await this.video.play();
       this._resizeCanvasToVideoElement(this.video);
     } catch (err) {
-      this._notify('Error cambiando cámara: ' + err.message, 'warning');
+      console.error('Error cambiando de cámara', err);
+      this._createNotification('Error al activar cámara local: ' + (err.message || err), 'warning');
     }
   }
 
   getActiveVideo() {
     const selected = this.videoDevices[this.currentCamIndex];
     if (selected && selected.deviceId && selected.deviceId.startsWith('remote-')) {
-      const sid = selected.deviceId.replace('remote-','');
+      const sid = selected.deviceId.replace('remote-', '');
       return this.webrtc.remoteVideos[sid] || this.video;
     }
     return this.video;
   }
 
   _resizeCanvasToVideoElement(vid) {
+    if (!vid) return;
+    // ensure video has layout; if not, try a small delay
     const rect = vid.getBoundingClientRect();
     this.canvas.width = rect.width;
     this.canvas.height = rect.height;
@@ -161,43 +220,147 @@ async init() {
     this.canvas._scaleY = rect.height / (vid.videoHeight || rect.height);
   }
 
-  // ---------- UI binding ----------
+  // -------------------------
+  // UI Binding
+  // -------------------------
   _bindUI() {
+    // start/stop
     this.startBtn.addEventListener('click', this._onStartClick);
-    this.stopBtn.addEventListener('click', ()=>{ this.faceRec.stopDetection(); this.startBtn.disabled=false; this.stopBtn.disabled=true; });
-    this.prevCamBtn.addEventListener('click', ()=>this.switchCamera(-1));
-    this.nextCamBtn.addEventListener('click', ()=>this.switchCamera(1));
-    this.toggleDebugBtn.addEventListener('click', ()=>{ this.faceRec.showDebugPoint = !this.faceRec.showDebugPoint; this.toggleDebugBtn.textContent = this.faceRec.showDebugPoint ? '⚪ Ocultar punto rojo' : '🔴 Mostrar punto rojo'; });
-    this.thresholdInput.addEventListener('input', ()=>{ this.thVal.textContent = this.thresholdInput.value; this.faceRec.setThreshold(this.thresholdInput.value); });
+    this.stopBtn.addEventListener('click', () => {
+      this.faceRec.stopDetection();
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.startBtn.disabled = false;
+      this.stopBtn.disabled = true;
+    });
 
-    // references
-    this.addRefForm.addEventListener('submit', async (e)=>{
+    // prev/next
+    this.prevCamBtn.addEventListener('click', () => this.switchCamera(-1));
+    this.nextCamBtn.addEventListener('click', () => this.switchCamera(1));
+
+    // debug toggle
+    this.toggleDebugBtn.addEventListener('click', () => {
+      this.faceRec.showDebugPoint = !this.faceRec.showDebugPoint;
+      this.toggleDebugBtn.textContent = this.faceRec.showDebugPoint ? '⚪ Ocultar punto rojo' : '🔴 Mostrar punto rojo';
+    });
+
+    // threshold
+    this.thresholdInput.addEventListener('input', () => {
+      this.faceRec.setThreshold(this.thresholdInput.value);
+      this.thVal.textContent = this.thresholdInput.value;
+    });
+
+    // references: add
+    this.addRefForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = this.refNameInput.value.trim();
       const files = [...this.refFilesInput.files];
       if (!name || !files.length) { alert('Pon un nombre y elige al menos una imagen.'); return; }
       this.statusEl.textContent = `Procesando referencias para ${name}...`;
       const labeled = await this.faceRec.addReferenceImages(name, files);
-      if (labeled) this._renderRefItem(name, files[0]);
-      this.refNameInput.value = ''; this.refFilesInput.value = null;
-      this.statusEl.textContent = `Referencia "${name}" agregada.`;
+      if (labeled) {
+        this._renderRefItem(name, files[0]);
+        this._createNotification(`Referencia "${name}" agregada`, 'success');
+      } else {
+        this._createNotification(`No se pudo generar descriptor para "${name}"`, 'warning');
+      }
+      this.refNameInput.value = '';
+      this.refFilesInput.value = null;
+      this.statusEl.textContent = 'Listo';
     });
 
-    this.clearRefsBtn.addEventListener('click', ()=>{ localStorage.removeItem('faceRefs'); this.faceRec.labeledDescriptors = []; this.faceRec.updateMatcher(); this.refList.textContent = 'No hay referencias aún.'; });
+    // clear refs
+    this.clearRefsBtn.addEventListener('click', () => {
+      localStorage.removeItem('faceRefs');
+      this.faceRec.labeledDescriptors = [];
+      this.faceRec.updateMatcher();
+      this.refList.innerHTML = 'No hay referencias aún.';
+      this._createNotification('Referencias locales eliminadas', 'warning');
+    });
 
-    this.forceReloadBtn.addEventListener('click', async ()=>{ await this._loadReferencesFromFolder(true); });
+    // force reload folder
+    if (this.forceReloadBtn) {
+      this.forceReloadBtn.addEventListener('click', async () => {
+        await this.loadReferencesFromFolder(true);
+      });
+    }
 
-    // populate saved refs UI
-    // populate saved refs UI
-try {
-  const raw = localStorage.getItem('faceRefs');
-  if (raw) {
-    this.refList.innerHTML = ""; // <<< FIX
-    const parsed = JSON.parse(raw);
-    for (const r of parsed) this._renderRefItem(r.label, null);
+    // hidden addMoreFiles input for adding images to existing ref items
+    this.addMoreFiles.addEventListener('change', async (e) => {
+      const targetRef = e.target.dataset.targetRef;
+      if (!targetRef) return;
+      const files = [...e.target.files];
+      if (!files.length) return;
+      this.statusEl.textContent = `Agregando ${files.length} imagen(es) a ${targetRef}...`;
+      const descriptors = [];
+      for (const f of files) {
+        const img = await faceapi.bufferToImage(f);
+        const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+        if (det) descriptors.push(det.descriptor);
+      }
+      if (!descriptors.length) {
+        this._createNotification('No se detectaron caras en las nuevas imágenes', 'warning');
+        return;
+      }
+      const existing = this.faceRec.labeledDescriptors.find(ld => ld.label === targetRef);
+      if (existing) {
+        existing.descriptors.push(...descriptors);
+        this.faceRec.updateMatcher();
+        this.faceRec.saveReferencesToLocalStorage?.();
+        this._createNotification(`${files.length} imágenes añadidas a ${targetRef}`, 'success');
+      } else {
+        const labeled = new faceapi.LabeledFaceDescriptors(targetRef, descriptors);
+        this.faceRec.labeledDescriptors.push(labeled);
+        this.faceRec.updateMatcher();
+        this.faceRec.saveReferencesToLocalStorage?.();
+        this._renderRefItem(targetRef, files[0]);
+        this._createNotification(`Referencia ${targetRef} creada y añadida`, 'success');
+      }
+    });
   }
-} catch(e){}
 
+  // -------------------------
+  // Start detection (button handler)
+  // -------------------------
+  async _onStartClick() {
+    try {
+      // ensure active video ready
+      const vid = this.getActiveVideo();
+      this._resizeCanvasToVideoElement(vid);
+
+      this.faceRec.startDetection({
+        canvasCtx: this.ctx,
+        resizeCanvasToVideoElement: (v) => this._resizeCanvasToVideoElement(v),
+        getActiveVideo: () => this.getActiveVideo()
+      });
+
+      this.startBtn.disabled = true;
+      this.stopBtn.disabled = false;
+    } catch (err) {
+      console.error('Error iniciando detección', err);
+      this._createNotification('No se pudo iniciar la detección', 'warning');
+      this.startBtn.disabled = false;
+      this.stopBtn.disabled = true;
+    }
+  }
+
+  // -------------------------
+  // References rendering & helpers
+  // -------------------------
+  _renderSavedReferences() {
+    const raw = localStorage.getItem('faceRefs');
+    if (!raw) {
+      this.refList.innerHTML = 'No hay referencias aún.';
+      return;
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      this.refList.innerHTML = '';
+      for (const r of parsed) {
+        this._renderRefItem(r.label, null);
+      }
+    } catch (err) {
+      console.error('Error parseando refs', err);
+    }
   }
 
   _renderRefItem(name, file) {
@@ -206,57 +369,165 @@ try {
     div.style.display = 'flex';
     div.style.alignItems = 'center';
     div.style.gap = '8px';
+    div.dataset.name = name;
+
     if (file) {
-      const url = URL.createObjectURL(file);
       const img = document.createElement('img');
-      img.src = url; img.style.width='64px'; img.style.height='64px'; img.style.objectFit='cover'; img.style.borderRadius='6px';
+      img.src = URL.createObjectURL(file);
+      img.width = 64; img.height = 64;
+      img.style.objectFit = 'cover'; img.style.borderRadius = '6px';
       div.appendChild(img);
     }
+
     const span = document.createElement('span');
     span.textContent = name;
     div.appendChild(span);
+
+    // add click handler to add more images to this ref
+    div.addEventListener('click', () => {
+      // set a flag so onchange knows which ref to add to
+      this.addMoreFiles.dataset.targetRef = name;
+      this.addMoreFiles.value = null;
+      this.addMoreFiles.click();
+    });
+
+    if (this.refList.textContent.trim() === 'No hay referencias aún.') this.refList.textContent = '';
     this.refList.appendChild(div);
   }
 
-  // ---------- Remote feed callback from WebRTCManager ----------
-  _onRemoteFeed(senderId, stream) {
-    // create thumbnail + hidden video (if not exists)
-    if (this.webrtc.remoteVideos[senderId]) {
-      // already created by WebRTCManager: webrtc.remoteVideos[senderId] is the element
-    } else {
-      // but WebRTCManager normally creates the element; ensure we reference it
+  // -------------------------
+  // Load references from folder (server-side JSON)
+  // -------------------------
+  async loadReferencesFromFolder(forceReload = false) {
+    try {
+      const res = await fetch('./references/references.json?_=' + Date.now());
+      if (!res.ok) throw new Error('No se pudo cargar references.json');
+      const data = await res.json();
+
+      this.statusEl.textContent = '🔍 Revisando referencias en carpeta...';
+      let newRefsCount = 0;
+
+      for (const [name, files] of Object.entries(data)) {
+        const existing = this.faceRec.labeledDescriptors.find(ld => ld.label === name);
+        if (existing && !forceReload) continue;
+
+        const descriptors = [];
+        for (const file of files) {
+          const url = `./references/${name}/${file}?_=${Date.now()}`;
+          try {
+            const img = await faceapi.fetchImage(url);
+            const detection = await faceapi
+              .detectSingleFace(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+              .withFaceLandmarks()
+              .withFaceDescriptor();
+            if (detection) descriptors.push(detection.descriptor);
+            else this._createNotification(`No se detectó rostro en ${name}/${file}`, 'warning');
+          } catch (err) {
+            this._createNotification(`Error leyendo ${name}/${file}`, 'warning');
+          }
+        }
+
+        if (descriptors.length) {
+          if (existing) {
+            existing.descriptors.push(...descriptors);
+          } else {
+            this.faceRec.labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(name, descriptors));
+            this._renderRefItem(name, null);
+          }
+          newRefsCount++;
+        }
+      }
+
+      if (newRefsCount > 0) {
+        this.faceRec.updateMatcher();
+        // persist
+        if (this.faceRec.saveReferencesToLocalStorage) this.faceRec.saveReferencesToLocalStorage();
+        this.statusEl.textContent = `✅ ${newRefsCount} nuevas referencias cargadas desde carpeta.`;
+      } else {
+        this.statusEl.textContent = '📁 No se encontraron nuevas referencias.';
+      }
+    } catch (err) {
+      console.error('Error cargando referencias desde carpeta:', err);
+      this.statusEl.textContent = '⚠️ Error al cargar referencias desde carpeta.';
     }
+  }
 
-    const videoEl = this.webrtc.remoteVideos[senderId] || (() => {
-      const v = document.createElement('video'); v.autoplay=true; v.muted=true; v.playsInline=true; v.className='remote-video'; v.id = `remote-${senderId}`; v.srcObject = stream; document.body.appendChild(v); return v;
-    })();
+  // -------------------------
+  // Remote feed handling (callback from WebRTCManager)
+  // -------------------------
+  _onRemoteFeed(senderId, stream) {
+    // ensure an element exists or create one
+    let videoEl = this.webrtc.remoteVideos[senderId];
+    if (!videoEl) {
+      videoEl = document.createElement('video');
+      videoEl.autoplay = true;
+      videoEl.muted = true;
+      videoEl.playsInline = true;
+      videoEl.className = 'remote-video';
+      videoEl.id = `remote-${senderId}`;
+      document.body.appendChild(videoEl);
+      this.webrtc.remoteVideos[senderId] = videoEl;
+    }
+    videoEl.srcObject = stream;
 
-    // create thumbnail UI block
+    // thumbnail
     const thumbWrap = document.createElement('div');
     thumbWrap.className = 'thumb';
-    thumbWrap.style.width = '160px';
+    thumbWrap.style.display = 'flex';
+    thumbWrap.style.flexDirection = 'column';
+    thumbWrap.style.alignItems = 'center';
+    thumbWrap.style.gap = '6px';
+
     const thumb = document.createElement('video');
-    thumb.autoplay = true; thumb.muted = true; thumb.playsInline = true;
-    thumb.width = 160; thumb.height = 90; thumb.srcObject = stream; thumb.style.borderRadius='8px';
-    const label = document.createElement('div'); label.textContent = `Remoto ${senderId}`; label.style.color='#fff'; label.style.fontSize='13px';
-    thumbWrap.appendChild(thumb); thumbWrap.appendChild(label);
+    thumb.autoplay = true;
+    thumb.muted = true;
+    thumb.playsInline = true;
+    thumb.width = 160;
+    thumb.height = 90;
+    thumb.srcObject = stream;
+    thumb.style.borderRadius = '8px';
+
+    const label = document.createElement('div');
+    label.textContent = `Remoto ${senderId}`;
+    label.style.color = '#fff';
+    label.style.fontSize = '13px';
+
+    thumbWrap.appendChild(thumb);
+    thumbWrap.appendChild(label);
 
     thumbWrap.onclick = async () => {
-      if (!this.videoDevices.some(v => v.deviceId === `remote-${senderId}`)) this.videoDevices.push({ deviceId: `remote-${senderId}`, label: `Cámara remota ${senderId}`});
-      this._updateCamName();
+      if (!this.videoDevices.some(v => v.deviceId === `remote-${senderId}`)) {
+        this.videoDevices.push({ deviceId: `remote-${senderId}`, label: `Cámara remota ${senderId}` });
+      }
+      // set index and switch
       const idx = this.videoDevices.findIndex(v => v.deviceId === `remote-${senderId}`);
-      if (idx >= 0) { this.currentCamIndex = idx; await this.switchCamera(0); }
+      if (idx >= 0) {
+        this.currentCamIndex = idx;
+        await this.switchCamera(0);
+      }
     };
 
     this.remoteList.appendChild(thumbWrap);
 
-    // keep the element in the webrtc remoteVideos map (WebRTCManager may have created it)
-    this.webrtc.remoteVideos[senderId] = videoEl;
-
-    // also add placeholder device entry if missing
+    // ensure videoDevices list contains it
     if (!this.videoDevices.some(v => v.deviceId === `remote-${senderId}`)) {
-      this.videoDevices.push({ deviceId: `remote-${senderId}`, label: `Cámara remota ${senderId}`});
+      this.videoDevices.push({ deviceId: `remote-${senderId}`, label: `Cámara remota ${senderId}` });
+      this._updateCamName();
     }
-    this._updateCamName();
   }
+
+  // -------------------------
+  // Helper - create hidden input for adding images to refs
+  // -------------------------
+  _createHiddenFileInput() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.style.display = 'none';
+    input.id = 'addMoreFiles';
+    document.body.appendChild(input);
+    return input;
+  }
+
 }

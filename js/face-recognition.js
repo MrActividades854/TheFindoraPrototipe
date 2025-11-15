@@ -93,15 +93,27 @@ export default class FaceRecognitionManager {
 
   // ---------- Tracking helpers ----------
   distance(a,b) { const dx=a.x-b.x, dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy); }
-  assignTracked(x,y) {
+  assignTracked(x, y, width, height) {
     for (const t of this.tracked) {
-      if (this.distance(t, {x,y}) < this.MAX_DIST) {
-        t.x = x; t.y = y; t.lastSeen = Date.now(); t.missing = false;
+      const dist = this.distance({x: t.smoothedX || t.x, y: t.smoothedY || t.y}, {x,y});
+      if (dist < this.MAX_DIST) {
+        // Apply smoothing to position and size
+        const smoothingFactor = 0.7; // Further increased for more smoothing
+        t.smoothedX = t.smoothedX ? t.smoothedX * (1 - smoothingFactor) + x * smoothingFactor : x;
+        t.smoothedY = t.smoothedY ? t.smoothedY * (1 - smoothingFactor) + y * smoothingFactor : y;
+        t.smoothedWidth = t.smoothedWidth ? t.smoothedWidth * (1 - smoothingFactor) + width * smoothingFactor : width;
+        t.smoothedHeight = t.smoothedHeight ? t.smoothedHeight * (1 - smoothingFactor) + height * smoothingFactor : height;
+        t.lastSeen = Date.now();
+        t.missing = false;
         return t;
       }
     }
     const color = ['#00FF00','#FF3B30','#007AFF','#FF9500','#AF52DE','#FFCC00','#00C7BE'][this.tracked.length % 7];
-    const newT = { x, y, color, lastSeen: Date.now(), missing: false };
+    const newT = {
+      x, y, width, height,
+      smoothedX: x, smoothedY: y, smoothedWidth: width, smoothedHeight: height,
+      color, lastSeen: Date.now(), missing: false
+    };
     this.tracked.push(newT);
     return newT;
   }
@@ -154,6 +166,10 @@ export default class FaceRecognitionManager {
   stopDetection() {
     this.detecting = false;
     this.tracked = [];
+    // reset people timers?
+    this.peopleLastSeen = {};
+    this.activeAlerts = {};
+    this.knownPeople = new Set();
   }
 
   async _detectionLoop({ canvasCtx, resizeCanvasToVideoElement, getActiveVideo }) {
@@ -174,7 +190,7 @@ export default class FaceRecognitionManager {
         const scaleY = canvasCtx.canvas._scaleY || 1;
         const x = box.x * scaleX, y = box.y * scaleY, width = box.width * scaleX, height = box.height * scaleY;
         const xCenter = x + width/2, yCenter = y + height/2;
-        const t = this.assignTracked(xCenter, yCenter);
+        const t = this.assignTracked(xCenter, yCenter, width, height);
 
         // matching
         let label = 'Desconocido';
@@ -184,18 +200,24 @@ export default class FaceRecognitionManager {
           this.updatePersonDetection(label);
         }
 
+        // Use smoothed values for drawing
+        const smoothedX = t.smoothedX - t.smoothedWidth / 2;
+        const smoothedY = t.smoothedY - t.smoothedHeight / 2;
+        const smoothedWidth = t.smoothedWidth;
+        const smoothedHeight = t.smoothedHeight;
+
         // dibujar
-        canvasCtx.lineWidth = Math.max(2, width/100);
+        canvasCtx.lineWidth = Math.max(2, smoothedWidth/100);
         canvasCtx.strokeStyle = t.color;
-        canvasCtx.strokeRect(x,y,width,height);
+        canvasCtx.strokeRect(smoothedX, smoothedY, smoothedWidth, smoothedHeight);
 
         const padding = 6;
-        canvasCtx.font = `${Math.max(14, width/18)}px sans-serif`;
+        canvasCtx.font = `${Math.max(14, smoothedWidth/18)}px sans-serif`;
         const text = label;
         const textW = canvasCtx.measureText(text).width + padding*2;
-        const textH = Math.max(26, height/9);
-        let tagX = x, tagY = y + height + textH + 4;
-        if (tagY > canvasCtx.canvas.height - 5) tagY = y - 10;
+        const textH = Math.max(26, smoothedHeight/9);
+        let tagX = smoothedX, tagY = smoothedY + smoothedHeight + textH + 4;
+        if (tagY > canvasCtx.canvas.height - 5) tagY = smoothedY - 10;
         canvasCtx.fillStyle = 'rgba(0,0,0,0.65)';
         canvasCtx.fillRect(tagX - 2, tagY - textH, textW + 4, textH);
         canvasCtx.fillStyle = '#fff';
@@ -203,7 +225,7 @@ export default class FaceRecognitionManager {
 
         if (this.showDebugPoint) {
           canvasCtx.beginPath();
-          canvasCtx.arc(xCenter, yCenter, 4, 0, Math.PI*2);
+          canvasCtx.arc(t.smoothedX, t.smoothedY, 4, 0, Math.PI*2);
           canvasCtx.fillStyle = 'red';
           canvasCtx.fill();
         }
