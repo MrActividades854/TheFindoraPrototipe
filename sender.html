@@ -42,7 +42,7 @@
   <p id="log" style="color:#ddd;"></p>
 
 <script>
-const ws = new WebSocket("ws://192.168.101.10:8080");
+const ws = new WebSocket("ws://192.168.101.15:8080");
 
 const senderId = Math.random().toString(36).slice(2, 9);
 let pc = null;
@@ -57,24 +57,41 @@ function log(msg) {
 
 document.getElementById("startBtn").onclick = async () => {
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        document.getElementById("localVideo").srcObject = localStream;
+        localStream = await navigator.mediaDevices.getUserMedia({
+    video: { width: 640, height: 480, frameRate: { ideal: 30 } },
+    audio: false
+});
 
-        pc = new RTCPeerConnection();
+const video = document.getElementById("localVideo");
+video.srcObject = localStream;
+
+video.onloadedmetadata = () => {
+    video.play().catch(err => console.error("Error reproduciendo cámara local:", err));
+};
+
+
+        pc = new RTCPeerConnection({
+    iceServers: [
+        { urls: "stun:stun.l.google.com:19302" }
+    ]
+});
+
 
         pc.onicecandidate = (e) => {
-            if (e.candidate) {
-                ws.send(JSON.stringify({
-                    type: "ice",
-                    from: senderId,
-                    ice: {
-                        candidate: e.candidate.candidate,
-                        sdpMid: e.candidate.sdpMid,
-                        sdpMLineIndex: e.candidate.sdpMLineIndex
-                    }
-                }));
+    if (e.candidate) {
+        ws.send(JSON.stringify({
+            type: "ice",
+            from: senderId,
+            to: "receiver",
+            ice: {
+                candidate: e.candidate.candidate,
+                sdpMid: e.candidate.sdpMid,
+                sdpMLineIndex: e.candidate.sdpMLineIndex
             }
-        };
+        }));
+    }
+};
+
 
         for (const track of localStream.getTracks()) {
             pc.addTrack(track, localStream);

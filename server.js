@@ -3,7 +3,7 @@ const WebSocket = require("ws");
 
 const wss = new WebSocket.Server({ port: 8080 });
 
-console.log("Servidor WebSocket iniciado en ws://192.168.101.10:8080");
+console.log("Servidor WebSocket iniciado en ws://192.168.101.15:8080");
 
 wss.on("connection", (ws) => {
     console.log("Cliente conectado");

@@ -6,7 +6,7 @@ import WebRTCManager from './webrtc.js';
 import FaceRecognitionManager from './face-recognition.js';
 
 export default class UIManager {
-  constructor({ wsUrl = 'ws://192.168.101.10:8080', modelPath = '/models' } = {}) {
+  constructor({ wsUrl = 'ws://192.168.101.15:8080', modelPath = '/models' } = {}) {
     // DOM
     this.video = document.getElementById('video');
     this.canvas = document.getElementById('overlay');
