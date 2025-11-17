@@ -223,8 +223,18 @@ if (selected.deviceId.startsWith('remote-')) {
     // Asegurar reproducción
     this.video.play().catch(err => console.error("Error playing remote:", err));
 
-    // Ajustar overlay al nuevo video
+this.video.onloadedmetadata = () => {
     this._resizeCanvasToVideoElement(this.video);
+
+    if (this.faceRec.detecting) {
+        this.faceRec.startDetection({
+            canvasCtx: this.ctx,
+            resizeCanvasToVideoElement: (v) => this._resizeCanvasToVideoElement(v),
+            getActiveVideo: () => this.getActiveVideo()
+        });
+    }
+};
+
 
     return;
 }
@@ -257,15 +267,19 @@ if (selected.deviceId.startsWith('remote-')) {
     return this.video;
   }
 
-  _resizeCanvasToVideoElement(vid) {
+_resizeCanvasToVideoElement(vid) {
     if (!vid) return;
-    // ensure video has layout; if not, try a small delay
-    const rect = vid.getBoundingClientRect();
-    this.canvas.width = rect.width;
-    this.canvas.height = rect.height;
-    this.canvas._scaleX = rect.width / (vid.videoWidth || rect.width);
-    this.canvas._scaleY = rect.height / (vid.videoHeight || rect.height);
-  }
+
+    // esperar a que tenga dimensiones reales
+    if (!vid.videoWidth || !vid.videoHeight) {
+        setTimeout(() => this._resizeCanvasToVideoElement(vid), 50);
+        return;
+    }
+
+    this.canvas.width = vid.videoWidth;
+    this.canvas.height = vid.videoHeight;
+}
+
 
   // -------------------------
   // UI Binding
