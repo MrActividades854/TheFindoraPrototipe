@@ -39,6 +39,9 @@ export default class UIManager {
     this.videoDevices = [];
     this.currentCamIndex = 0;
     this.stream = null;
+
+    this.getActiveRoom = this.getActiveRoom.bind(this);
+
     
 
     // instances
@@ -267,6 +270,18 @@ this.video.onloadedmetadata = () => {
     return this.video;
   }
 
+  getActiveRoom() {
+    const selected = this.videoDevices[this.currentCamIndex];
+
+    if (!selected) return "sala1";
+
+    if (selected.deviceId.startsWith("remote-"))
+        return "sala2";
+
+    return "sala1";
+}
+
+
 _resizeCanvasToVideoElement(vid) {
     if (!vid) return;
 
@@ -391,7 +406,8 @@ _resizeCanvasToVideoElement(vid) {
       this.faceRec.startDetection({
         canvasCtx: this.ctx,
         resizeCanvasToVideoElement: (v) => this._resizeCanvasToVideoElement(v),
-        getActiveVideo: () => this.getActiveVideo()
+        getActiveVideo: () => this.getActiveVideo(),
+        getActiveRoom: () => this.getActiveRoom()
       });
 
       this.startBtn.disabled = true;

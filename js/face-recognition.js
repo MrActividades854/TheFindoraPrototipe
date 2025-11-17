@@ -33,6 +33,12 @@ export default class FaceRecognitionManager {
     this.confirmUnknownAfter = 3; // número de frames para confirmar desconocido
     this.lastBoxWidth = 0;
     this.lastBoxHeight = 0;
+
+
+    this.currentRoom = null;
+    this.lastRoomDetected = null;
+
+
   }
 
   async loadModels() {
@@ -110,6 +116,22 @@ export default class FaceRecognitionManager {
       console.error('Error cargando refs', e);
     }
   }
+
+  updatePersonLocation(name, room) {
+    if (!name || name === "Desconocido") return;
+
+    if (!this.lastRoomDetected) {
+        this.lastRoomDetected = room;
+        this.onNotification(`${name} detectado en ${room}`, "success");
+        return;
+    }
+
+    if (this.lastRoomDetected !== room) {
+        this.onNotification(`${name} salió de ${this.lastRoomDetected} y entró a ${room}`, "success");
+        this.lastRoomDetected = room;
+    }
+}
+
 
   // Tracking helpers
   distance(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy); }
@@ -206,14 +228,14 @@ export default class FaceRecognitionManager {
   }
 
   // Detección principal
-  startDetection({canvasCtx,resizeCanvasToVideoElement,getActiveVideo}={}){
+  startDetection({canvasCtx,resizeCanvasToVideoElement,getActiveVideo, getActiveRoom}={}){
     if (this.detecting) return;
 
     this.detecting = true;
     this.detectionStartedAt = Date.now();
     this.unconfirmedUnknownFrames = 0;
 
-    this._detectionLoop({canvasCtx,resizeCanvasToVideoElement,getActiveVideo});
+    this._detectionLoop({canvasCtx,resizeCanvasToVideoElement,getActiveVideo, getActiveRoom});
   }
 
   stopDetection(){
@@ -223,9 +245,12 @@ export default class FaceRecognitionManager {
     this.activeAlerts = {};
     this.knownPeople = new Set();
     this.unconfirmedUnknownFrames = 0;
+    this.lastRoomDetected = null;
+    this.currentRoom = null;
+
   }
 
-  async _detectionLoop({canvasCtx,resizeCanvasToVideoElement,getActiveVideo}){
+  async _detectionLoop({canvasCtx,resizeCanvasToVideoElement,getActiveVideo, getActiveRoom}){
     const options=new faceapi.TinyFaceDetectorOptions({
       inputSize:320, scoreThreshold:0.7
     });
@@ -272,6 +297,18 @@ export default class FaceRecognitionManager {
         }
 
         this.updatePersonDetection(label);
+
+ // si hay una función para saber la sala activa, úsala
+if (label !== "Desconocido" && typeof getActiveRoom === 'function') {
+    try {
+        const room = getActiveRoom();
+        if (room) this.updatePersonLocation(label, room);
+    } catch (e) {
+        // no interrumpe el loop si getActiveRoom falla
+        console.warn('getActiveRoom error:', e);
+    }
+}
+
 
         // dibujo
         const sx=t.smoothedX-t.smoothedWidth/2;
