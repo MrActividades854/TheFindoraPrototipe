@@ -1,3 +1,6 @@
+/* ============================================================
+   ESTILO GENERAL
+============================================================ */
 body {
   font-family: system-ui, Segoe UI, Roboto, Arial;
   padding: 18px;
@@ -11,27 +14,53 @@ h1 {
   margin: 0;
 }
 
+/* ============================================================
+   CONTENEDOR PRINCIPAL (MUY IMPORTANTE)
+============================================================ */
 #container {
-  position: relative;
+  position: relative;        /* Necesario para alinear el canvas */
+  width: 100%;
   max-width: 900px;
-  width: 100%;
-  display: inline-block;
+  margin: auto;
 }
 
-video {
+/* ============================================================
+   VIDEO PRINCIPAL — Ajustado para FaceRecognition
+============================================================ */
+#video {
+  display: block;
   width: 100%;
+  height: auto;
+
+  object-fit: cover;         /* ALIGN PERFECTO PARA REMOTO Y LOCAL */
+  background: black;
+
   border-radius: 10px;
-  background: #000;
+
+  position: relative;
+  z-index: 1;
 }
 
-canvas {
+/* ============================================================
+   CANVAS DONDE SE DIBUJAN LOS RECTÁNGULOS
+============================================================ */
+#overlay {
   position: absolute;
-  left: 0;
   top: 0;
+  left: 0;
+
+  width: 100% !important;
+  height: 100% !important;
+
   pointer-events: none;
+  z-index: 3;
+
   border-radius: 10px;
 }
 
+/* ============================================================
+   CONTROLES Y LISTADOS
+============================================================ */
 #refs, #camera {
   width: 100%;
   max-width: 900px;
@@ -68,14 +97,9 @@ canvas {
   margin-top: 8px;
 }
 
-label {
-  font-size: 0.95rem;
-}
-
-#status {
-  color: #444;
-}
-
+/* ============================================================
+   BOTONES DE CAMBIO DE CÁMARA
+============================================================ */
 .camera-controls {
   position: absolute;
   top: 50%;
@@ -111,6 +135,9 @@ label {
   transform: scale(1.1);
 }
 
+/* ============================================================
+   NOMBRE DE CÁMARA
+============================================================ */
 #camName {
   margin-top: 10px;
   text-align: center;
