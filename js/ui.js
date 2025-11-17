@@ -189,20 +189,46 @@ _createNotification(message, type = 'warning') {
     const selected = this.videoDevices[this.currentCamIndex];
     if (!selected) return;
 
-    // remote
-    if (selected.deviceId.startsWith('remote-')) {
-      const sid = selected.deviceId.replace('remote-', '');
-      const rv = this.webrtc.remoteVideos[sid];
-      if (!rv || !rv.srcObject) {
+    // =============================
+// CAMARA REMOTA - ARREGLADO
+// =============================
+if (selected.deviceId.startsWith('remote-')) {
+
+    const sid = selected.deviceId.replace('remote-', '');
+    const rv = this.webrtc.remoteVideos[sid];
+
+    if (!rv || !rv.srcObject) {
         this._createNotification('⚠️ Feed remoto no disponible (aún).', 'warning');
         return;
-      }
-      // hide local, show remote
-      this.video.style.display = 'none';
-      rv.style.display = 'block';
-      this._resizeCanvasToVideoElement(rv);
-      return;
     }
+
+    console.log("[UI] Mostrando cámara remota arriba:", sid);
+
+    // Mostrar feed remoto EN EL VIDEO PRINCIPAL
+    this.video.srcObject = rv.srcObject;
+
+    // Mostrar el video local como oculto
+    this.video.style.display = "block";
+
+    // Mantener los videos remotos en el DOM para que WebRTC no los desconecte
+    Object.values(this.webrtc.remoteVideos).forEach(v => {
+    v.style.visibility = "hidden";   // que no molesten visualmente
+    v.style.pointerEvents = "none";  // que no se puedan presionar
+    v.style.position = "absolute";   // que no ocupen espacio
+    v.style.width = "1px";
+    v.style.height = "1px";
+});
+;
+
+    // Asegurar reproducción
+    this.video.play().catch(err => console.error("Error playing remote:", err));
+
+    // Ajustar overlay al nuevo video
+    this._resizeCanvasToVideoElement(this.video);
+
+    return;
+}
+
 
     Object.values(this.webrtc.remoteVideos).forEach(v => v.style.display = 'none');
 
