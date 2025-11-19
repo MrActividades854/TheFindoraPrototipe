@@ -2,7 +2,7 @@
 // Manejo de señalización WebSocket + múltiples PeerConnections receptoras (one receiver PC per sender)
 
 export default class WebRTCManager {
-  constructor({ wsUrl = 'ws://192.168.101.15:8080', onRemoteFeed = ()=>{}, onLog = ()=>{}, maxFeeds = 5 } = {}) {
+  constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com', onRemoteFeed = ()=>{}, onLog = ()=>{}, maxFeeds = 5 } = {}) {
     this.wsUrl = wsUrl;
     this.onRemoteFeed = onRemoteFeed;
     this.onLog = onLog;
