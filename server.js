@@ -1,39 +1,34 @@
-// server.js
+const express = require("express");
+const http = require("http");
 const WebSocket = require("ws");
+const path = require("path");
 
-const wss = new WebSocket.Server({ port: 8080 });
+const app = express();
 
-console.log("Servidor WebSocket iniciado en ws://192.168.101.15:8080");
+// Sirve TODOS los archivos EXACTAMENTE como los tienes
+app.use(express.static(__dirname));
+
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
-    console.log("Cliente conectado");
+    console.log("[WS] Cliente conectado");
 
-    ws.on("message", async (msg) => {
-    let text;
+    ws.on("message", (msg) => {
+        wss.clients.forEach((client) => {
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+                client.send(msg);
+            }
+        });
+    });
 
-    // 1. Si viene como Blob → convertir
-    if (msg instanceof Blob) {
-        text = await msg.text();
-    }
-    // 2. Si es Buffer → convertir
-    else if (Buffer.isBuffer(msg)) {
-        text = msg.toString("utf8");
-    }
-    // 3. Si ya es string
-    else {
-        text = msg;
-    }
-
-    // Reenviar como texto JSON puro
-    wss.clients.forEach(client => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-            client.send(text);
-        }
+    ws.on("close", () => {
+        console.log("[WS] Cliente desconectado");
     });
 });
 
-
-    ws.on("close", () => {
-        console.log("Cliente desconectado");
-    });
+// Render/railway asignarán PORT automáticamente
+const PORT = process.env.PORT || 8080;
+server.listen(PORT, () => {
+    console.log("Servidor escuchando en puerto " + PORT);
 });
