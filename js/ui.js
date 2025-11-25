@@ -33,6 +33,27 @@ export default class UIManager {
     this.forceReloadBtn = document.getElementById('forceReloadBtn');
     this.notificationContainer = document.getElementById('notificationContainer');
 
+    if (!this.notificationContainer) {
+    this.notificationContainer = document.createElement('div');
+    this.notificationContainer.id = 'notificationContainer';
+    document.body.appendChild(this.notificationContainer);
+}
+
+// 🔥 Estilos forzados desde el primer render
+this.notificationContainer.style.position = "fixed";
+this.notificationContainer.style.bottom = "20px";
+this.notificationContainer.style.right = "20px";
+this.notificationContainer.style.pointerEvents = "none";
+
+// Muy importante: usar setProperty con prioridad "important"
+this.notificationContainer.style.setProperty(
+    "z-index",
+    "2147483647",
+    "important"
+);
+
+
+
     // config/state
     this.wsUrl = wsUrl;
     this.modelPath = modelPath;
@@ -138,6 +159,8 @@ _createNotification(message, type = 'warning') {
       border-radius:8px;
       box-shadow:0 6px 18px rgba(0,0,0,0.25);
       min-width:220px;
+      position:relative;
+      z-index:9999999;
       ">
       <div style="display:flex; align-items:center; gap:8px;">
         <div style="font-size:18px">${type === 'warning' ? '⚠️' : '✅'}</div>
@@ -148,6 +171,7 @@ _createNotification(message, type = 'warning') {
   `;
 
   container.appendChild(notif);
+  notif.style.setProperty("z-index", "2147483647", "important");
   setTimeout(() => notif.remove(), type === 'warning' ? 5000 : 3000);
 }
 
@@ -157,6 +181,7 @@ _createNotification(message, type = 'warning') {
   // -------------------------
   async _loadCameras() {
     try {
+      await navigator.mediaDevices.getUserMedia({ video: true });
       const devices = await navigator.mediaDevices.enumerateDevices();
       this.videoDevices = devices
         .filter(d => d.kind === 'videoinput')
@@ -247,18 +272,49 @@ this.video.onloadedmetadata = () => {
 
     // local
     if (this.stream) this.stream.getTracks().forEach(t => t.stop());
-    try {
-      this.stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: selected.deviceId } }, audio: false });
-      this.video.srcObject = this.stream;
-      // hide remotes
-      Object.values(this.webrtc.remoteVideos).forEach(v => v.style.display = 'none');
-      this.video.style.display = 'block';
-      await this.video.play();
-      this._resizeCanvasToVideoElement(this.video);
-    } catch (err) {
-      console.error('Error cambiando de cámara', err);
-      this._createNotification('Error al activar cámara local: ' + (err.message || err), 'warning');
+try {
+    let id = selected.deviceId;
+
+    // Si el deviceId está vacío o no existe → usar modo compatible
+    if (!id || id === "" || id === "undefined" || id === undefined) {
+        console.warn("⚠ deviceId inválido, activando modo compatible");
+        this.stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+        });
+    } else {
+        try {
+            // Intento 1: usar el ID exacto
+            this.stream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: { exact: id } },
+                audio: false
+            });
+        } catch (err1) {
+            console.warn("⚠ deviceId exacto falló, reintentando modo compatible", err1);
+
+            // Intento 2: fallback
+            this.stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: false
+            });
+        }
     }
+
+    this.video.srcObject = this.stream;
+
+    // Ocultar remotas
+    Object.values(this.webrtc.remoteVideos).forEach(v => v.style.display = "none");
+    this.video.style.display = "block";
+
+    await this.video.play();
+    this._resizeCanvasToVideoElement(this.video);
+
+} catch (err) {
+    console.error("Error activando cámara local:", err);
+    this._createNotification("Error activando cámara local: " + err.message, "warning");
+}
+
+
   }
 
   getActiveVideo() {
