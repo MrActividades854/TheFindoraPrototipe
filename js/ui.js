@@ -33,6 +33,27 @@ export default class UIManager {
     this.forceReloadBtn = document.getElementById('forceReloadBtn');
     this.notificationContainer = document.getElementById('notificationContainer');
 
+    if (!this.notificationContainer) {
+    this.notificationContainer = document.createElement('div');
+    this.notificationContainer.id = 'notificationContainer';
+    document.body.appendChild(this.notificationContainer);
+}
+
+// 🔥 Estilos forzados desde el primer render
+this.notificationContainer.style.position = "fixed";
+this.notificationContainer.style.bottom = "20px";
+this.notificationContainer.style.right = "20px";
+this.notificationContainer.style.pointerEvents = "none";
+
+// Muy importante: usar setProperty con prioridad "important"
+this.notificationContainer.style.setProperty(
+    "z-index",
+    "2147483647",
+    "important"
+);
+
+
+
     // config/state
     this.wsUrl = wsUrl;
     this.modelPath = modelPath;
@@ -150,7 +171,7 @@ _createNotification(message, type = 'warning') {
   `;
 
   container.appendChild(notif);
-  notif.style.zIndex = "2147483647";
+  notif.style.setProperty("z-index", "2147483647", "important");
   setTimeout(() => notif.remove(), type === 'warning' ? 5000 : 3000);
 }
 
