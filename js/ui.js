@@ -97,6 +97,7 @@ this.notificationContainer.style.setProperty(
 
       // load local references and render UI list
       this.faceRec.loadReferencesFromLocalStorage();
+
       this._renderSavedReferences();
 
       this.statusEl.textContent = 'Conectando señalización (WebSocket)...';
