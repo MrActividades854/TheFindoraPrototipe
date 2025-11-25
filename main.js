@@ -20,6 +20,10 @@ window.addEventListener('DOMContentLoaded', async () => {
         window.ui = ui;
         window.webrtc = ui.webrtc;
 
+        // Importante: cargar referencias ANTES de iniciar UI
+        await ui.faceRec.loadModels();
+        ui.faceRec.loadReferencesFromLocalStorage();
+
         // Iniciar la aplicación
         await ui.init();
 
