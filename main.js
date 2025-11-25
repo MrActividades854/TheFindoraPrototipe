@@ -3,7 +3,7 @@
 // ================================
 
 // Importa la capa principal de interfaz
-import UIManager from './ui.js';
+import UIManager from './js/ui.js';
 
 // Espera a que el DOM esté listo
 window.addEventListener('DOMContentLoaded', async () => {
