@@ -16,6 +16,14 @@ window.addEventListener('DOMContentLoaded', async () => {
             modelPath: '/models'
         });
 
+        console.log("⏳ Cargando modelos de FaceAPI...");
+    await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+        faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
+        faceapi.nets.faceLandmark68Net.loadFromUri('/models')
+    ]);
+    console.log("✅ Modelos cargados correctamente");
+
         // Exponer para debugging
         window.ui = ui;
         window.webrtc = ui.webrtc;
