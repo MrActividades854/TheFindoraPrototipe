@@ -37,7 +37,7 @@ const receiverPCs = {};    // { senderId: RTCPeerConnection }
 
 const colors = ['#00FF00','#FF3B30','#007AFF','#FF9500','#AF52DE','#FFCC00','#00C7BE'];
 const tracked = [];
-const MAX_DIST = 120;
+const MAX_DIST = 60;
 
 const ALERT_TIMEOUT = 10000;
 let peopleLastSeen = {};
