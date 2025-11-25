@@ -16,12 +16,6 @@ window.addEventListener('DOMContentLoaded', async () => {
             modelPath: '/models'
         });
 
-        console.log("⏳ Cargando modelos de FaceAPI...");
-    await Promise.all([
-        ui.loadReferencesFromFolder(true)
-    ]);
-    console.log("✅ Modelos cargados correctamente");
-
         // Exponer para debugging
         window.ui = ui;
         window.webrtc = ui.webrtc;
