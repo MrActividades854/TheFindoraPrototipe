@@ -42,7 +42,9 @@
   <p id="log" style="color:#ddd;"></p>
 
 <script>
-const ws = new WebSocket("https://thefindoraprototipe.onrender.com");
+const protocol = location.protocol === "https:" ? "wss://" : "ws://";
+const ws = new WebSocket(protocol + "thefindoraprototipe.onrender.com");
+
 
 const senderId = Math.random().toString(36).slice(2, 9);
 let pc = null;
