@@ -30,7 +30,7 @@ export default class FaceRecognitionManager {
     // NUEVO: sistema anti falsos positivos
     this.detectionStartedAt = 0;
     this.unconfirmedUnknownFrames = 0;
-    this.confirmUnknownAfter = 3; // número de frames para confirmar desconocido
+    this.confirmUnknownAfter = 5; // número de frames para confirmar desconocido
     this.lastBoxWidth = 0;
     this.lastBoxHeight = 0;
 
@@ -265,7 +265,7 @@ export default class FaceRecognitionManager {
       resizeCanvasToVideoElement(vid);
 
       const results = await faceapi
-        .detectAllFaces(vid, options)
+        .detectAllFaces(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 }))
         .withFaceLandmarks()
         .withFaceDescriptors();
 
