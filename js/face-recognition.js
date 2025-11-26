@@ -179,7 +179,7 @@ export default class FaceRecognitionManager {
 
     // ---- ANTI-FALSOS POSITIVOS ----
     // muy pequeño → ruido
-    if (this.lastBoxWidth < 40 || this.lastBoxHeight < 40) return;
+    if (this.lastBoxWidth < 20 || this.lastBoxHeight < 20) return;
 
     // ignore detecciones en los primeros 1.5s
     if (now - this.detectionStartedAt < 1500) return;
@@ -252,13 +252,13 @@ export default class FaceRecognitionManager {
 
   async _detectionLoop({canvasCtx,resizeCanvasToVideoElement,getActiveVideo, getActiveRoom}){
     const options=new faceapi.TinyFaceDetectorOptions({
-      inputSize:320, scoreThreshold:0.7
+      inputSize:512, scoreThreshold:0.5
     });
 
     while(this.detecting){
       const vid = getActiveVideo();
       if(!vid || vid.readyState < 2){
-        await this._sleep(80);
+        await this._sleep(40);
         continue;
       }
 
@@ -345,7 +345,7 @@ if (label !== "Desconocido" && typeof getActiveRoom === 'function') {
 
       this.checkAllGone();
 
-      await this._sleep(80);
+      await this._sleep(40);
     }
   }
 

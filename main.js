@@ -3,7 +3,7 @@
 // ================================
 
 // Importa la capa principal de interfaz
-import UIManager from './ui.js';
+import UIManager from './js/ui.js';
 
 // Espera a que el DOM esté listo
 window.addEventListener('DOMContentLoaded', async () => {
@@ -19,6 +19,10 @@ window.addEventListener('DOMContentLoaded', async () => {
         // Exponer para debugging
         window.ui = ui;
         window.webrtc = ui.webrtc;
+
+        // Importante: cargar referencias ANTES de iniciar UI
+        await ui.faceRec.loadModels();
+        await ui.loadReferencesFromFolder(true);
 
         // Iniciar la aplicación
         await ui.init();
