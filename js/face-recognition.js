@@ -25,7 +25,7 @@ export default class FaceRecognitionManager {
     this.activeAlerts = {};
     this.knownPeople = new Set();
 
-    this.threshold = 0.6;
+    this.threshold = 0.45;
 
     // NUEVO: sistema anti falsos positivos
     this.detectionStartedAt = 0;
