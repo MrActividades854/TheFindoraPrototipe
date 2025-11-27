@@ -83,6 +83,11 @@ this.notificationContainer.style.setProperty(
 
     this.bc = new BroadcastChannel("canal_notificaciones");
 
+
+    this.lastDetectedRoom = null;
+    this.currentPerson = null;
+
+
   }
 
 
@@ -455,27 +460,35 @@ _resizeCanvasToVideoElement(vid) {
   // Start detection (button handler)
   // -------------------------
   async _onStartClick() {
-    try {
-      // ensure active video ready
-      const vid = this.getActiveVideo();
-      this._resizeCanvasToVideoElement(vid);
+    const vids = [
+        this.video,                         // siempre cámara local
+        ...Object.values(this.webrtc.remoteVideos)  // todas las remotas
+    ];
 
-      this.faceRec.startDetection({
-        canvasCtx: this.ctx,
-        resizeCanvasToVideoElement: (v) => this._resizeCanvasToVideoElement(v),
-        getActiveVideo: () => this.getActiveVideo(),
-        getActiveRoom: () => this.getActiveRoom()
-      });
+    this.faceRec.startMultiDetection({
+        videos: vids,
+        getRoomByVideo: (vid) => {
+            if (vid === this.video) return "sala1";
+            return "sala2"; // puedes expandir si hay más salas
+        },
+        onDetect: (name, sala) => {
+            if (this.currentPerson !== name || this.lastDetectedRoom !== sala) {
+                if (this.lastDetectedRoom && this.lastDetectedRoom !== sala) {
+                    this._createNotification(`${name} salió de ${this.lastDetectedRoom} y entró a ${sala}`, "success");
+                } else {
+                    this._createNotification(`${name} está en ${sala}`, "success");
+                }
 
-      this.startBtn.disabled = true;
-      this.stopBtn.disabled = false;
-    } catch (err) {
-      console.error('Error iniciando detección', err);
-      this._createNotification('No se pudo iniciar la detección', 'warning');
-      this.startBtn.disabled = false;
-      this.stopBtn.disabled = true;
-    }
-  }
+                this.currentPerson = name;
+                this.lastDetectedRoom = sala;
+            }
+        }
+    });
+
+    this.startBtn.disabled = true;
+    this.stopBtn.disabled = false;
+}
+
 
   // -------------------------
   // References rendering & helpers

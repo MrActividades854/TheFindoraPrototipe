@@ -61,6 +61,39 @@ export default class FaceRecognitionManager {
     }
   }
 
+  startMultiDetection({ videos, getRoomByVideo, onDetect }) {
+    this.stopDetection();
+
+    this.detecting = true;
+
+    const loop = async () => {
+        if (!this.detecting) return;
+
+        for (const vid of videos) {
+            if (!vid.videoWidth) continue;
+
+            const det = await faceapi
+                .detectAllFaces(vid, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptors();
+
+            if (det.length > 0) {
+                const best = this.matcher.findBestMatch(det[0].descriptor);
+
+                if (best.label !== "unknown") {
+                    const sala = getRoomByVideo(vid);
+                    onDetect(best.label, sala);
+                }
+            }
+        }
+
+        requestAnimationFrame(loop);
+    };
+
+    loop();
+}
+
+
   // Guardado
   async addReferenceImages(name, files) {
     const descriptors = [];
