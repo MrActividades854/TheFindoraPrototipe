@@ -133,7 +133,23 @@ document.getElementById("stopBtn").onclick = () => {
 };
 
 ws.onmessage = async (event) => {
-    const data = JSON.parse(event.data);
+    let text;
+
+    if (event.data instanceof Blob) {
+        text = await event.data.text();
+    } else if (event.data instanceof ArrayBuffer) {
+        text = new TextDecoder().decode(event.data);
+    } else {
+        text = event.data;
+    }
+
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (err) {
+        console.error("❌ Mensaje recibido NO es JSON:", text);
+        return;
+    }
 
     if (data.type === "answer" && data.to === senderId) {
         if (!pc) return;
@@ -145,6 +161,7 @@ ws.onmessage = async (event) => {
         await pc.addIceCandidate(new RTCIceCandidate(data.ice));
     }
 };
+
 </script>
 </body>
 </html>
