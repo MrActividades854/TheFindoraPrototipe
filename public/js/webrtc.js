@@ -96,7 +96,7 @@ export default class WebRTCManager {
 
     const pc = new RTCPeerConnection({
       iceServers: [
-        { urls: "stun:stun.l.google:19302" },
+        { urls: "stun:stun.l.google.com:19302" },
         {
       urls: "turn:relay.metered.ca:80",
       username: "openai",
