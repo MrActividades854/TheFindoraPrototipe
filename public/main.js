@@ -12,7 +12,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     try {
         // Crear instancia principal
         const ui = new UIManager({
-            wsUrl: 'https://thefindoraprototipe.onrender.com',
+            wsUrl: 'https://thefindoraprototipe.onrender.com/ws',
             modelPath: '/models'
         });
 

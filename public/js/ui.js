@@ -6,7 +6,7 @@ import WebRTCManager from './webrtc.js';
 import FaceRecognitionManager from './face-recognition.js';
 
 export default class UIManager {
-  constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com', modelPath = '/models' } = {}) {
+  constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com/ws', modelPath = '/models' } = {}) {
     // DOM
     this.video = document.getElementById('video');
     this.canvas = document.getElementById('overlay');

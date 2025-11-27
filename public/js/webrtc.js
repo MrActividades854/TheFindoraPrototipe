@@ -2,7 +2,7 @@
 // Manejo de señalización WebSocket + múltiples PeerConnections receptoras (one receiver PC per sender)
 
 export default class WebRTCManager {
-  constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com', onRemoteFeed = ()=>{}, onLog = ()=>{}, maxFeeds = 5 } = {}) {
+  constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com/ws', onRemoteFeed = ()=>{}, onLog = ()=>{}, maxFeeds = 5 } = {}) {
     this.wsUrl = wsUrl;
     this.onRemoteFeed = onRemoteFeed;
     this.onLog = onLog;
@@ -96,7 +96,7 @@ export default class WebRTCManager {
 
     const pc = new RTCPeerConnection({
       iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun.l.google:19302" },
         {
       urls: "turn:relay.metered.ca:80",
       username: "openai",
