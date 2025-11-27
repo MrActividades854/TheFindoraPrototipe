@@ -43,7 +43,7 @@
 
 <script>
 const protocol = location.protocol === "https:" ? "wss://" : "ws://";
-const ws = new WebSocket(protocol + "thefindoraprototipe.onrender.com");
+const ws = new WebSocket(protocol + "thefindoraprototipe.onrender.com" + "/ws");
 
 
 const senderId = Math.random().toString(36).slice(2, 9);
