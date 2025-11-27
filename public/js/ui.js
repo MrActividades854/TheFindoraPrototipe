@@ -52,8 +52,6 @@ this.notificationContainer.style.setProperty(
     "important"
 );
 
-
-
     // config/state
     this.wsUrl = wsUrl;
     this.modelPath = modelPath;
@@ -63,7 +61,7 @@ this.notificationContainer.style.setProperty(
 
     this.getActiveRoom = this.getActiveRoom.bind(this);
 
-    
+    this.currentSelectedVideo = this.video; // al iniciar, la cámara local
 
     // instances
     this.webrtc = new WebRTCManager({
@@ -117,11 +115,18 @@ this.notificationContainer.style.setProperty(
       // pick first camera (important)
       await this.switchCamera(0);
 
+      window.ui = this;
+
+
+
       this.statusEl.textContent = '✅ Listo';
     } catch (err) {
       console.error(err);
       this.statusEl.textContent = 'Error inicializando: ' + (err.message || err);
     }
+
+
+
   }
 
   // -------------------------
@@ -320,6 +325,7 @@ try {
     this._createNotification("Error activando cámara local: " + err.message, "warning");
 }
 
+this.currentSelectedVideo = this.getActiveVideo();
 
   }
 

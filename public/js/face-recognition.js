@@ -79,6 +79,10 @@ export default class FaceRecognitionManager {
 
             if (det.length > 0) {
                 const best = this.faceMatcher.findBestMatch(det[0].descriptor);
+                if (vid === window.ui.currentSelectedVideo) {
+                  this.drawSingleBox(vid, det[0], best.label);
+                }
+
 
                 if (best.label !== "unknown") {
                     const sala = getRoomByVideo(vid);
@@ -86,6 +90,13 @@ export default class FaceRecognitionManager {
                 }
             }
         }
+
+        if (vid === window.ui.currentSelectedVideo && det.length === 0) {
+    const canvas = document.getElementById("overlay");
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
 
         requestAnimationFrame(loop);
     };
@@ -282,6 +293,29 @@ export default class FaceRecognitionManager {
     this.currentRoom = null;
 
   }
+
+  drawSingleBox(video, detection, label = "") {
+    const canvas = document.getElementById("overlay");
+    const ctx = canvas.getContext("2d");
+
+    // Ajusta canvas al tamaño del video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const dims = faceapi.matchDimensions(canvas, video, true);
+    const resized = faceapi.resizeResults(detection, dims);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Dibuja la caja
+    faceapi.draw.drawDetections(canvas, resized);
+    faceapi.draw.drawFaceLandmarks(canvas, resized);
+
+    if (label) {
+        new faceapi.draw.DrawTextField([label], resized.detection.box.bottomLeft).draw(canvas);
+    }
+}
+
 
   async _detectionLoop({canvasCtx,resizeCanvasToVideoElement,getActiveVideo, getActiveRoom}){
     const options=new faceapi.TinyFaceDetectorOptions({
