@@ -78,7 +78,7 @@ export default class FaceRecognitionManager {
                 .withFaceDescriptors();
 
             if (det.length > 0) {
-                const best = this.matcher.findBestMatch(det[0].descriptor);
+                const best = this.faceMatcher.findBestMatch(det[0].descriptor);
 
                 if (best.label !== "unknown") {
                     const sala = getRoomByVideo(vid);
