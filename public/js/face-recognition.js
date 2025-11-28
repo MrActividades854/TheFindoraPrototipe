@@ -61,15 +61,15 @@ export default class FaceRecognitionManager {
     }
   }
 
-  startMultiDetection({ videos, getRoomByVideo, onDetect }) {
+ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
     this.stopDetection();
-
     this.detecting = true;
 
     const loop = async () => {
         if (!this.detecting) return;
 
         for (const vid of videos) {
+
             if (!vid.videoWidth) continue;
 
             const det = await faceapi
@@ -77,32 +77,38 @@ export default class FaceRecognitionManager {
                 .withFaceLandmarks()
                 .withFaceDescriptors();
 
+            // Si hay detección
             if (det.length > 0) {
                 const best = this.faceMatcher.findBestMatch(det[0].descriptor);
+
+                // Dibujar solo en la cámara seleccionada
                 if (vid === window.ui.currentSelectedVideo) {
-                  this.drawSingleBox(vid, det[0], best.label);
+                    this.drawSingleBox(vid, det[0], best.label);
                 }
 
-
+                // Notificar sala
                 if (best.label !== "unknown") {
                     const sala = getRoomByVideo(vid);
                     onDetect(best.label, sala);
                 }
+
+            } else {
+
+                // Si NO hay detección y este video es el seleccionado → limpiar canvas
+                if (vid === window.ui.currentSelectedVideo) {
+                    const canvas = document.getElementById("overlay");
+                    const ctx = canvas.getContext("2d");
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
             }
         }
-
-        if (vid === window.ui.currentSelectedVideo && det.length === 0) {
-    const canvas = document.getElementById("overlay");
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
 
         requestAnimationFrame(loop);
     };
 
     loop();
 }
+
 
 
   // Guardado
