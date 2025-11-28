@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestor de Perfiles</title>
+  <style>
+    body {
+      background: #0d1117;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 { margin-top: 0; }
+    .profile-list, .profile-view, .new-profile-form {
+      background: #161b22;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    .profile-item {
+      padding: 10px;
+      background: #1f2937;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    label { display: block; margin-top: 10px; }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 6px;
+      border: none;
+    }
+    button {
+      background: #238636;
+      border: none;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      margin-top: 15px;
+    }
+    button:hover { background: #2ea043; }
+    img.ref-preview {
+      width: 90px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gestor de Perfiles</h1>
+
+  <button onclick="location.href='index.html'">⬅ Volver</button>
+
+  <section class="new-profile-form">
+    <h2>Crear nuevo perfil</h2>
+    <label>Nombre:
+      <input type="text" id="nameInput" />
+    </label>
+
+    <label>Edad:
+      <input type="number" id="ageInput" />
+    </label>
+
+    <label>Imágenes de referencia (1 a 5):
+      <input type="file" id="refFiles" accept="image/*" multiple />
+    </label>
+
+    <button id="saveProfileBtn">Guardar Perfil</button>
+  </section>
+
+  <section class="profile-list">
+    <h2>Perfiles guardados</h2>
+    <div id="profilesContainer">Cargando...</div>
+  </section>
+
+  <script>
+    async function fetchProfiles() {
+      const res = await fetch('/api/profiles');
+      const list = await res.json();
+
+      const container = document.getElementById('profilesContainer');
+      container.innerHTML = '';
+
+      list.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'profile-item';
+        div.textContent = `${p.name} — ${p.age} años`;
+        div.onclick = () => location.href = `profile_view.html?id=${p.id}`;
+        container.appendChild(div);
+      });
+    }
+
+    document.getElementById('saveProfileBtn').onclick = async () => {
+      const name = document.getElementById('nameInput').value.trim();
+      const age = parseInt(document.getElementById('ageInput').value.trim());
+      const files = document.getElementById('refFiles').files;
+
+      if (!name || !age || files.length === 0) {
+        alert('Completa todos los campos y agrega entre 1 y 5 imágenes.');
+        return;
+      }
+
+      const form = new FormData();
+      form.append('name', name);
+      form.append('age', age);
+      for (let f of files) form.append('refs', f);
+
+      const res = await fetch('/api/new_profile', {
+        method: 'POST',
+        body: form
+      });
+
+      if (res.ok) {
+        alert('Perfil guardado correctamente');
+        fetchProfiles();
+      } else {
+        alert('Error guardando perfil');
+      }
+    };
+
+    fetchProfiles();
+  </script>
+</body>
+</html>
