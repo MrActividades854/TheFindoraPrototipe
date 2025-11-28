@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // ---------------------------------------------------------
 // CREAR BD SQLITE
 // ---------------------------------------------------------
-const db = new sqlite3.Database("database.sqlite");
+const db = new sqlite3.Database(path.join(__dirname, "data", "database.sqlite"));
 
 db.serialize(() => {
     db.run(`
