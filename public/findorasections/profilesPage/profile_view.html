@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Perfil</title>
+  <style>
+    body {
+      background: #0d1117;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+    }
+    .card {
+      background: #161b22;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 20px;
+    }
+    h1, h2 { margin-top: 0; }
+    .refs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .refs img {
+      width: 180px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 2px solid #30363d;
+    }
+    button {
+      background: #238636;
+      border: none;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      margin-top: 15px;
+    }
+    button:hover { background: #2ea043; }
+    .danger {
+      background: #da3633;
+    }
+    .danger:hover {
+      background: #f85149;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button onclick="location.href='profiles.html'">⬅ Volver</button>
+
+    <div class="card" id="profileCard">
+      <h1 id="name"></h1>
+      <h2 id="age"></h2>
+      <h3>Imágenes de referencia:</h3>
+      <div class="refs" id="refs"></div>
+
+      <button class="danger" id="deleteBtn">Eliminar Perfil</button>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const profileId = urlParams.get('id');
+
+    async function loadProfile() {
+      const res = await fetch(`/api/profile/${profileId}`);
+      const data = await res.json();
+
+      document.getElementById('name').textContent = data.name;
+      document.getElementById('age').textContent = data.age + ' años';
+
+      const refsContainer = document.getElementById('refs');
+      refsContainer.innerHTML = '';
+
+      data.references.forEach(r => {
+        const img = document.createElement('img');
+        img.src = r.file_path;
+        refsContainer.appendChild(img);
+      });
+    }
+
+    document.getElementById('deleteBtn').onclick = async () => {
+      if (!confirm('¿Eliminar este perfil permanentemente?')) return;
+
+      const res = await fetch(`/api/delete_profile/${profileId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        alert('Perfil eliminado');
+        location.href = 'profiles.html';
+      } else {
+        alert('Error eliminando el perfil');
+      }
+    };
+
+    loadProfile();
+  </script>
+</body>
+</html>
