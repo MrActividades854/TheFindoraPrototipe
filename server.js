@@ -156,6 +156,50 @@ wss.on("connection", (ws) => {
 });
 
 // ---------------------------------------------------------
+// API: EDITAR NOMBRE Y EDAD
+// ---------------------------------------------------------
+app.put("/api/edit_profile/:id", (req, res) => {
+    const id = req.params.id;
+    const { name, age } = req.body;
+
+    if (!name || !age)
+        return res.status(400).json({ error: "Datos incompletos" });
+
+    db.run(
+        `UPDATE perfiles SET name = ?, age = ? WHERE id = ?`,
+        [name, age, id],
+        (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        }
+    );
+});
+
+// ---------------------------------------------------------
+// API: AGREGAR NUEVAS IMÁGENES AL PERFIL
+// ---------------------------------------------------------
+app.post("/api/add_images/:id", upload.array("refs", 5), (req, res) => {
+    const id = req.params.id;
+    const files = req.files;
+
+    if (!files || files.length === 0)
+        return res.status(400).json({ error: "No llegaron imágenes" });
+
+    const stmt = db.prepare(
+        `INSERT INTO referencias (profile_id, file_path) VALUES (?, ?)`
+    );
+
+    files.forEach((file) => {
+        stmt.run(id, `/references/perfiles/${file.filename}`);
+    });
+
+    stmt.finalize();
+
+    res.json({ success: true });
+});
+
+
+// ---------------------------------------------------------
 // INICIAR SERVIDOR
 // ---------------------------------------------------------
 const PORT = process.env.PORT || 8080;

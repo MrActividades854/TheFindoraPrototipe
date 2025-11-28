@@ -46,12 +46,10 @@
       margin-top: 15px;
     }
     button:hover { background: #2ea043; }
-    .danger {
-      background: #da3633;
-    }
-    .danger:hover {
-      background: #f85149;
-    }
+    .danger { background: #da3633; }
+    .danger:hover { background: #f85149; }
+    #editSection label { display:block; margin-top:10px; }
+    #editSection input { width:100%; padding:8px; border:none; border-radius:6px; margin-top:4px; }
   </style>
 </head>
 <body>
@@ -61,8 +59,26 @@
     <div class="card" id="profileCard">
       <h1 id="name"></h1>
       <h2 id="age"></h2>
+
+      <button id="editBtn">✏ Editar</button>
+
+      <div id="editSection" style="display:none; margin-top:20px;">
+        <label>Nombre:
+          <input type="text" id="editName">
+        </label>
+
+        <label>Edad:
+          <input type="number" id="editAge">
+        </label>
+
+        <button id="saveChangesBtn">Guardar Cambios</button>
+      </div>
+
       <h3>Imágenes de referencia:</h3>
       <div class="refs" id="refs"></div>
+
+      <button id="addImageBtn">➕ Agregar imágenes</button>
+      <input type="file" id="addImageInput" accept="image/*" multiple style="display:none;">
 
       <button class="danger" id="deleteBtn">Eliminar Perfil</button>
     </div>
@@ -88,6 +104,56 @@
         refsContainer.appendChild(img);
       });
     }
+
+    // MODO EDICIÓN
+    document.getElementById("editBtn").onclick = () => {
+      document.getElementById("editSection").style.display = "block";
+      document.getElementById("editName").value = document.getElementById("name").textContent;
+      document.getElementById("editAge").value = parseInt(document.getElementById("age").textContent);
+    };
+
+    // GUARDAR CAMBIOS
+    document.getElementById("saveChangesBtn").onclick = async () => {
+      const name = document.getElementById("editName").value.trim();
+      const age = parseInt(document.getElementById("editAge").value.trim());
+
+      const res = await fetch(`/api/edit_profile/${profileId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, age })
+      });
+
+      if (res.ok) {
+        alert("Perfil actualizado.");
+        location.reload();
+      } else {
+        alert("Error guardando cambios.");
+      }
+    };
+
+    // AGREGAR IMÁGENES
+    document.getElementById("addImageBtn").onclick = () =>
+      document.getElementById("addImageInput").click();
+
+    document.getElementById("addImageInput").onchange = async (e) => {
+      const files = e.target.files;
+      if (files.length === 0) return;
+
+      const form = new FormData();
+      for (let f of files) form.append("refs", f);
+
+      const res = await fetch(`/api/add_images/${profileId}`, {
+        method: "POST",
+        body: form
+      });
+
+      if (res.ok) {
+        alert("Imágenes añadidas.");
+        loadProfile();
+      } else {
+        alert("Error agregando imágenes.");
+      }
+    };
 
     document.getElementById('deleteBtn').onclick = async () => {
       if (!confirm('¿Eliminar este perfil permanentemente?')) return;
