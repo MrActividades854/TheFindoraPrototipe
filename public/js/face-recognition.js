@@ -38,6 +38,12 @@ export default class FaceRecognitionManager {
     this.currentRoom = null;
     this.lastRoomDetected = null;
 
+    // Anti-cambio de identidad
+this.lastIdentifiedPerson = null;
+this.lastIdentityFrames = 0;
+this.identityStabilityRequired = 8; // frames para confirmar cambio de persona
+
+
 
   }
 
@@ -368,6 +374,34 @@ export default class FaceRecognitionManager {
           const best=this.faceMatcher.findBestMatch(res.descriptor);
           if(best && best.label!=='unknown') label=best.label;
         }
+        // ---------------------
+// ANTI CAMBIO INSTANTÁNEO
+// ---------------------
+
+if (this.lastIdentifiedPerson === null) {
+    // Primera detección
+    this.lastIdentifiedPerson = label;
+    this.lastIdentityFrames = 0;
+} else {
+    if (label === this.lastIdentifiedPerson) {
+        // Sigue siendo la misma persona → reset contador
+        this.lastIdentityFrames = 0;
+    } else {
+        // Posible cambio
+        this.lastIdentityFrames++;
+
+        // No permitir cambio inmediato
+        if (this.lastIdentityFrames < this.identityStabilityRequired) {
+            // ❗ Mantenemos la persona anterior hasta que se confirme
+            label = this.lastIdentifiedPerson;
+        } else {
+            // Cambio confirmado (varios frames seguidos)
+            this.lastIdentifiedPerson = label;
+            this.lastIdentityFrames = 0;
+        }
+    }
+}
+
 
         this.updatePersonDetection(label);
 
