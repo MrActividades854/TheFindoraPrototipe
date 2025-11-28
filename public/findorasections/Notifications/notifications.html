@@ -98,60 +98,38 @@
   ⬅️ Regresar
 </button>
 
-  <button class="clear-btn" onclick="clearLog()">Borrar historial</button>
+  <button onclick="localStorage.removeItem('findora_notifications'); location.reload();">
+🗑️ Borrar historial
+</button>
+
   <div id="logContainer">
     <ul id="logList"></ul>
   </div>
 
-  <script>
-  const bc = new BroadcastChannel("canal_notificaciones");
-  const list = document.getElementById("logList");
-  const shownIDs = new Set();
+<script>
+function loadNotifications() {
+    const list = JSON.parse(localStorage.getItem("findora_notifications") || "[]");
+    const container = document.getElementById("logList");   // ← corregido
 
-  function addLog(log) {
-    if (shownIDs.has(log.id)) return; // Evita duplicados exactos
-    shownIDs.add(log.id);
+    if (!container) return;
 
-    const li = document.createElement("li");
-    li.className = log.type === 'warning' ? 'warning' : 'success';
-    li.innerHTML = `
-      <div class="message">${log.message}</div>
-      <div class="time">🕒 ${log.time}</div>
-    `;
-    list.insertBefore(li, list.firstChild);
-    document.getElementById("logContainer").scrollTop = 0;
-  }
+    container.innerHTML = "";
 
-  // Cargar historial guardado (una sola vez al abrir)
-  function loadLogs() {
-    const logs = JSON.parse(localStorage.getItem("notificationLog")) || [];
-    logs.forEach(log => {
-      addLog(log);
+    list.forEach(n => {
+        const li = document.createElement("li");
+        li.className = n.type === "warning" ? "warning" : "success";
+        li.innerHTML = `
+            <div class="message">${n.message}</div>
+            <div class="time">${new Date(n.time).toLocaleString()}</div>
+        `;
+        container.appendChild(li);
     });
-  }
+}
 
-  // Escuchar mensajes en tiempo real
-  bc.onmessage = (e) => {
-    const log = e.data;
-    addLog(log);
-
-    // Guardar también en localStorage si no existe
-    const logs = JSON.parse(localStorage.getItem("notificationLog")) || [];
-    if (!logs.some(l => l.id === log.id)) {
-      logs.push(log);
-      if (logs.length > 100) logs.shift();
-      localStorage.setItem("notificationLog", JSON.stringify(logs));
-    }
-  };
-
-  function clearLog() {
-    localStorage.removeItem("notificationLog");
-    list.innerHTML = "";
-    shownIDs.clear();
-  }
-
-  loadLogs();
+window.onload = loadNotifications;
 </script>
+
+
 
 
 

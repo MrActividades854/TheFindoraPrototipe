@@ -137,8 +137,23 @@ this.notificationContainer.style.setProperty(
     if (this.statusEl) this.statusEl.textContent = msg;
   }
 
+  _saveNotification(message, type) {
+    const notif = {
+        message,
+        type,
+        time: new Date().toISOString()
+    };
+
+    let list = JSON.parse(localStorage.getItem("findora_notifications") || "[]");
+
+    list.unshift(notif); // agregar al inicio
+    localStorage.setItem("findora_notifications", JSON.stringify(list));
+}
+
+
   // Reusa el sistema bonito de notificaciones del script original
 _createNotification(message, type = 'warning') {
+  this._saveNotification(message, type);
   const container = this.notificationContainer || document.getElementById('notificationContainer');
   if (!container) return;
 
