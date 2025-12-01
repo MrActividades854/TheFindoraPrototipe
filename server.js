@@ -18,10 +18,19 @@ app.use(express.json());
 // ---------------------------------------------------------
 app.use(express.static(path.join(__dirname, "public")));
 
-// ---------------------------------------------------------
-// CREAR BD SQLITE
-// ---------------------------------------------------------
-const db = new sqlite3.Database(path.join(__dirname, "data", "database.sqlite"));
+// Ruta absoluta de la base de datos persistente
+const dbPath = path.join(__dirname, "data", "database.sqlite");
+
+// Mostrar en consola qué está pasando
+if (fs.existsSync(dbPath)) {
+    console.log("✓ Base de datos encontrada en /data/database.sqlite");
+} else {
+    console.log("⚠ No existe database.sqlite, se creará una nueva.");
+}
+
+// Crear conexión a SQLite sin sobrescribir si ya existe
+const db = new sqlite3.Database(dbPath);
+
 
 db.serialize(() => {
     db.run(`
