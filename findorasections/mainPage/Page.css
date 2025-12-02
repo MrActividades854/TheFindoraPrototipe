@@ -47,14 +47,25 @@ nav img {
     border: none;
 }
 
-.main {
-    place-items: center;
+h1 {
+    color: white;
+    font-family:'Segoe UI    ', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight: bold;
     text-align: center;
+    margin: 10px 0 20px 0;
+}
+
+.main {
+    display: flex;
+    gap: 70px;
+    align-items: center;
+    justify-content: center;
 }
 
 .boxes {
-    width: 100px;
-    height: 100px;
+    width: 300px;
+    height: 400px;
     background-color: red;
-    
+    border-radius: 10px;
+
 }
