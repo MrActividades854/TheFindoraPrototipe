@@ -36,6 +36,8 @@ export default class FaceRecognitionManager {
     this.currentRoom = null;
     this.lastRoomDetected = null;
 
+    this.getCanvasForVideo = () => null;
+
 
   }
 
@@ -118,29 +120,23 @@ for (const vid of videos) {
 
     const sala = getRoomByVideo(vid);
 
-    // 🟩 LIMPIAR CANVAS SOLO UNA VEZ POR CUADRO
-    if (vid === window.ui.currentSelectedVideo) {
-        const canvas = document.getElementById("overlay");
-        const ctx = canvas.getContext("2d");
+const canvas = this.getCanvasForVideo(vid);
+if (canvas) {
+    canvas.width = vid.videoWidth;
+    canvas.height = vid.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
 
-        canvas.width = vid.videoWidth;
-        canvas.height = vid.videoHeight;
+for (const det of detections) {
+    const best = this.faceMatcher
+        ? this.faceMatcher.findBestMatch(det.descriptor)
+        : { label: "Desconocido" };
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
+    this.drawSingleBox(vid, det, best.label);
+    onDetect(best.label, sala);
+}
 
-    // 🟦 DIBUJAR CADA CARA
-    for (const det of detections) {
-
-        const best = this.faceMatcher
-            ? this.faceMatcher.findBestMatch(det.descriptor)
-            : { label: "Desconocido" };
-
-        this.drawSingleBox(vid, det, best.label);
-
-        // Notificar detección
-        onDetect(best.label, sala);
-    }
 }
 
 
@@ -315,7 +311,9 @@ for (const vid of videos) {
   }
 
 drawSingleBox(video, detection, label = "") {
-    const canvas = document.getElementById("overlay");
+    const canvas = this.getCanvasForVideo(video);
+    if (!canvas) return;
+
     const ctx = canvas.getContext("2d");
 
     const dims = faceapi.matchDimensions(canvas, video, true);
@@ -329,6 +327,7 @@ drawSingleBox(video, detection, label = "") {
             .draw(canvas);
     }
 }
+
 
 
 

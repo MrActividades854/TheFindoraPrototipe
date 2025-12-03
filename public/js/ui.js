@@ -10,53 +10,64 @@ import NotificationManager from './notifications.js';
 export default class UIManager {
   constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com/ws', modelPath = '/models' } = {}) {
     // DOM
-    this.statusEl = document.getElementById('status');
 
-    this.startBtn = document.getElementById('startBtn');
-    this.stopBtn = document.getElementById('stopBtn');
-    this.prevCamBtn = document.getElementById('prevCamBtn');
-    this.nextCamBtn = document.getElementById('nextCamBtn');
-    this.camNameEl = document.getElementById('camName');
+this.statusEl = document.getElementById('status');
 
-    this.remoteList = document.getElementById('remoteList');
-    this.toggleDebugBtn = document.getElementById('toggleDebugBtn');
-    this.thresholdInput = document.getElementById('threshold');
-    this.thVal = document.getElementById('thVal');
+this.startBtn = document.getElementById('startBtn');
+this.stopBtn = document.getElementById('stopBtn');
+this.prevCamBtn = document.getElementById('prevCamBtn');
+this.nextCamBtn = document.getElementById('nextCamBtn');
+this.camNameEl = document.getElementById('camName');
 
-    // config/state
-    this.wsUrl = wsUrl;
-    this.modelPath = modelPath;
-    this.videoDevices = [];
-    this.currentCamIndex = 0;
-    this.stream = null;
+this.remoteList = document.getElementById('remoteList');
+this.toggleDebugBtn = document.getElementById('toggleDebugBtn');
+this.thresholdInput = document.getElementById('threshold');
+this.thVal = document.getElementById('thVal');
 
-    this.getActiveRoom = this.getActiveRoom.bind(this);
+// config/state
+this.wsUrl = wsUrl;
+this.modelPath = modelPath;
+this.videoDevices = [];
+this.currentCamIndex = 0;
+this.stream = null;
 
-    this.currentSelectedVideo = this.video; // al iniciar, la cámara local
+// videos/canvas dinamicos
+this.videos = [];            // lista de video elements (local + remotos)
+this.localVideo = null;      // elemento video local
+this.localCanvas = null;     // canvas asociado a la cámara local
 
-    this.notifier = new NotificationManager();
+this.webrtc = null;
+this.faceRec = null;
 
-    // instances
-    this.webrtc = new WebRTCManager({
-      wsUrl: this.wsUrl,
-      onRemoteFeed: (id, stream) => this._onRemoteFeed(id, stream),
-      onLog: (m) => this._log(m)
-    });
+this.getActiveRoom = this.getActiveRoom.bind(this);
+this._onStartClick = this._onStartClick.bind(this);
 
-    this.faceRec = new FaceRecognitionManager({
-      modelPath: this.modelPath,
-      getActiveVideo: () => this.getActiveVideo(),
-      onNotification: (msg, type) => this._showOnce(msg, type)
-    });
+this.notifier = new NotificationManager();
 
-    // bind
-    this._onStartClick = this._onStartClick.bind(this);
+this.personState = {};
+this.lastNotify = {};
+
+// Instanciar WebRTC y FaceRec AFTER variables iniciales
+this.webrtc = new WebRTCManager({
+  wsUrl: this.wsUrl,
+  onRemoteFeed: (id, stream) => this._onRemoteFeed(id, stream),
+  onLog: (m) => this._log(m)
+});
+
+this.faceRec = new FaceRecognitionManager({
+  modelPath: this.modelPath,
+  getActiveVideo: () => this.getActiveVideo(),
+  onNotification: (msg, type) => this._showOnce(msg, type)
+});
 
 
-    this.personState = {};
-    this.lastNotify = {};
+// Proveer a faceRec una forma de obtener el canvas de cada video.
+// face-recognition asumirá que cada video tiene video._canvas (created in createVideoCanvasPair)
+this.faceRec.getCanvasForVideo = (vid) => {
+  if (!vid) return null;
+  return vid._canvas || null;
+};
 
-    const canvas = this.getCanvasForVideo(vid);
     const ctx = canvas.getContext('2d');
 
 
@@ -143,6 +154,8 @@ await this.faceRec.loadProfilesFromServer();
     wrapper.appendChild(video);
     wrapper.appendChild(canvas);
     container.appendChild(wrapper);
+
+    video._canvas = canvas;
 
     return { video, canvas };
 }
