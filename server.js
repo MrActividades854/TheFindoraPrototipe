@@ -132,6 +132,35 @@ app.post("/api/new_profile", upload.array("refs", 5), async (req, res) => {
     console.log("FILES RECIBIDOS:", req.files);
 });
 
+app.get("/api/profiles_full", async (req, res) => {
+    try {
+        const profiles = await pool.query("SELECT * FROM perfiles ORDER BY id DESC");
+
+        const finalList = [];
+
+        for (let p of profiles.rows) {
+            const refs = await pool.query(
+                "SELECT file_path FROM referencias WHERE profile_id = $1",
+                [p.id]
+            );
+
+            finalList.push({
+                id: p.id,
+                name: p.name,
+                age: p.age,
+                images: refs.rows.map(r => r.file_path)
+            });
+        }
+
+        res.json(finalList);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
 // ---------------------------------------------------------
 // API: LISTAR TODOS LOS PERFILES
 // ---------------------------------------------------------
