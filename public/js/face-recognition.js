@@ -31,8 +31,8 @@ export default class FaceRecognitionManager {
     this.detectionStartedAt = 0;
     this.unconfirmedUnknownFrames = 0;
     this.confirmUnknownAfter = 5; // número de frames para confirmar desconocido
-    this.lastBoxWidth = 0;
-    this.lastBoxHeight = 0;
+    t.lastBoxWidth = 0;
+    t.lastBoxHeight = 0;
 
 
     this.currentRoom = null;
@@ -206,6 +206,41 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
     this.activeAlerts[name]=true;
   }
 
+  updateTrackedPersonDetection(track, label) {
+    const now = Date.now();
+
+    if (label !== 'Desconocido') {
+        track.unconfirm = 0;
+
+        if (!this.knownPeople.has(label)) {
+            this.knownPeople.add(label);
+            this.onNotification(`${label} ha entrado al cuarto`, "success");
+        }
+
+        track.lastSeen = now;
+
+        if (track.alertActive) {
+            this.onNotification(`${label} ha vuelto`, "success");
+            track.alertActive = false;
+        }
+
+        track.lastLabel = label;
+        return;
+    }
+
+    // DESCONOCIDO
+    track.unconfirm = (track.unconfirm || 0) + 1;
+
+    if (track.unconfirm >= 5) {
+        if (!track.unknownShown) {
+            this.onNotification(`Un desconocido ha entrado`, "warning");
+            track.unknownShown = true;
+        }
+        track.lastSeen = now;
+    }
+}
+
+
   updatePersonDetection(label){
     const now = Date.now();
 
@@ -324,12 +359,18 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
         .withFaceLandmarks()
         .withFaceDescriptors();
 
-      canvasCtx.clearRect(0,0,canvasCtx.canvas.width,canvasCtx.canvas.height);
-
       const now=Date.now();
       for(let i=this.tracked.length-1;i>=0;i--)
-        if (now - this.tracked[i].lastSeen > 3000)
-          this.tracked.splice(i,1);
+        if (now - t.lastSeen > 3000) {
+    if (!t.alertActive) {
+        this.onNotification(`${t.lastLabel} ha salido`, "warning");
+        t.alertActive = true;
+    }
+    this.tracked.splice(i,1);
+}
+
+
+      canvasCtx.clearRect(0,0,canvasCtx.canvas.width,canvasCtx.canvas.height);
 
       for(const res of results){
         const b=res.detection.box;
@@ -371,7 +412,8 @@ if (t.stabilityFrames >= STABLE_FRAMES) {
 
 
 
-        this.updatePersonDetection(finalLabel);
+        this.updateTrackedPersonDetection(t, finalLabel);
+
 
  // si hay una función para saber la sala activa, úsala
 if (label !== "Desconocido" && typeof getActiveRoom === 'function') {
