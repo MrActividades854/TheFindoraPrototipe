@@ -109,7 +109,7 @@ await this.faceRec.loadProfilesFromServer();
         return; // Ignorar mensajes repetidos
 
     this.lastNotify[msg] = now;
-    this._showOnce(msg, type);
+    this.notifier.show(msg, type);
 }
 
 
