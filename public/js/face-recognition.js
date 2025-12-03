@@ -107,39 +107,41 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
     const loop = async () => {
         if (!this.detecting) return;
 
-        for (const vid of videos) {
+for (const vid of videos) {
 
-            if (!vid.videoWidth) continue;
+    if (!vid.videoWidth) continue;
 
-            const detections = await faceapi
-                .detectAllFaces(vid, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptors();
+    const detections = await faceapi
+        .detectAllFaces(vid, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptors();
 
-            const sala = getRoomByVideo(vid);
+    const sala = getRoomByVideo(vid);
 
-            for (const det of detections) {
+    // 🟩 LIMPIAR CANVAS SOLO UNA VEZ POR CUADRO
+    if (vid === window.ui.currentSelectedVideo) {
+        const canvas = document.getElementById("overlay");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 
-                const best = this.faceMatcher
-                    ? this.faceMatcher.findBestMatch(det.descriptor)
-                    : { label: "Desconocido" };
+    // 🟦 DIBUJAR CADA CARA
+    for (const det of detections) {
 
-                // Solo dibuja si este video es el seleccionado
-                if (vid === window.ui.currentSelectedVideo) {
-                    this.drawSingleBox(vid, det, best.label);
-                }
+        const best = this.faceMatcher
+            ? this.faceMatcher.findBestMatch(det.descriptor)
+            : { label: "Desconocido" };
 
-                // Notificar detección
-                onDetect(best.label, sala);
-            }
-
-            // Limpia si no hay personas en este video
-            if (detections.length === 0 && vid === window.ui.currentSelectedVideo) {
-                const canvas = document.getElementById("overlay");
-                const ctx = canvas.getContext("2d");
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
+        // Dibujar si este video es el seleccionado
+        if (vid === window.ui.currentSelectedVideo) {
+            this.drawSingleBox(vid, det, best.label);
         }
+
+        // Notificar detección
+        onDetect(best.label, sala);
+    }
+}
+
 
         requestAnimationFrame(loop);
     };
@@ -327,8 +329,6 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
 
     const dims = faceapi.matchDimensions(canvas, video, true);
     const resized = faceapi.resizeResults(detection, dims);
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Dibuja la caja
     faceapi.draw.drawDetections(canvas, resized);
