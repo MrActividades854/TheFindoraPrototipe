@@ -49,15 +49,16 @@ export default class UIManager {
     this.faceRec = new FaceRecognitionManager({
       modelPath: this.modelPath,
       getActiveVideo: () => this.getActiveVideo(),
-      onNotification: (msg, type) => this.notifier.show(msg, type)
+      onNotification: (msg, type) => this._showOnce(msg, type)
     });
 
     // bind
     this._onStartClick = this._onStartClick.bind(this);
 
 
-    this.lastDetectedRoom = null;
-    this.currentPerson = null;
+    this.personState = {};
+    this.lastNotify = {};
+
 
 
   }
@@ -100,6 +101,17 @@ await this.faceRec.loadProfilesFromServer();
 
 
   }
+
+  _showOnce(msg, type = "success", delay = 2500) {
+    const now = Date.now();
+
+    if (this.lastNotify[msg] && (now - this.lastNotify[msg] < delay))
+        return; // Ignorar mensajes repetidos
+
+    this.lastNotify[msg] = now;
+    this._showOnce(msg, type);
+}
+
 
   // -------------------------
   // Logging & Notifications
@@ -244,7 +256,7 @@ try {
 
 } catch (err) {
     console.error("Error activando cámara local:", err);
-    this.notifier.show("Error activando cámara local: " + err.message, "warning");
+    this._showOnce("Error activando cámara local: " + err.message, "warning");
 }
 
 this.currentSelectedVideo = this.getActiveVideo();
@@ -333,18 +345,48 @@ _resizeCanvasToVideoElement(vid) {
             return "sala2"; // puedes expandir si hay más salas
         },
         onDetect: (name, sala) => {
-            if (this.currentPerson !== name || this.lastDetectedRoom !== sala) {
-                if (this.lastDetectedRoom && this.lastDetectedRoom !== sala) {
-                    this.notifier.show(`${name} salió de ${this.lastDetectedRoom} y entró a ${sala}`, "success");
-                } else {
-                    this.notifier.show(`${name} está en ${sala}`, "success");
-                }
+    const now = Date.now();
 
-                this.currentPerson = name;
-                this.lastDetectedRoom = sala;
-            }
+    if (!this.personState[name]) {
+        // Primera vez que aparece esta persona
+        this.personState[name] = { room: sala, lastSeen: now };
+
+        this._showOnce(`${name} está en ${sala}`, "success");
+        return;
+    }
+
+    const person = this.personState[name];
+
+    // Si cambió de sala → Notificación de transición
+    if (person.room !== sala) {
+        this._showOnce(
+            `${name} salió de ${person.room} y entró a ${sala}`,
+            "success"
+        );
+        person.room = sala;
+    }
+
+    // Actualizar último visto (para detectar que DESAPARECE)
+    person.lastSeen = now;
+}
+
+});
+
+    // Cada frame revisamos quién desapareció de cada sala
+setInterval(() => {
+    const now = Date.now();
+
+    for (const name in this.personState) {
+        const person = this.personState[name];
+
+        // Si no lo han visto en 1 segundo → salió de la cámara
+        if (now - person.lastSeen > 1000) {
+            this._showOnce(`${name} salió de ${person.room}`, "warning");
+            delete this.personState[name];
         }
-    });
+    }
+}, 300);
+
 
     this.startBtn.disabled = true;
     this.stopBtn.disabled = false;
