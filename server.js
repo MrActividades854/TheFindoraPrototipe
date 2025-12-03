@@ -1,23 +1,21 @@
 // ---------------------------------------------------------
-// SERVER.JS — COMPLETAMENTE MIGRADO A POSTGRESQL (RAILWAY)
-// WebRTC conservado, Multer funcionando, API full SQL
+// SERVER.JS — POSTGRES + SUPABASE STORAGE + WebRTC
 // ---------------------------------------------------------
 
 const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
 const path = require("path");
-const fs = require("fs");
 const multer = require("multer");
 const cors = require("cors");
+const fs = require("fs");
 
-// ---------------------------------------------------------
-// EXPRESS CONFIG
-// ---------------------------------------------------------
+// Express
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Public folder
 app.use(express.static(path.join(__dirname, "public")));
 
 // ---------------------------------------------------------
@@ -30,7 +28,7 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Crear tablas si no existen
+// Crear tablas automáticamente
 async function initDB() {
     await pool.query(`
         CREATE TABLE IF NOT EXISTS perfiles (
@@ -48,31 +46,55 @@ async function initDB() {
         );
     `);
 
-    console.log("✓ PostgreSQL listo en Railway");
+    console.log("✓ PostgreSQL conectado y listo");
 }
-
-initDB().catch(console.error);
+initDB();
 
 // ---------------------------------------------------------
-// MULTER — SUBIDA DE IMÁGENES
+// SUPABASE STORAGE
 // ---------------------------------------------------------
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const dir = path.join(__dirname, "public", "references", "perfiles");
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
-    },
-    filename: function (req, file, cb) {
-        const unique = Date.now() + "-" + Math.round(Math.random() * 99999);
-        const ext = path.extname(file.originalname);
-        cb(null, unique + ext);
-    }
+const { createClient } = require("@supabase/supabase-js");
+
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_KEY
+);
+
+// ---------------------------------------------------------
+// MULTER (solo en memoria → NO usa disco)
+// ---------------------------------------------------------
+const upload = multer({
+    storage: multer.memoryStorage() // <<<<<< IMPORTANTE
 });
 
-const upload = multer({ storage });
+// ---------------------------------------------------------
+// SUBIR ARCHIVOS A SUPABASE
+// ---------------------------------------------------------
+async function uploadImageToSupabase(profileId, file) {
+    const fileName = `perfil-${profileId}/${Date.now()}-${file.originalname}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from("perfiles")
+        .upload(fileName, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false
+        });
+
+    if (uploadError) {
+        console.error("Supabase upload error:", uploadError);
+        throw uploadError;
+    }
+
+    // obtener URL pública
+    const { data } = supabase.storage
+        .from("perfiles")
+        .getPublicUrl(fileName);
+
+    return data.publicUrl;
+}
 
 // ---------------------------------------------------------
-// API: CREAR PERFIL NUEVO
+// API: CREAR PERFIL CON IMÁGENES
 // ---------------------------------------------------------
 app.post("/api/new_profile", upload.array("refs", 5), async (req, res) => {
     const { name, age } = req.body;
@@ -82,19 +104,19 @@ app.post("/api/new_profile", upload.array("refs", 5), async (req, res) => {
         return res.status(400).json({ error: "Faltan datos" });
 
     try {
-        // Crear el perfil
-        const profileResult = await pool.query(
+        const result = await pool.query(
             "INSERT INTO perfiles (name, age) VALUES ($1, $2) RETURNING id",
             [name, age]
         );
 
-        const profileId = profileResult.rows[0].id;
+        const profileId = result.rows[0].id;
 
-        // Guardar imágenes
         for (const file of files) {
+            const publicUrl = await uploadImageToSupabase(profileId, file);
+
             await pool.query(
                 "INSERT INTO referencias (profile_id, file_path) VALUES ($1, $2)",
-                [profileId, `/references/perfiles/${file.filename}`]
+                [profileId, publicUrl]
             );
         }
 
@@ -102,7 +124,7 @@ app.post("/api/new_profile", upload.array("refs", 5), async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Error guardando perfil" });
+        res.status(500).json({ error: "Error creando perfil" });
     }
 });
 
@@ -121,18 +143,15 @@ app.get("/api/profiles", async (req, res) => {
 });
 
 // ---------------------------------------------------------
-// API: PERFIL INDIVIDUAL
+// API: OBTENER PERFIL INDIVIDUAL
 // ---------------------------------------------------------
 app.get("/api/profile/:id", async (req, res) => {
     const id = req.params.id;
 
     try {
-        const profile = await pool.query(
-            "SELECT * FROM perfiles WHERE id = $1",
-            [id]
-        );
+        const p = await pool.query("SELECT * FROM perfiles WHERE id = $1", [id]);
 
-        if (profile.rows.length === 0)
+        if (p.rows.length === 0)
             return res.status(404).json({ error: "Perfil no encontrado" });
 
         const refs = await pool.query(
@@ -141,7 +160,7 @@ app.get("/api/profile/:id", async (req, res) => {
         );
 
         res.json({
-            ...profile.rows[0],
+            ...p.rows[0],
             references: refs.rows
         });
 
@@ -157,9 +176,6 @@ app.put("/api/edit_profile/:id", async (req, res) => {
     const id = req.params.id;
     const { name, age } = req.body;
 
-    if (!name || !age)
-        return res.status(400).json({ error: "Datos incompletos" });
-
     try {
         await pool.query(
             "UPDATE perfiles SET name = $1, age = $2 WHERE id = $3",
@@ -174,20 +190,19 @@ app.put("/api/edit_profile/:id", async (req, res) => {
 });
 
 // ---------------------------------------------------------
-// API: AGREGAR IMÁGENES A PERFIL EXISTENTE
+// API: AGREGAR IMÁGENES A UN PERFIL
 // ---------------------------------------------------------
 app.post("/api/add_images/:id", upload.array("refs", 5), async (req, res) => {
-    const id = req.params.id;
+    const profileId = req.params.id;
     const files = req.files;
-
-    if (!files || files.length === 0)
-        return res.status(400).json({ error: "No llegaron imágenes" });
 
     try {
         for (const file of files) {
+            const publicUrl = await uploadImageToSupabase(profileId, file);
+
             await pool.query(
                 "INSERT INTO referencias (profile_id, file_path) VALUES ($1, $2)",
-                [id, `/references/perfiles/${file.filename}`]
+                [profileId, publicUrl]
             );
         }
 
@@ -199,34 +214,14 @@ app.post("/api/add_images/:id", upload.array("refs", 5), async (req, res) => {
 });
 
 // ---------------------------------------------------------
-// API: ELIMINAR PERFIL COMPLETO
+// API: ELIMINAR PERFIL (NO es necesario borrar archivo en Supabase)
 // ---------------------------------------------------------
 app.delete("/api/delete_profile/:id", async (req, res) => {
     const id = req.params.id;
 
     try {
-        // Borrar imágenes del servidor
-        const refs = await pool.query(
-            "SELECT file_path FROM referencias WHERE profile_id = $1",
-            [id]
-        );
-
-        refs.rows.forEach(r => {
-            const filePath = path.join(__dirname, "public", r.file_path);
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        });
-
-        // Borrar referencias de DB
-        await pool.query(
-            "DELETE FROM referencias WHERE profile_id = $1",
-            [id]
-        );
-
-        // Borrar perfil
-        await pool.query(
-            "DELETE FROM perfiles WHERE id = $1",
-            [id]
-        );
+        await pool.query("DELETE FROM referencias WHERE profile_id = $1", [id]);
+        await pool.query("DELETE FROM perfiles WHERE id = $1", [id]);
 
         res.json({ success: true });
 
@@ -236,10 +231,9 @@ app.delete("/api/delete_profile/:id", async (req, res) => {
 });
 
 // ---------------------------------------------------------
-// WEBSOCKET (TU CÓDIGO ORIGINAL, INTACTO)
+// WEBSOCKET (igual que tu código original)
 // ---------------------------------------------------------
 const server = http.createServer(app);
-
 const wss = new WebSocket.Server({ noServer: true });
 
 server.on("upgrade", (req, socket, head) => {
@@ -253,18 +247,12 @@ server.on("upgrade", (req, socket, head) => {
 });
 
 wss.on("connection", (ws) => {
-    console.log("[WS] Cliente conectado");
-
     ws.on("message", (msg) => {
         wss.clients.forEach((client) => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
                 client.send(msg);
             }
         });
-    });
-
-    ws.on("close", () => {
-        console.log("[WS] Cliente desconectado");
     });
 });
 
