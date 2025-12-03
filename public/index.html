@@ -3,43 +3,38 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Reconocimiento facial (local) — Demo</title>
+  <title>Reconocimiento facial (Demo)</title>
   <link rel="stylesheet" href="style.css">
 </head>
+<body>
   <h1>Reconocimiento facial (Demo)</h1>
 
   <button onclick="location.href='/findorasections/Notifications/notifications.html'" 
         style="position: absolute; top: 20px; right: 20px; padding: 8px 14px;">
   📋 Ver historial
-</button>
-<button onclick="location.href='/findorasections/profilesPage/profiles.html'" class="profile-btn">
-  Administrar Perfiles
-</button>
+  </button>
 
-  <section id="camera" style="margin-top:18px;">
-    <h2>Cámara</h2>
-    <div id="container">
-      <!--<video id="video" autoplay muted playsinline></video>
-      <canvas id="overlay"></canvas>-->
-    </div>
+  <button onclick="location.href='/findorasections/profilesPage/profiles.html'" class="profile-btn" style="position: absolute; top: 20px; left: 20px;">
+    Administrar Perfiles
+  </button>
+
+  <section id="camera" style="margin-top:18px; width:100%; max-width:1100px;">
+    <h2>Cámaras (grid)</h2>
+
+    <div id="container" class="grid-container"></div>
 
     <div style="margin-top:8px;">
-      <button id="prevCamBtn">⏪</button>
-      <button id="nextCamBtn">⏩</button>
       <div id="camName" style="display:inline-block; margin-left:12px;">–</div>
     </div>
 
     <div class="controls" style="margin-top:12px;">
-      <button id="startBtn">Iniciar cámara</button>
-      <button id="stopBtn" disabled>Detener</button>
-
       <label for="threshold" style="margin-left:12px;">Umbral: <span id="thVal">0.6</span></label>
       <input id="threshold" type="range" min="0.3" max="0.8" step="0.01" value="0.6">
       <button id="toggleDebugBtn">🔴 Mostrar punto rojo</button>
     </div>
 
-    <h3 style="margin-top:14px;">📥 Feeds remotos conectados</h3>
-    <div id="remoteList"></div>
+    <h3 style="margin-top:14px;">📥 Personas detectadas (miniaturas)</h3>
+    <div id="remoteList" class="detected-list"></div>
 
     <p id="status" style="margin-top:10px;">Cargando modelos...</p>
   </section>
@@ -49,9 +44,5 @@
   <!-- face-api -->
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
   <script type="module" src="main.js"></script>
-
-
-  <!-- <script src="og_script.js"></script> -->
-
 </body>
 </html>

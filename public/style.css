@@ -1,175 +1,180 @@
 /* ============================================================
-   ESTILO GENERAL
+   ESTILOS GENERALES
 ============================================================ */
 body {
-  font-family: system-ui, Segoe UI, Roboto, Arial;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  align-items: center;
+    font-family: system-ui, Segoe UI, Roboto, Arial;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    background: #f7f7f7;
+    color: #222;
 }
 
-h1 {
-  margin: 0;
+h1, h2, h3 {
+    margin: 0;
+    font-weight: 600;
 }
 
 /* ============================================================
-   CONTENEDOR PRINCIPAL (MUY IMPORTANTE)
+   GRID AUTOMÁTICO DE FEEDS
 ============================================================ */
 #container {
-  position: relative;        /* Necesario para alinear el canvas */
-  width: 100%;
-  max-width: 900px;
-  margin: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    width: 100%;
+    max-width: 1100px;
 }
 
-/* ============================================================
-   VIDEO PRINCIPAL — Ajustado para FaceRecognition
-============================================================ */
-#video {
-  display: block;
-  width: 100%;
-  height: auto;
-
-  object-fit: cover;         /* ALIGN PERFECTO PARA REMOTO Y LOCAL */
-  background: black;
-
-  border-radius: 10px;
-
-  position: relative;
-  z-index: 5 !important;
+/* Cada feed (video + canvas + etiquetas) */
+.feed {
+    background: #111;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    min-height: 180px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* ============================================================
-   CANVAS DONDE SE DIBUJAN LOS RECTÁNGULOS
-============================================================ */
-#overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-
-  width: 100% !important;
-  height: 100% !important;
-
-  pointer-events: none;
-  z-index: 10 !important;
-
-  border-radius: 10px;
+/* Mantener relación 16:9 */
+.feed-frame {
+    width: 100%;
+    position: relative;
+    padding-top: 56.25%;   /* 16:9 */
+    background: black;
 }
 
-/* ============================================================
-   CONTROLES Y LISTADOS
-============================================================ */
-#refs, #camera {
-  width: 100%;
-  max-width: 900px;
+/* Video */
+.feed-frame video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-#refList {
-  margin-top: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.ref-item {
-  background: #f4f4f4;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid #e0e0e0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ref-item img {
-  width: 48px;
-  height: 48px;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.controls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-top: 8px;
-}
-
-/* ============================================================
-   BOTONES DE CAMBIO DE CÁMARA
-============================================================ */
-.camera-controls {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.cam-btn {
-  pointer-events: auto;
-  background: rgba(0, 0, 0, 0.4);
-  color: white;
-  border: none;
-  font-size: 2rem;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  backdrop-filter: blur(3px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-}
-
-.cam-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: scale(1.1);
-}
-
-/* ============================================================
-   NOMBRE DE CÁMARA
-============================================================ */
-#camName {
-  margin-top: 10px;
-  text-align: center;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  display: inline-block;
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-family: 'Segoe UI', sans-serif;
-  backdrop-filter: blur(3px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  letter-spacing: 0.3px;
-  transition: all 0.3s ease;
-}
-/* 🔥 Forzar que las notificaciones siempre estén arriba */
-#notificationContainer {
-    position: fixed !important;
-    bottom: 20px !important;
-    right: 20px !important;
-    z-index: 2147483647 !important; /* capa más alta posible */
+/* Canvas encima del video */
+.feed-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
     pointer-events: none !important;
+}
+
+/* Etiquetas dentro del feed (parte inferior izquierda) */
+.feed-labels {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 20;
+}
+
+/* Una etiqueta individual dentro del feed */
+.feed-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.85);
+    color: #111;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* Mini foto dentro del feed */
+.feed-label img {
+    width: 26px;
+    height: 26px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+/* ============================================================
+   LISTA DE PERSONAS DETECTADAS
+============================================================ */
+#remoteList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 450px;
+    margin-top: 10px;
+}
+
+.detected-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    padding: 8px 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+.detected-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.detected-name {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.detected-meta {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* ============================================================
+   CONTROLES (umbral, debug)
+============================================================ */
+.controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 10px;
+}
+
+/* ============================================================
+   NOTIFICACIONES
+============================================================ */
+#notificationContainer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999999;
+    pointer-events: none;
 }
 
 #notificationContainer .notification {
-    position: relative !important;
-    z-index: 2147483647 !important;
-    pointer-events: auto !important;
+    pointer-events: auto;
 }
 
-/* Evita que el overlay bloquee clics o se ponga encima */
-#overlay {
-    pointer-events: none !important;
-    z-index: 10 !important;
+/* ============================================================
+   BOTÓN DE PERFILES
+============================================================ */
+.profile-btn {
+    padding: 8px 14px;
+    background: #0e63ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+}
+
+.profile-btn:hover {
+    background: #004de0;
 }
