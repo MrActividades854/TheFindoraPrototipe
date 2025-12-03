@@ -4,6 +4,8 @@
 
 import WebRTCManager from './webrtc.js';
 import FaceRecognitionManager from './face-recognition.js';
+import NotificationManager from './notifications.js';
+
 
 export default class UIManager {
   constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com/ws', modelPath = '/models' } = {}) {
@@ -31,26 +33,6 @@ export default class UIManager {
     this.thresholdInput = document.getElementById('threshold');
     this.thVal = document.getElementById('thVal');
     this.forceReloadBtn = document.getElementById('forceReloadBtn');
-    this.notificationContainer = document.getElementById('notificationContainer');
-
-    if (!this.notificationContainer) {
-    this.notificationContainer = document.createElement('div');
-    this.notificationContainer.id = 'notificationContainer';
-    document.body.appendChild(this.notificationContainer);
-}
-
-// 🔥 Estilos forzados desde el primer render
-this.notificationContainer.style.position = "fixed";
-this.notificationContainer.style.bottom = "20px";
-this.notificationContainer.style.right = "20px";
-this.notificationContainer.style.pointerEvents = "none";
-
-// Muy importante: usar setProperty con prioridad "important"
-this.notificationContainer.style.setProperty(
-    "z-index",
-    "2147483647",
-    "important"
-);
 
     // config/state
     this.wsUrl = wsUrl;
@@ -63,6 +45,8 @@ this.notificationContainer.style.setProperty(
 
     this.currentSelectedVideo = this.video; // al iniciar, la cámara local
 
+    this.notifier = new NotificationManager();
+
     // instances
     this.webrtc = new WebRTCManager({
       wsUrl: this.wsUrl,
@@ -73,13 +57,11 @@ this.notificationContainer.style.setProperty(
     this.faceRec = new FaceRecognitionManager({
       modelPath: this.modelPath,
       getActiveVideo: () => this.getActiveVideo(),
-      onNotification: (msg, type) => this._createNotification(msg, type)
+      onNotification: (msg, type) => this.notifier.show(msg, type)
     });
 
     // bind
     this._onStartClick = this._onStartClick.bind(this);
-
-    this.bc = new BroadcastChannel("canal_notificaciones");
 
 
     this.lastDetectedRoom = null;
@@ -137,71 +119,6 @@ this.notificationContainer.style.setProperty(
     if (this.statusEl) this.statusEl.textContent = msg;
   }
 
-  _saveNotification(message, type) {
-    const notif = {
-        message,
-        type,
-        time: new Date().toISOString()
-    };
-
-    let list = JSON.parse(localStorage.getItem("findora_notifications") || "[]");
-
-    list.unshift(notif); // agregar al inicio
-    localStorage.setItem("findora_notifications", JSON.stringify(list));
-}
-
-
-  // Reusa el sistema bonito de notificaciones del script original
-_createNotification(message, type = 'warning') {
-  this._saveNotification(message, type);
-  const container = this.notificationContainer || document.getElementById('notificationContainer');
-  if (!container) return;
-
-  const now = new Date();
-  const timeString = now.toLocaleTimeString('es-CO', { hour12: false });
-
-  // ---- NUEVO: enviar al BroadcastChannel ----
-  const log = {
-    id: Date.now() + Math.random(),
-    message,
-    type,
-    time: timeString
-  };
-  if (this.bc) this.bc.postMessage(log);
-  // --------------------------------------------
-
-  const notif = document.createElement('div');
-  notif.className = 'notification';
-  notif.style.marginTop = '8px';
-
-  notif.innerHTML = `
-    <div style="
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      background:${type === 'warning' ? '#ff4d4d' : '#4caf50'};
-      color:white;
-      padding:12px;
-      border-radius:8px;
-      box-shadow:0 6px 18px rgba(0,0,0,0.25);
-      min-width:220px;
-      position:relative;
-      z-index:9999999;
-      ">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <div style="font-size:18px">${type === 'warning' ? '⚠️' : '✅'}</div>
-        <div style="flex:1">${message}</div>
-      </div>
-      <div style="text-align:right; font-size:12px; opacity:0.9;">🕒 ${timeString}</div>
-    </div>
-  `;
-
-  container.appendChild(notif);
-  notif.style.setProperty("z-index", "2147483647", "important");
-  setTimeout(() => notif.remove(), type === 'warning' ? 5000 : 3000);
-}
-
-
   // -------------------------
   // Cameras
   // -------------------------
@@ -252,7 +169,7 @@ if (selected.deviceId.startsWith('remote-')) {
     const rv = this.webrtc.remoteVideos[sid];
 
     if (!rv || !rv.srcObject) {
-        this._createNotification('⚠️ Feed remoto no disponible (aún).', 'warning');
+        this._notifier.show('⚠️ Feed remoto no disponible (aún).', 'warning');
         return;
     }
 
@@ -337,7 +254,7 @@ try {
 
 } catch (err) {
     console.error("Error activando cámara local:", err);
-    this._createNotification("Error activando cámara local: " + err.message, "warning");
+    this.notifier.show("Error activando cámara local: " + err.message, "warning");
 }
 
 this.currentSelectedVideo = this.getActiveVideo();
@@ -418,9 +335,9 @@ _resizeCanvasToVideoElement(vid) {
       const labeled = await this.faceRec.addReferenceImages(name, files);
       if (labeled) {
         this._renderRefItem(name, files[0]);
-        this._createNotification(`Referencia "${name}" agregada`, 'success');
+        this.notifier.show(`Referencia "${name}" agregada`, 'success');
       } else {
-        this._createNotification(`No se pudo generar descriptor para "${name}"`, 'warning');
+        this.notifier.show(`No se pudo generar descriptor para "${name}"`, 'warning');
       }
       this.refNameInput.value = '';
       this.refFilesInput.value = null;
@@ -433,7 +350,7 @@ _resizeCanvasToVideoElement(vid) {
       this.faceRec.labeledDescriptors = [];
       this.faceRec.updateMatcher();
       this.refList.innerHTML = 'No hay referencias aún.';
-      this._createNotification('Referencias locales eliminadas', 'warning');
+      this.notifier.show('Referencias locales eliminadas', 'warning');
     });
 
     // force reload folder
@@ -457,7 +374,7 @@ _resizeCanvasToVideoElement(vid) {
         if (det) descriptors.push(det.descriptor);
       }
       if (!descriptors.length) {
-        this._createNotification('No se detectaron caras en las nuevas imágenes', 'warning');
+        this.notifier.show('No se detectaron caras en las nuevas imágenes', 'warning');
         return;
       }
       const existing = this.faceRec.labeledDescriptors.find(ld => ld.label === targetRef);
@@ -465,14 +382,14 @@ _resizeCanvasToVideoElement(vid) {
         existing.descriptors.push(...descriptors);
         this.faceRec.updateMatcher();
         this.faceRec.saveReferencesToLocalStorage?.();
-        this._createNotification(`${files.length} imágenes añadidas a ${targetRef}`, 'success');
+        this.notifier.show(`${files.length} imágenes añadidas a ${targetRef}`, 'success');
       } else {
         const labeled = new faceapi.LabeledFaceDescriptors(targetRef, descriptors);
         this.faceRec.labeledDescriptors.push(labeled);
         this.faceRec.updateMatcher();
         this.faceRec.saveReferencesToLocalStorage?.();
         this._renderRefItem(targetRef, files[0]);
-        this._createNotification(`Referencia ${targetRef} creada y añadida`, 'success');
+        this.notifier.show(`Referencia ${targetRef} creada y añadida`, 'success');
       }
     });
   }
@@ -495,9 +412,9 @@ _resizeCanvasToVideoElement(vid) {
         onDetect: (name, sala) => {
             if (this.currentPerson !== name || this.lastDetectedRoom !== sala) {
                 if (this.lastDetectedRoom && this.lastDetectedRoom !== sala) {
-                    this._createNotification(`${name} salió de ${this.lastDetectedRoom} y entró a ${sala}`, "success");
+                    this.notifier.show(`${name} salió de ${this.lastDetectedRoom} y entró a ${sala}`, "success");
                 } else {
-                    this._createNotification(`${name} está en ${sala}`, "success");
+                    this.notifier.show(`${name} está en ${sala}`, "success");
                 }
 
                 this.currentPerson = name;
@@ -589,9 +506,9 @@ _resizeCanvasToVideoElement(vid) {
               .withFaceLandmarks()
               .withFaceDescriptor();
             if (detection) descriptors.push(detection.descriptor);
-            else this._createNotification(`No se detectó rostro en ${name}/${file}`, 'warning');
+            else this.notifier.show(`No se detectó rostro en ${name}/${file}`, 'warning');
           } catch (err) {
-            this._createNotification(`Error leyendo ${name}/${file}`, 'warning');
+            this.notifier.show(`Error leyendo ${name}/${file}`, 'warning');
           }
         }
 
