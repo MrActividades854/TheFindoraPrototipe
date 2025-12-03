@@ -14,6 +14,8 @@ const fs = require("fs");
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 // Public folder
 app.use(express.static(path.join(__dirname, "public")));
@@ -64,7 +66,8 @@ const supabase = createClient(
 // MULTER (solo en memoria → NO usa disco)
 // ---------------------------------------------------------
 const upload = multer({
-    storage: multer.memoryStorage() // <<<<<< IMPORTANTE
+    storage: multer.memoryStorage(), // <<<<<< IMPORTANTE
+    limits: { fileSize: 15 * 1024 * 1024 }
 });
 
 // ---------------------------------------------------------
@@ -126,6 +129,7 @@ app.post("/api/new_profile", upload.array("refs", 5), async (req, res) => {
         console.error(err);
         res.status(500).json({ error: "Error creando perfil" });
     }
+    console.log("FILES RECIBIDOS:", req.files);
 });
 
 // ---------------------------------------------------------
