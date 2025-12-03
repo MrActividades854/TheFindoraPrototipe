@@ -200,11 +200,14 @@ this.video.onloadedmetadata = () => {
     this._resizeCanvasToVideoElement(this.video);
 
     if (this.faceRec.detecting) {
-        this.faceRec.startDetection({
-            canvasCtx: this.ctx,
-            resizeCanvasToVideoElement: (v) => this._resizeCanvasToVideoElement(v),
-            getActiveVideo: () => this.getActiveVideo()
-        });
+        this.faceRec.startMultiDetection({
+    videos: this.videos,
+    getRoomByVideo: this.getRoomByVideo,
+    onDetect: (name, sala) => {
+        this._onDetect(name, sala);
+    }
+});
+
     }
 };
 

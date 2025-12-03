@@ -298,13 +298,7 @@ for (const vid of videos) {
 
   // Detección principal
   startDetection({canvasCtx,resizeCanvasToVideoElement,getActiveVideo, getActiveRoom}={}){
-    if (this.detecting) return;
-
-    this.detecting = true;
-    this.detectionStartedAt = Date.now();
-    this.unconfirmedUnknownFrames = 0;
-
-    this._detectionLoop({canvasCtx,resizeCanvasToVideoElement,getActiveVideo, getActiveRoom});
+    return
   }
 
   stopDetection(){
@@ -370,7 +364,7 @@ for (const vid of videos) {
 }
 
 
-      canvasCtx.clearRect(0,0,canvasCtx.canvas.width,canvasCtx.canvas.height);
+      //canvasCtx.clearRect(0,0,canvasCtx.canvas.width,canvasCtx.canvas.height);
 
       for(const res of results){
         const b=res.detection.box;
