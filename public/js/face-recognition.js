@@ -108,65 +108,6 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
     loop();
 }
 
-
-
-
-  // Guardado
-  async addReferenceImages(name, files) {
-    const descriptors = [];
-    for (const f of files) {
-      const img = await faceapi.bufferToImage(f);
-      const detection = await faceapi
-        .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!detection) {
-        this.onNotification(`No se detectó cara en ${f.name}`, 'warning');
-        continue;
-      }
-
-      descriptors.push(detection.descriptor);
-    }
-
-    if (!descriptors.length) return null;
-
-    const labeled = new faceapi.LabeledFaceDescriptors(name, descriptors);
-    this.labeledDescriptors.push(labeled);
-    this.updateMatcher();
-    this.saveReferencesToLocalStorage();
-    return labeled;
-  }
-
-  saveReferencesToLocalStorage() {
-    try {
-      const data = this.labeledDescriptors.map(ld => ({
-        label: ld.label,
-        descriptors: ld.descriptors.map(d => Array.from(new Float32Array(d)))
-      }));
-      localStorage.setItem('faceRefs', JSON.stringify(data));
-      this.onNotification('Referencias guardadas localmente', 'success');
-    } catch (e) { console.error('Error guardando', e); }
-  }
-
-  loadReferencesFromLocalStorage() {
-    const raw = localStorage.getItem('faceRefs');
-    if (!raw) return;
-
-    try {
-      const parsed = JSON.parse(raw);
-      this.labeledDescriptors = parsed.map(p =>
-        new faceapi.LabeledFaceDescriptors(
-          p.label,
-          p.descriptors.map(d => new Float32Array(d))
-        )
-      );
-      this.updateMatcher();
-    } catch (e) {
-      console.error('Error cargando refs', e);
-    }
-  }
-
   updatePersonLocation(name, room) {
     if (!name || name === "Desconocido") return;
 

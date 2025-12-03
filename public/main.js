@@ -22,7 +22,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 
         // Importante: cargar referencias ANTES de iniciar UI
         await ui.faceRec.loadModels();
-        await ui.loadReferencesFromFolder(true);
 
         // Iniciar la aplicación
         await ui.init();

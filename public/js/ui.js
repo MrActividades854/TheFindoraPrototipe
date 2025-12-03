@@ -1,6 +1,6 @@
 // ui.js
 // UI manager completo — integra WebRTCManager y FaceRecognitionManager
-// Incluye: notificaciones, referencias, loadFromFolder, start/stop, thumbnails remotos, forceReload, etc.
+// Incluye: notificaciones, referencias, start/stop, thumbnails remotos, etc.
 
 import WebRTCManager from './webrtc.js';
 import FaceRecognitionManager from './face-recognition.js';
@@ -15,12 +15,6 @@ export default class UIManager {
     this.ctx = this.canvas.getContext('2d');
     this.statusEl = document.getElementById('status');
 
-    this.addRefForm = document.getElementById('addRefForm');
-    this.refNameInput = document.getElementById('refName');
-    this.refFilesInput = document.getElementById('refFiles');
-    this.refList = document.getElementById('refList');
-    this.addMoreFiles = document.getElementById('addMoreFiles') || this._createHiddenFileInput();
-
     this.startBtn = document.getElementById('startBtn');
     this.stopBtn = document.getElementById('stopBtn');
     this.prevCamBtn = document.getElementById('prevCamBtn');
@@ -28,11 +22,9 @@ export default class UIManager {
     this.camNameEl = document.getElementById('camName');
 
     this.remoteList = document.getElementById('remoteList');
-    this.clearRefsBtn = document.getElementById('clearRefsBtn');
     this.toggleDebugBtn = document.getElementById('toggleDebugBtn');
     this.thresholdInput = document.getElementById('threshold');
     this.thVal = document.getElementById('thVal');
-    this.forceReloadBtn = document.getElementById('forceReloadBtn');
 
     // config/state
     this.wsUrl = wsUrl;
@@ -79,11 +71,6 @@ export default class UIManager {
     try {
       this.statusEl.textContent = 'Cargando modelos...';
       await this.faceRec.loadModels();
-
-      // load local references and render UI list
-      this.faceRec.loadReferencesFromLocalStorage();
-
-      this._renderSavedReferences();
 
       this.statusEl.textContent = 'Conectando señalización (WebSocket)...';
       await this.webrtc.init();
@@ -325,73 +312,6 @@ _resizeCanvasToVideoElement(vid) {
       this.thVal.textContent = this.thresholdInput.value;
     });
 
-    // references: add
-    this.addRefForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = this.refNameInput.value.trim();
-      const files = [...this.refFilesInput.files];
-      if (!name || !files.length) { alert('Pon un nombre y elige al menos una imagen.'); return; }
-      this.statusEl.textContent = `Procesando referencias para ${name}...`;
-      const labeled = await this.faceRec.addReferenceImages(name, files);
-      if (labeled) {
-        this._renderRefItem(name, files[0]);
-        this.notifier.show(`Referencia "${name}" agregada`, 'success');
-      } else {
-        this.notifier.show(`No se pudo generar descriptor para "${name}"`, 'warning');
-      }
-      this.refNameInput.value = '';
-      this.refFilesInput.value = null;
-      this.statusEl.textContent = 'Listo';
-    });
-
-    // clear refs
-    this.clearRefsBtn.addEventListener('click', () => {
-      localStorage.removeItem('faceRefs');
-      this.faceRec.labeledDescriptors = [];
-      this.faceRec.updateMatcher();
-      this.refList.innerHTML = 'No hay referencias aún.';
-      this.notifier.show('Referencias locales eliminadas', 'warning');
-    });
-
-    // force reload folder
-    if (this.forceReloadBtn) {
-      this.forceReloadBtn.addEventListener('click', async () => {
-        await this.loadReferencesFromFolder(true);
-      });
-    }
-
-    // hidden addMoreFiles input for adding images to existing ref items
-    this.addMoreFiles.addEventListener('change', async (e) => {
-      const targetRef = e.target.dataset.targetRef;
-      if (!targetRef) return;
-      const files = [...e.target.files];
-      if (!files.length) return;
-      this.statusEl.textContent = `Agregando ${files.length} imagen(es) a ${targetRef}...`;
-      const descriptors = [];
-      for (const f of files) {
-        const img = await faceapi.bufferToImage(f);
-        const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-        if (det) descriptors.push(det.descriptor);
-      }
-      if (!descriptors.length) {
-        this.notifier.show('No se detectaron caras en las nuevas imágenes', 'warning');
-        return;
-      }
-      const existing = this.faceRec.labeledDescriptors.find(ld => ld.label === targetRef);
-      if (existing) {
-        existing.descriptors.push(...descriptors);
-        this.faceRec.updateMatcher();
-        this.faceRec.saveReferencesToLocalStorage?.();
-        this.notifier.show(`${files.length} imágenes añadidas a ${targetRef}`, 'success');
-      } else {
-        const labeled = new faceapi.LabeledFaceDescriptors(targetRef, descriptors);
-        this.faceRec.labeledDescriptors.push(labeled);
-        this.faceRec.updateMatcher();
-        this.faceRec.saveReferencesToLocalStorage?.();
-        this._renderRefItem(targetRef, files[0]);
-        this.notifier.show(`Referencia ${targetRef} creada y añadida`, 'success');
-      }
-    });
   }
 
   // -------------------------
@@ -426,116 +346,6 @@ _resizeCanvasToVideoElement(vid) {
     this.startBtn.disabled = true;
     this.stopBtn.disabled = false;
 }
-
-
-  // -------------------------
-  // References rendering & helpers
-  // -------------------------
-  _renderSavedReferences() {
-    const raw = localStorage.getItem('faceRefs');
-    if (!raw) {
-      this.refList.innerHTML = 'No hay referencias aún.';
-      return;
-    }
-    try {
-      const parsed = JSON.parse(raw);
-      this.refList.innerHTML = '';
-      for (const r of parsed) {
-        this._renderRefItem(r.label, null);
-      }
-    } catch (err) {
-      console.error('Error parseando refs', err);
-    }
-  }
-
-  _renderRefItem(name, file) {
-    const div = document.createElement('div');
-    div.className = 'ref-item';
-    div.style.display = 'flex';
-    div.style.alignItems = 'center';
-    div.style.gap = '8px';
-    div.dataset.name = name;
-
-    if (file) {
-      const img = document.createElement('img');
-      img.src = URL.createObjectURL(file);
-      img.width = 64; img.height = 64;
-      img.style.objectFit = 'cover'; img.style.borderRadius = '6px';
-      div.appendChild(img);
-    }
-
-    const span = document.createElement('span');
-    span.textContent = name;
-    div.appendChild(span);
-
-    // add click handler to add more images to this ref
-    div.addEventListener('click', () => {
-      // set a flag so onchange knows which ref to add to
-      this.addMoreFiles.dataset.targetRef = name;
-      this.addMoreFiles.value = null;
-      this.addMoreFiles.click();
-    });
-
-    if (this.refList.textContent.trim() === 'No hay referencias aún.') this.refList.textContent = '';
-    this.refList.appendChild(div);
-  }
-
-  // -------------------------
-  // Load references from folder (server-side JSON)
-  // -------------------------
-  async loadReferencesFromFolder(forceReload = false) {
-    try {
-      const res = await fetch('./references/references.json?_=' + Date.now());
-      if (!res.ok) throw new Error('No se pudo cargar references.json');
-      const data = await res.json();
-
-      this.statusEl.textContent = '🔍 Revisando referencias en carpeta...';
-      let newRefsCount = 0;
-
-      for (const [name, files] of Object.entries(data)) {
-        const existing = this.faceRec.labeledDescriptors.find(ld => ld.label === name);
-        if (existing && !forceReload) continue;
-
-        const descriptors = [];
-        for (const file of files) {
-          const url = `./references/${name}/${file}?_=${Date.now()}`;
-          try {
-            const img = await faceapi.fetchImage(url);
-            const detection = await faceapi
-              .detectSingleFace(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
-              .withFaceLandmarks()
-              .withFaceDescriptor();
-            if (detection) descriptors.push(detection.descriptor);
-            else this.notifier.show(`No se detectó rostro en ${name}/${file}`, 'warning');
-          } catch (err) {
-            this.notifier.show(`Error leyendo ${name}/${file}`, 'warning');
-          }
-        }
-
-        if (descriptors.length) {
-          if (existing) {
-            existing.descriptors.push(...descriptors);
-          } else {
-            this.faceRec.labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(name, descriptors));
-            this._renderRefItem(name, null);
-          }
-          newRefsCount++;
-        }
-      }
-
-      if (newRefsCount > 0) {
-        this.faceRec.updateMatcher();
-        // persist
-        if (this.faceRec.saveReferencesToLocalStorage) this.faceRec.saveReferencesToLocalStorage();
-        this.statusEl.textContent = `✅ ${newRefsCount} nuevas referencias cargadas desde carpeta.`;
-      } else {
-        this.statusEl.textContent = '📁 No se encontraron nuevas referencias.';
-      }
-    } catch (err) {
-      console.error('Error cargando referencias desde carpeta:', err);
-      this.statusEl.textContent = '⚠️ Error al cargar referencias desde carpeta.';
-    }
-  }
 
   // -------------------------
   // Remote feed handling (callback from WebRTCManager)
@@ -616,20 +426,6 @@ videoEl.style.zIndex = '1';
       this.videoDevices.push({ deviceId: `remote-${senderId}`, label: `Cámara remota ${senderId}` });
       this._updateCamName();
     }
-  }
-
-  // -------------------------
-  // Helper - create hidden input for adding images to refs
-  // -------------------------
-  _createHiddenFileInput() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.multiple = true;
-    input.style.display = 'none';
-    input.id = 'addMoreFiles';
-    document.body.appendChild(input);
-    return input;
   }
 
 }
