@@ -38,12 +38,6 @@ export default class FaceRecognitionManager {
     this.currentRoom = null;
     this.lastRoomDetected = null;
 
-    // Anti-cambio de identidad
-this.lastIdentifiedPerson = null;
-this.lastIdentityFrames = 0;
-this.identityStabilityRequired = 8; // frames para confirmar cambio de persona
-
-
 
   }
 
@@ -212,7 +206,7 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
       x,y,width:w,height:h,
       smoothedX:x,smoothedY:y,smoothedWidth:w,smoothedHeight:h,
       color:colors[this.tracked.length % colors.length],
-      lastSeen:Date.now(),missing:false
+      lastSeen:Date.now(),missing:false, lastLabel: "Desconocido", stabilityFrames: 0
     };
     this.tracked.push(newT);
     return newT;
@@ -374,15 +368,34 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
           const best=this.faceMatcher.findBestMatch(res.descriptor);
           if(best && best.label!=='unknown') label=best.label;
         }
+        // anti-confusión por persona (NO global)
+if (t.lastLabel === label) {
+    // sigue siendo la misma identidad → sumar frames
+    t.stabilityFrames++;
+} else {
+    // identidad cambió → reiniciar contador
+    t.stabilityFrames = 0;
+}
+
+// solo confirmar identidad si lleva X frames siendo consistente
+const STABLE_FRAMES = 6;  // puedes ajustar este número
+
+let finalLabel = t.lastLabel;
+
+if (t.stabilityFrames >= STABLE_FRAMES) {
+    finalLabel = label;
+    t.lastLabel = label; // actualizar identidad confirmada
+}
 
 
-        this.updatePersonDetection(label);
+
+        this.updatePersonDetection(finalLabel);
 
  // si hay una función para saber la sala activa, úsala
 if (label !== "Desconocido" && typeof getActiveRoom === 'function') {
     try {
         const room = getActiveRoom();
-        if (room) this.updatePersonLocation(label, room);
+        if (room) this.updatePersonLocation(finalLabel, room);
     } catch (e) {
         // no interrumpe el loop si getActiveRoom falla
         console.warn('getActiveRoom error:', e);
@@ -398,7 +411,7 @@ if (label !== "Desconocido" && typeof getActiveRoom === 'function') {
         canvasCtx.strokeStyle=t.color;
         canvasCtx.strokeRect(sx,sy,t.smoothedWidth,t.smoothedHeight);
 
-        const text=label;
+        const text=finalLabel;
         const pad=6;
         canvasCtx.font=`${Math.max(14,t.smoothedWidth/18)}px sans-serif`;
 
