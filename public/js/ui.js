@@ -11,7 +11,6 @@ export default class UIManager {
   constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com/ws', modelPath = '/models' } = {}) {
     // DOM
     this.video = document.getElementById('video');
-    this.canvas = document.getElementById('overlay');
     this.ctx = this.canvas.getContext('2d');
     this.statusEl = document.getElementById('status');
 
@@ -59,6 +58,10 @@ export default class UIManager {
     this.personState = {};
     this.lastNotify = {};
 
+    const canvas = this.getCanvasForVideo(vid);
+    const ctx = canvas.getContext('2d');
+
+
 
 
   }
@@ -101,6 +104,51 @@ await this.faceRec.loadProfilesFromServer();
 
 
   }
+
+  getCanvasForVideo(vid) {
+    if (vid.id.startsWith("remote-")) {
+        const id = vid.id.replace("remote-", "");
+        return window.ui.webrtc.remoteCanvas[id];
+    }
+    return window.ui.canvas; // local canvas
+}
+
+
+  createVideoCanvasPair(id, stream) {
+    const container = document.getElementById('container');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'video-wrapper';
+    wrapper.style.position = 'relative';
+    wrapper.style.width = '100%';
+    wrapper.style.height = '100%';
+
+    const video = document.createElement('video');
+    video.id = 'video-' + id;
+    video.autoplay = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.srcObject = stream;
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.objectFit = 'cover';
+
+    const canvas = document.createElement('canvas');
+    canvas.id = 'canvas-' + id;
+    canvas.style.position = 'absolute';
+    canvas.style.top = 0;
+    canvas.style.left = 0;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.pointerEvents = 'none';
+
+    wrapper.appendChild(video);
+    wrapper.appendChild(canvas);
+    container.appendChild(wrapper);
+
+    return { video, canvas };
+}
+
 
   _showOnce(msg, type = "success", delay = 2500) {
     const now = Date.now();
@@ -177,8 +225,9 @@ if (selected.deviceId.startsWith('remote-')) {
 
     console.log("[UI] Mostrando cámara remota arriba:", sid);
 
-    // Mostrar feed remoto EN EL VIDEO PRINCIPAL
-    this.video.srcObject = rv.srcObject;
+    this.currentSelectedVideo = rv;
+    this.currentSelectedCanvas = this.webrtc.remoteCanvas[sid];
+
 
     // Mostrar el video local como oculto
     this.video.style.display = "block";
@@ -399,81 +448,10 @@ setInterval(() => {
   // Remote feed handling (callback from WebRTCManager)
   // -------------------------
   _onRemoteFeed(senderId, stream) {
-    // ensure an element exists or create one
-    let videoEl = this.webrtc.remoteVideos[senderId];
-    if (!videoEl) {
-      videoEl = document.createElement('video');
-videoEl.autoplay = true;
-videoEl.muted = true;
-videoEl.playsInline = true;
-videoEl.className = 'remote-video';
-videoEl.id = `remote-${senderId}`;
+    const { video, canvas } = this.createVideoCanvasPair(senderId, stream);
+this.webrtc.remoteVideos[senderId] = video;
+this.webrtc.remoteCanvas[senderId] = canvas;
 
-const container = document.getElementById('container');
-container.appendChild(videoEl);
-
-videoEl.style.position = 'absolute';
-videoEl.style.top = '0';
-videoEl.style.left = '0';
-videoEl.style.width = '100%';
-videoEl.style.height = '100%';
-videoEl.style.objectFit = 'cover';
-videoEl.style.display = 'none'; // se mostrará al seleccionarlo
-videoEl.style.zIndex = '1';
-
-      this.webrtc.remoteVideos[senderId] = videoEl;
-    }
-    videoEl.srcObject = stream;
-
-    videoEl.onloadedmetadata = () => {
-  videoEl.play().catch(err => console.error("Error play remoto:", err));
-};
-
-
-    // thumbnail
-    const thumbWrap = document.createElement('div');
-    thumbWrap.className = 'thumb';
-    thumbWrap.style.display = 'flex';
-    thumbWrap.style.flexDirection = 'column';
-    thumbWrap.style.alignItems = 'center';
-    thumbWrap.style.gap = '6px';
-
-    const thumb = document.createElement('video');
-    thumb.autoplay = true;
-    thumb.muted = true;
-    thumb.playsInline = true;
-    thumb.width = 160;
-    thumb.height = 90;
-    thumb.srcObject = stream;
-    thumb.style.borderRadius = '8px';
-
-    const label = document.createElement('div');
-    label.textContent = `Remoto ${senderId}`;
-    label.style.color = '#fff';
-    label.style.fontSize = '13px';
-
-    thumbWrap.appendChild(thumb);
-    thumbWrap.appendChild(label);
-
-    thumbWrap.onclick = async () => {
-      if (!this.videoDevices.some(v => v.deviceId === `remote-${senderId}`)) {
-        this.videoDevices.push({ deviceId: `remote-${senderId}`, label: `Cámara remota ${senderId}` });
-      }
-      // set index and switch
-      const idx = this.videoDevices.findIndex(v => v.deviceId === `remote-${senderId}`);
-      if (idx >= 0) {
-        this.currentCamIndex = idx;
-        await this.switchCamera(0);
-      }
-    };
-
-    this.remoteList.appendChild(thumbWrap);
-
-    // ensure videoDevices list contains it
-    if (!this.videoDevices.some(v => v.deviceId === `remote-${senderId}`)) {
-      this.videoDevices.push({ deviceId: `remote-${senderId}`, label: `Cámara remota ${senderId}` });
-      this._updateCamName();
-    }
   }
 
 }

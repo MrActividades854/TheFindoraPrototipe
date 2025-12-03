@@ -132,10 +132,7 @@ for (const vid of videos) {
             ? this.faceMatcher.findBestMatch(det.descriptor)
             : { label: "Desconocido" };
 
-        // Dibujar si este video es el seleccionado
-        if (vid === window.ui.currentSelectedVideo) {
-            this.drawSingleBox(vid, det, best.label);
-        }
+        this.drawSingleBox(vid, det, best.label);
 
         // Notificar detección
         onDetect(best.label, sala);
