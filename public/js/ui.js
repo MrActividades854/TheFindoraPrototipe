@@ -101,47 +101,6 @@ await this.faceRec.loadProfilesFromServer();
 
   }
 
-  async loadProfilesFromServer() {
-    console.log("[FaceRec] Cargando perfiles desde API…");
-
-    // 1. Obtener la lista completa de perfiles
-    const res = await fetch("/api/profiles_full");
-    const profiles = await res.json();
-
-    this.labeledDescriptors = [];
-
-    for (const p of profiles) {
-        if (!p.images || p.images.length === 0) continue;
-
-        const descriptors = [];
-
-        for (const imgUrl of p.images) {
-            try {
-                const img = await faceapi.fetchImage(imgUrl);
-
-                const det = await faceapi
-                    .detectSingleFace(img)
-                    .withFaceLandmarks()
-                    .withFaceDescriptor();
-
-                if (det) descriptors.push(det.descriptor);
-            } catch (e) {
-                console.warn("Error cargando imagen:", imgUrl, e);
-            }
-        }
-
-        if (descriptors.length > 0) {
-            this.labeledDescriptors.push(
-                new faceapi.LabeledFaceDescriptors(p.name, descriptors)
-            );
-        }
-    }
-
-    console.log("[FaceRec] Perfiles cargados:", this.labeledDescriptors.length);
-    this.updateMatcher();
-}
-
-
   // -------------------------
   // Logging & Notifications
   // -------------------------
