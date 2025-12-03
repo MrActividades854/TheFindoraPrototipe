@@ -122,6 +122,10 @@ for (const vid of videos) {
     if (vid === window.ui.currentSelectedVideo) {
         const canvas = document.getElementById("overlay");
         const ctx = canvas.getContext("2d");
+
+        canvas.width = vid.videoWidth;
+        canvas.height = vid.videoHeight;
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
@@ -310,25 +314,22 @@ for (const vid of videos) {
 
   }
 
-  drawSingleBox(video, detection, label = "") {
+drawSingleBox(video, detection, label = "") {
     const canvas = document.getElementById("overlay");
     const ctx = canvas.getContext("2d");
-
-    // Ajusta canvas al tamaño del video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
 
     const dims = faceapi.matchDimensions(canvas, video, true);
     const resized = faceapi.resizeResults(detection, dims);
 
-    // Dibuja la caja
     faceapi.draw.drawDetections(canvas, resized);
     faceapi.draw.drawFaceLandmarks(canvas, resized);
 
     if (label) {
-        new faceapi.draw.DrawTextField([label], resized.detection.box.bottomLeft).draw(canvas);
+        new faceapi.draw.DrawTextField([label], resized.detection.box.bottomLeft)
+            .draw(canvas);
     }
 }
+
 
 
   async _detectionLoop({canvasCtx,resizeCanvasToVideoElement,getActiveVideo, getActiveRoom}){

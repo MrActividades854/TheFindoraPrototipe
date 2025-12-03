@@ -10,8 +10,6 @@ import NotificationManager from './notifications.js';
 export default class UIManager {
   constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com/ws', modelPath = '/models' } = {}) {
     // DOM
-    this.video = document.getElementById('video');
-    this.ctx = this.canvas.getContext('2d');
     this.statusEl = document.getElementById('status');
 
     this.startBtn = document.getElementById('startBtn');
