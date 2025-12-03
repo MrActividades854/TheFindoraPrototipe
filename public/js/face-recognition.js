@@ -67,7 +67,7 @@ this.identityStabilityRequired = 8; // frames para confirmar cambio de persona
     }
   }
 
- startMultiDetection({ videos, getRoomByVideo, onDetect }) {
+startMultiDetection({ videos, getRoomByVideo, onDetect }) {
     this.stopDetection();
     this.detecting = true;
 
@@ -78,34 +78,33 @@ this.identityStabilityRequired = 8; // frames para confirmar cambio de persona
 
             if (!vid.videoWidth) continue;
 
-            const det = await faceapi
+            const detections = await faceapi
                 .detectAllFaces(vid, new faceapi.TinyFaceDetectorOptions())
                 .withFaceLandmarks()
                 .withFaceDescriptors();
 
-            // Si hay detección
-            if (det.length > 0) {
-                const best = this.faceMatcher.findBestMatch(det[0].descriptor);
+            const sala = getRoomByVideo(vid);
 
-                // Dibujar solo en la cámara seleccionada
+            for (const det of detections) {
+
+                const best = this.faceMatcher
+                    ? this.faceMatcher.findBestMatch(det.descriptor)
+                    : { label: "Desconocido" };
+
+                // Solo dibuja si este video es el seleccionado
                 if (vid === window.ui.currentSelectedVideo) {
-                    this.drawSingleBox(vid, det[0], best.label);
+                    this.drawSingleBox(vid, det, best.label);
                 }
 
-                // Notificar sala
-                if (best.label !== "unknown") {
-                    const sala = getRoomByVideo(vid);
-                    onDetect(best.label, sala);
-                }
+                // Notificar detección
+                onDetect(best.label, sala);
+            }
 
-            } else {
-
-                // Si NO hay detección y este video es el seleccionado → limpiar canvas
-                if (vid === window.ui.currentSelectedVideo) {
-                    const canvas = document.getElementById("overlay");
-                    const ctx = canvas.getContext("2d");
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                }
+            // Limpia si no hay personas en este video
+            if (detections.length === 0 && vid === window.ui.currentSelectedVideo) {
+                const canvas = document.getElementById("overlay");
+                const ctx = canvas.getContext("2d");
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
         }
 
@@ -114,6 +113,7 @@ this.identityStabilityRequired = 8; // frames para confirmar cambio de persona
 
     loop();
 }
+
 
 
 
@@ -374,33 +374,6 @@ this.identityStabilityRequired = 8; // frames para confirmar cambio de persona
           const best=this.faceMatcher.findBestMatch(res.descriptor);
           if(best && best.label!=='unknown') label=best.label;
         }
-        // ---------------------
-// ANTI CAMBIO INSTANTÁNEO
-// ---------------------
-
-if (this.lastIdentifiedPerson === null) {
-    // Primera detección
-    this.lastIdentifiedPerson = label;
-    this.lastIdentityFrames = 0;
-} else {
-    if (label === this.lastIdentifiedPerson) {
-        // Sigue siendo la misma persona → reset contador
-        this.lastIdentityFrames = 0;
-    } else {
-        // Posible cambio
-        this.lastIdentityFrames++;
-
-        // No permitir cambio inmediato
-        if (this.lastIdentityFrames < this.identityStabilityRequired) {
-            // ❗ Mantenemos la persona anterior hasta que se confirme
-            label = this.lastIdentifiedPerson;
-        } else {
-            // Cambio confirmado (varios frames seguidos)
-            this.lastIdentifiedPerson = label;
-            this.lastIdentityFrames = 0;
-        }
-    }
-}
 
 
         this.updatePersonDetection(label);
