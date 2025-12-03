@@ -31,8 +31,6 @@ export default class FaceRecognitionManager {
     this.detectionStartedAt = 0;
     this.unconfirmedUnknownFrames = 0;
     this.confirmUnknownAfter = 5; // número de frames para confirmar desconocido
-    t.lastBoxWidth = 0;
-    t.lastBoxHeight = 0;
 
 
     this.currentRoom = null;
@@ -170,6 +168,8 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
 
   assignTracked(x,y,w,h){
     for(const t of this.tracked){
+      t.lastBoxWidth = 0;
+      t.lastBoxHeight = 0;
       const dist=this.distance({x:t.smoothedX||t.x,y:t.smoothedY||t.y},{x,y});
       if(dist < this.MAX_DIST){
         const f=0.7;
