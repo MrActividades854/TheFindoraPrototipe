@@ -1,0 +1,90 @@
+* {
+    margin: 0;
+}
+
+body {
+    background:  linear-gradient(90deg,rgb(135, 199, 231), rgb(196, 218, 237));
+}
+
+header {
+    background-color: blue;
+}
+
+header nav {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    padding: 10px;
+}
+
+nav a {
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+nav a:hover {
+    background-color: aqua;
+}
+
+nav img {
+    height: 50px;
+    width: 50px;
+    border-radius: 50%;
+}
+
+.bell {
+    margin-left: 55%;
+}
+
+.perfil {
+    transform: scale(200%);
+    border-radius: 10px;
+    border: none;
+}
+
+h1 {
+    color: white;
+    font-family:'Segoe UI    ', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight: bold;
+    text-align: center;
+    margin: 10px 0 20px 0;
+}
+
+.main {
+    display: flex;
+    gap: 70px;
+    align-items: center;
+    justify-content: center;
+}
+
+.boxes {
+    width: 300px;
+    height: 400px;
+    background-color: rgb(49, 49, 161);
+    border-radius: 10px;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.boxes:hover {
+    transform: scale(1.01);
+    transition: all 0.1s ease-in-out;
+    box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.bImg {
+    width: 100%;
+    height: 70%;
+    border-radius: 10px 10px 0 0;
+}
+
+h3 {
+    color: white;
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-top: 10px;
+}
