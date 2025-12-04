@@ -182,17 +182,12 @@ export default class UIManager {
     // overlay container (video + canvas)
     const frame = document.createElement('div');
     frame.className = 'feed-frame';
-    frame.style.position = 'relative';
-    frame.style.width = '100%';
-    frame.style.paddingTop = '56.25%'; // 16:9 aspect placeholder
     frame.appendChild(video);
 
     // absolutely position canvas on top
     canvas.style.position = 'absolute';
     canvas.style.top = 0;
     canvas.style.left = 0;
-    canvas.style.right = 0;
-    canvas.style.bottom = 0;
     canvas.style.width = '100%';
     canvas.style.height = '100%';
 

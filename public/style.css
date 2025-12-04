@@ -41,15 +41,20 @@ h1, h2, h3 {
 .feed-frame {
     position: relative;
     width: 100%;
-    height: auto;
+    height: 0;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
     background: black;
+    overflow: hidden;
 }
 
 .feed-frame video {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: auto;
+    height: 100%;
     display: block;
-    object-fit: contain;
+    object-fit: cover;
 }
 
 .feed-canvas {
