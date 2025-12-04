@@ -335,7 +335,7 @@ async _startAutoDetection() {
   try {
     // ensure each video has metadata and canvas size set
     const readyPromises = this.videos.map(v => this._waitForVideoReady(v));
-    const results = await Promise.all(readyPromises);
+    await Promise.all(readyPromises);
 
     // resize all canvases now that metadata is ready (best-effort)
     this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
@@ -343,7 +343,7 @@ async _startAutoDetection() {
     // copy the current list
     const vids = this.videos.slice();
 
-    // start multi detection
+    // start multi detection (non-blocking)
     this.faceRec.startMultiDetection({
       videos: vids,
       getRoomByVideo: (vid) => {
@@ -351,13 +351,11 @@ async _startAutoDetection() {
         return vid.dataset.feedId === 'local' ? 'local' : 'remote';
       },
       onDetect: (name, sala, vid) => {
-        // note: face-recognition currently calls onDetect(name, sala)
-        // if you later want per-video info, adapt face-recognition to pass vid
         this._onPersonDetected(name, sala);
       }
     });
 
-    // periodic cleanup for personState (detect disappear)
+    // periodic cleanup for personState (detect desaparecer)
     setInterval(() => {
       const now = Date.now();
       for (const name in this.personState) {

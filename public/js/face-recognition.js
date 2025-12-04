@@ -103,49 +103,45 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
   if (this.detecting) return;
   
   this.detecting = true;
-  this.detectionStartedAt = Date.now();
-  
-  // Crear un tracking independiente POR VIDEO
   this.trackedByVideo = new Map();
-  videos.forEach(vid => this.trackedByVideo.set(vid, []));
   
   const process = async () => {
     while (this.detecting) {
+      const startTime = performance.now();
+      
       for (const vid of videos) {
-        if (!vid || !vid._canvas || !vid.videoWidth) continue;
+        if (!vid || !vid._canvas || vid.readyState < 2 || !vid.videoWidth) continue;
         
         const canvas = vid._canvas;
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
         
-        // LIMPIA CANVAS DE ESTE VIDEO
+        // LIMPIA
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         try {
           const detections = await faceapi
-            .detectAllFaces(vid)
-            .withFaceLandmarks()
+            .detectAllFaces(vid, new faceapi.TinyFaceDetectorOptions())
             .withFaceDescriptors();
           
-          if (!this.faceMatcher) continue;
+          if (!this.faceMatcher || detections.length === 0) continue;
           
-          // Procesar detecciones de ESTE video
           for (const det of detections) {
             const bestMatch = this.faceMatcher.findBestMatch(det.descriptor);
             const label = bestMatch.distance < this.threshold ? bestMatch.label : "Desconocido";
             const room = getRoomByVideo(vid);
             
-            // Callback con contexto del video
             if (onDetect) onDetect(label, room, vid);
-            
-            // Dibujar en canvas del video
             this.drawSingleBox(canvas, det, label);
           }
         } catch (e) {
-          console.warn("Error en detección de", vid.id, e);
+          console.warn("Error en detección:", e);
         }
       }
       
-      await this._sleep(100);
+      // mantén 60fps aproximadamente
+      const elapsed = performance.now() - startTime;
+      const delay = Math.max(16, 33 - elapsed); // 30fps target
+      await this._sleep(delay);
     }
   };
   
