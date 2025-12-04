@@ -71,26 +71,8 @@ export default class UIManager {
       await this._loadCameras();
       await this._createLocalCamera();
 
-      // ✅ INICIALIZAR WORKER PRIMERO
-      this.worker = new Worker('/js/face-worker.js');
-      this.worker.onmessage = (e) => this._handleWorkerMessage(e);
-
-      // Enviar modelos al worker
-      this.worker.postMessage({
-        type: 'init',
-        data: {
-          modelPath: this.modelPath,
-          threshold: this.faceRec.threshold,
-          profiles: this.faceRec.labeledDescriptors
-        }
-      });
-
-      // ✅ ESPERAR A QUE WORKER ESTÉ LISTO ANTES DE INICIAR DETECCIÓN
-      await new Promise(resolve => {
-        this._resolveWorkerReady = resolve;
-      });
-
-      // Ahora sí, iniciar detección
+      // ✅ INICIAR DETECCIÓN DIRECTAMENTE (sin Worker)
+      this.detecting = true;
       this._startAutoDetection();
 
       this.statusEl.textContent = '✅ Listo';
@@ -109,57 +91,6 @@ export default class UIManager {
     } catch (err) {
       console.error(err);
       this.statusEl.textContent = 'Error inicializando: ' + (err.message || err);
-    }
-  }
-
-  _handleWorkerMessage(event) {
-    const { type, data } = event.data;
-    
-    if (type === 'ready') {
-      console.log('✓ Worker listo y modelos cargados');
-      if (this._resolveWorkerReady) this._resolveWorkerReady();
-    }
-    
-    if (type === 'detection') {
-      // Procesar detecciones del worker
-      const { name, room } = data;
-      this._onPersonDetected(name, room);
-    }
-  }
-
-  async _startAutoDetection() {
-    try {
-      const readyPromises = this.videos.map(v => this._waitForVideoReady(v));
-      await Promise.all(readyPromises);
-
-      this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
-
-      const vids = this.videos.slice();
-
-      // Detección continua sin bloquear UI
-      const detectLoop = async () => {
-        while (this.detecting) {
-          // Ejecutar detección cuando el navegador esté idle
-          await new Promise(resolve => {
-            requestIdleCallback(() => {
-              this.faceRec.startMultiDetection({
-                videos: vids,
-                getRoomByVideo: (vid) => vid.dataset.feedId === 'local' ? 'local' : 'remote',
-                onDetect: (name, room, vid) => this._onPersonDetected(name, room)
-              });
-              resolve();
-            }, { timeout: 100 });
-          });
-
-          await new Promise(r => setTimeout(r, 50));
-        }
-      };
-
-      this.detecting = true;
-      detectLoop();
-
-    } catch (e) {
-      console.error('Error iniciando detección automática', e);
     }
   }
 
@@ -401,26 +332,22 @@ async _startAutoDetection() {
 
     const vids = this.videos.slice();
 
-    // Detección continua sin bloquear UI
     const detectLoop = async () => {
       while (this.detecting) {
-        // Ejecutar detección cuando el navegador esté idle
-        await new Promise(resolve => {
-          requestIdleCallback(() => {
-            this.faceRec.startMultiDetection({
-              videos: vids,
-              getRoomByVideo: (vid) => vid.dataset.feedId === 'local' ? 'local' : 'remote',
-              onDetect: (name, room, vid) => this._onPersonDetected(name, room)
-            });
-            resolve();
-          }, { timeout: 100 });
-        });
+        try {
+          this.faceRec.startMultiDetection({
+            videos: vids,
+            getRoomByVideo: (vid) => vid.dataset.feedId === 'local' ? 'local' : 'remote',
+            onDetect: (name, room, vid) => this._onPersonDetected(name, room)
+          });
+        } catch (e) {
+          console.warn('Error en detección:', e);
+        }
 
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, 100));
       }
     };
 
-    this.detecting = true;
     detectLoop();
 
   } catch (e) {
