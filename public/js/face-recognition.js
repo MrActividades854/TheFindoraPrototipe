@@ -287,8 +287,18 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
   }
 
   // Detección principal
-  startDetection({canvasCtx,resizeCanvasToVideoElement,getActiveVideo, getActiveRoom}={}){
-    return
+  startDetection({canvasCtx, resizeCanvasToVideoElement, getActiveVideo, getActiveRoom}={}){
+    if (this.detecting) return; // evita múltiples loops
+    
+    this.detecting = true;
+    this.detectionStartedAt = Date.now();
+    
+    this._detectionLoop({
+      canvasCtx,
+      resizeCanvasToVideoElement,
+      getActiveVideo,
+      getActiveRoom
+    });
   }
 
   stopDetection(){
@@ -344,14 +354,16 @@ drawSingleBox(canvas, detection, label) {
         .withFaceDescriptors();
 
       const now=Date.now();
-      for(let i=this.tracked.length-1;i>=0;i--)
+      for(let i=this.tracked.length-1;i>=0;i--) {
+        const t = this.tracked[i];  // AÑADE ESTA LÍNEA
         if (now - t.lastSeen > 3000) {
-    if (!t.alertActive) {
-        this.onNotification(`${t.lastLabel} ha salido`, "warning");
-        t.alertActive = true;
-    }
-    this.tracked.splice(i,1);
-}
+          if (!t.alertActive) {
+            this.onNotification(`${t.lastLabel} ha salido`, "warning");
+            t.alertActive = true;
+          }
+          this.tracked.splice(i,1);
+        }
+      }
 
 
       //canvasCtx.clearRect(0,0,canvasCtx.canvas.width,canvasCtx.canvas.height);
