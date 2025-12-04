@@ -121,6 +121,7 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
         try {
           const detections = await faceapi
             .detectAllFaces(vid, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks()
             .withFaceDescriptors();
           
           if (!this.faceMatcher || detections.length === 0) continue;
