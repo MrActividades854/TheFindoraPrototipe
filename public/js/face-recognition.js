@@ -72,7 +72,7 @@ export default class FaceRecognitionManager {
 
         if (descriptors.length > 0) {
             this.labeledDescriptors.push(
-                new faceapi.this.labeledDescriptors(p.name, descriptors)
+                new faceapi.labeledDescriptors(p.name, descriptors)
             );
         }
     }
