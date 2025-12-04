@@ -25,8 +25,11 @@ export default class FaceRecognitionManager {
     this.activeAlerts = {};
     this.knownPeople = new Set();
 
-    this.threshold = 0.6;
-
+    this.threshold = 0.55;  // Más estricto
+    this.MIN_CONFIDENCE = 0.5;  // Mínimo para aceptar una cara
+    this.STABLE_FRAMES = 8;  // Frames antes de confirmar identidad
+    this.MAX_PERSONS = 20;
+    
     // NUEVO: sistema anti falsos positivos
     this.detectionStartedAt = 0;
     this.unconfirmedUnknownFrames = 0;
@@ -44,7 +47,6 @@ export default class FaceRecognitionManager {
   async loadProfilesFromServer() {
     console.log("[FaceRec] Cargando perfiles desde API…");
 
-    // 1. Obtener la lista completa de perfiles
     const res = await fetch("/api/profiles_full");
     const profiles = await res.json();
 
@@ -71,25 +73,48 @@ export default class FaceRecognitionManager {
         }
 
         if (descriptors.length > 0) {
-          const labeled = new faceapi.LabeledFaceDescriptors(p.name,descriptors);
+          const labeled = new faceapi.LabeledFaceDescriptors(p.name, descriptors);
           this.labeledDescriptors.push(labeled);
         }
     }
 
-    console.log("[FaceRec] Perfiles cargados:", this.labeledDescriptors.length);
+    console.log(`[FaceRec] Perfiles cargados: ${this.labeledDescriptors.length}/${this.MAX_PERSONS}`);
 
-    // Descriptores YA están cargados aquí
-if (!this.labeledDescriptors || this.labeledDescriptors.length === 0) {
-    console.warn("⚠ No hay perfiles. Se crea un FaceMatcher vacío.");
-    this.faceMatcher = new faceapi.FaceMatcher([], this.threshold);
-} else {
-    this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors, this.threshold);
-    console.log("FaceMatcher inicializado con", this.labeledDescriptors.length, "personas.");
+    if (this.labeledDescriptors.length === 0) {
+        console.warn("⚠ No hay perfiles.");
+        this.faceMatcher = new faceapi.FaceMatcher([], 0.6);
+    } else {
+        this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors, this.threshold);
+    }
 }
 
-}
+  // NUEVA: Identificación segura con confianza
+  _identifyFace(descriptor) {
+    if (!this.faceMatcher) return { label: 'Desconocido', distance: 1 };
 
+    const matches = this.faceMatcher.labeledDescriptorsByLabel;
+    let bestMatch = null;
+    let bestDistance = 1;
 
+    // Buscar la mejor coincidencia
+    for (const labeledDescs of this.labeledDescriptors) {
+      for (const desc of labeledDescs.descriptors) {
+        const dist = faceapi.euclideanDistance(descriptor, desc);
+        if (dist < bestDistance) {
+          bestDistance = dist;
+          bestMatch = labeledDescs.label;
+        }
+      }
+    }
+
+    // Validar confianza mínima
+    if (bestDistance > this.threshold) {
+      return { label: 'Desconocido', distance: bestDistance, confidence: 0 };
+    }
+
+    const confidence = 1 - bestDistance;
+    return { label: bestMatch, distance: bestDistance, confidence };
+  }
   async loadModels() {
     await faceapi.nets.tinyFaceDetector.loadFromUri(this.modelPath);
     await faceapi.nets.faceLandmark68Net.loadFromUri(this.modelPath);
@@ -391,29 +416,26 @@ drawSingleBox(canvas, detection, label) {
 
         const t=this.assignTracked(x+w/2,y+h/2,w,h);
 
-        let label='Desconocido';
-        if(this.faceMatcher){
-          const best=this.faceMatcher.findBestMatch(res.descriptor);
-          if(best && best.label!=='unknown') label=best.label;
+        let identification = this._identifyFace(res.descriptor);
+        let label = identification.label;
+
+        // Anti-confusión: solo cambiar identidad si hay alta confianza
+        if (t.lastLabel !== label) {
+            if (identification.confidence < 0.7 && t.lastLabel !== 'Desconocido') {
+                // No cambies a "Desconocido" a menos que sea muy seguro
+                label = t.lastLabel;
+            }
+            t.stabilityFrames = 0;
+        } else {
+            t.stabilityFrames++;
         }
-        // anti-confusión por persona (NO global)
-if (t.lastLabel === label) {
-    // sigue siendo la misma identidad → sumar frames
-    t.stabilityFrames++;
-} else {
-    // identidad cambió → reiniciar contador
-    t.stabilityFrames = 0;
-}
 
-// solo confirmar identidad si lleva X frames siendo consistente
-const STABLE_FRAMES = 6;  // puedes ajustar este número
-
-let finalLabel = t.lastLabel;
-
-if (t.stabilityFrames >= STABLE_FRAMES) {
-    finalLabel = label;
-    t.lastLabel = label; // actualizar identidad confirmada
-}
+        // Confirmar identidad solo después de X frames consistentes
+        let finalLabel = t.lastLabel;
+        if (t.stabilityFrames >= this.STABLE_FRAMES) {
+            finalLabel = label;
+            t.lastLabel = label;
+        }
 
 
 
