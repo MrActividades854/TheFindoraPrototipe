@@ -124,7 +124,7 @@ const canvas = this.getCanvasForVideo(vid);
 if (canvas) {
     canvas.width = vid.videoWidth;
     canvas.height = vid.videoHeight;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
@@ -314,7 +314,7 @@ drawSingleBox(video, detection, label = "") {
     const canvas = this.getCanvasForVideo(video);
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
     const dims = faceapi.matchDimensions(canvas, video, true);
     const resized = faceapi.resizeResults(detection, dims);

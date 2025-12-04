@@ -204,6 +204,16 @@ export default class UIManager {
     labelBox.className = 'feed-labels';
     wrapper.appendChild(labelBox);
 
+    // make sure canvas sits above the video
+    canvas.style.zIndex = 5;
+    frame.style.zIndex = 1;
+
+    // assign references for face-recognition
+    video._canvas = canvas;
+    video._wrapper = wrapper;
+    video._labelBox = labelBox;
+
+
     // insert into grid container
     this.container.appendChild(wrapper);
 
@@ -294,6 +304,28 @@ export default class UIManager {
     canvas.height = vid.videoHeight;
   }
 
+  // Espera hasta que el video tenga dimensiones nativas (videoWidth/videoHeight)
+_waitForVideoReady(video, timeout = 3000) {
+  return new Promise((resolve) => {
+    if (!video) return resolve(false);
+    if (video.videoWidth && video.videoHeight) return resolve(true);
+
+    const onMeta = () => {
+      video.removeEventListener('loadedmetadata', onMeta);
+      resolve(true);
+    };
+
+    video.addEventListener('loadedmetadata', onMeta);
+
+    // fallback timeout
+    setTimeout(() => {
+      video.removeEventListener('loadedmetadata', onMeta);
+      resolve(!!(video.videoWidth && video.videoHeight));
+    }, timeout);
+  });
+}
+
+
   // -------------------------
   // getActiveVideo used by faceRec if needed
   // -------------------------
@@ -304,20 +336,30 @@ export default class UIManager {
   // -------------------------
   // Start automatic multiperson detection
   // -------------------------
-  _startAutoDetection() {
-    // ensure canvases are resized
+async _startAutoDetection() {
+  try {
+    // ensure each video has metadata and canvas size set
+    const readyPromises = this.videos.map(v => this._waitForVideoReady(v));
+    const results = await Promise.all(readyPromises);
+
+    // resize all canvases now that metadata is ready (best-effort)
     this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
 
-    const vids = this.videos.slice(); // copy
+    // copy the current list
+    const vids = this.videos.slice();
 
+    // start multi detection
     this.faceRec.startMultiDetection({
       videos: vids,
-      // room detection: use feed id
       getRoomByVideo: (vid) => {
         if (!vid || !vid.dataset) return 'main';
         return vid.dataset.feedId === 'local' ? 'local' : 'remote';
       },
-      onDetect: (name, sala) => this._onPersonDetected(name, sala)
+      onDetect: (name, sala, vid) => {
+        // note: face-recognition currently calls onDetect(name, sala)
+        // if you later want per-video info, adapt face-recognition to pass vid
+        this._onPersonDetected(name, sala);
+      }
     });
 
     // periodic cleanup for personState (detect disappear)
@@ -326,14 +368,18 @@ export default class UIManager {
       for (const name in this.personState) {
         const p = this.personState[name];
         if (now - p.lastSeen > 2000) {
-          // show leave notification and remove
           this._showOnce(`${name} salió de ${p.room}`, 'warning');
           delete this.personState[name];
           this._removeFromList(name);
         }
       }
     }, 500);
+
+  } catch (e) {
+    console.error('Error iniciando detección automática', e);
   }
+}
+
 
   // -------------------------
   // When face-recognition reports someone
