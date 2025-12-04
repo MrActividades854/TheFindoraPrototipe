@@ -79,7 +79,6 @@ export default class FaceRecognitionManager {
     }
 
     console.log("[FaceRec] Perfiles cargados:", this.labeledDescriptors.length);
-    this.updateMatcher();
 
     // Descriptores YA están cargados aquí
 if (!this.labeledDescriptors || this.labeledDescriptors.length === 0) {
