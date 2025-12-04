@@ -89,28 +89,6 @@ export default class FaceRecognitionManager {
     await faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelPath);
 
     console.log("Modelos cargados.");
-
-    if (!this.this.labeledDescriptors || this.this.labeledDescriptors.length === 0) {
-        console.warn("⚠ No hay descriptores cargados. El reconocedor NO se inicializará.");
-        this.recognizer = new faceapi.FaceMatcher([], 0.6);
-        return;
-    }
-
-    this.recognizer = new faceapi.FaceMatcher(this.this.labeledDescriptors, 0.6);
-    console.log("Reconocedor inicializado.");
-  }
-
-  setThreshold(val) {
-    this.threshold = parseFloat(val);
-    this.updateMatcher();
-  }
-
-  updateMatcher() {
-    if (this.labeledDescriptors.length) {
-      this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors, this.threshold);
-    } else {
-      this.faceMatcher = null;
-    }
   }
 
 startMultiDetection({ videos, getRoomByVideo, onDetect }) {

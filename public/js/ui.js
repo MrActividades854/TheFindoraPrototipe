@@ -55,11 +55,10 @@ export default class UIManager {
       // faceRec needs to know how to get canvases for a video element
       this.faceRec.getCanvasForVideo = (vid) => vid ? vid._canvas || null : null;
 
-      this.statusEl.textContent = 'Cargando perfiles...';
-      await this.faceRec.loadProfilesFromServer();
-
       await this.faceRec.loadModels();
 
+      this.statusEl.textContent = 'Cargando perfiles...';
+      await this.faceRec.loadProfilesFromServer();
 
       // build profileThumbs map from profiles endpoint (quick)
       await this._loadProfileThumbs();
