@@ -202,7 +202,11 @@ function loadNotifications() {
     });
 }
 
-window.onload = loadNotifications;
+window.onload = function() {
+    loadNotifications();
+    // Actualizar cada 5 segundos para mostrar nuevas notificaciones en tiempo real
+    setInterval(loadNotifications, 5000);
+};
 </script>
 
 <script type="module">

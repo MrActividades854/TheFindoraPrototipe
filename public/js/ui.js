@@ -114,6 +114,8 @@ export default class UIManager {
   _showOnce(msg, type = "success", delay = 2500) {
     const now = Date.now();
     if (this.lastNotify[msg] && (now - this.lastNotify[msg] < delay)) return;
+
+    // Forzar notificación incluso si la sección de notificaciones está visible
     this.lastNotify[msg] = now;
     this.notifier.show(msg, type);
   }
