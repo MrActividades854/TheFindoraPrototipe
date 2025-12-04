@@ -8,7 +8,7 @@ export default class UIManager {
     // DOM
     this.container = document.getElementById('container');
     this.remoteList = document.getElementById('remoteList');
-    this.statusEl = document.getElementById('status');
+    this.statusEl = document.getElementById('status') || { textContent: '' }; // fallback object
     this.camNameEl = document.getElementById('camName');
     this.thresholdInput = document.getElementById('threshold');
     this.thVal = document.getElementById('thVal');
