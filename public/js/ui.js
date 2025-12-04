@@ -45,14 +45,12 @@ export default class UIManager {
     try {
       this.statusEl.textContent = 'Cargando modelos...';
 
-      // instantiate faceRec first so we can call loadModels/loadProfiles
       this.faceRec = new FaceRecognitionManager({
         modelPath: this.modelPath,
         getActiveVideo: () => this.getActiveVideo(),
         onNotification: (msg, type) => this._showOnce(msg, type)
       });
 
-      // faceRec needs to know how to get canvases for a video element
       this.faceRec.getCanvasForVideo = (vid) => vid ? vid._canvas || null : null;
 
       await this.faceRec.loadModels();
@@ -60,7 +58,6 @@ export default class UIManager {
       this.statusEl.textContent = 'Cargando perfiles...';
       await this.faceRec.loadProfilesFromServer();
 
-      // build profileThumbs map from profiles endpoint (quick)
       await this._loadProfileThumbs();
 
       this.statusEl.textContent = 'Conectando señalización (WebSocket)...';
@@ -71,19 +68,33 @@ export default class UIManager {
       });
 
       await this.webrtc.init();
-
-      // load cameras list (doesn't create DOM nodes)
       await this._loadCameras();
-
-      // create local camera automatically (first device)
       await this._createLocalCamera();
 
-      // start detection automatically
+      // ✅ INICIALIZAR WORKER PRIMERO
+      this.worker = new Worker('/js/face-worker.js');
+      this.worker.onmessage = (e) => this._handleWorkerMessage(e);
+
+      // Enviar modelos al worker
+      this.worker.postMessage({
+        type: 'init',
+        data: {
+          modelPath: this.modelPath,
+          threshold: this.faceRec.threshold,
+          profiles: this.faceRec.labeledDescriptors
+        }
+      });
+
+      // ✅ ESPERAR A QUE WORKER ESTÉ LISTO ANTES DE INICIAR DETECCIÓN
+      await new Promise(resolve => {
+        this._resolveWorkerReady = resolve;
+      });
+
+      // Ahora sí, iniciar detección
       this._startAutoDetection();
 
       this.statusEl.textContent = '✅ Listo';
 
-      // UI interactions: threshold slider
       if (this.thresholdInput) {
         this.thresholdInput.addEventListener('input', () => {
           const v = parseFloat(this.thresholdInput.value);
@@ -92,13 +103,62 @@ export default class UIManager {
         });
       }
 
-      // expose for debugging
       window.ui = this;
       window.webrtc = this.webrtc;
 
     } catch (err) {
       console.error(err);
       this.statusEl.textContent = 'Error inicializando: ' + (err.message || err);
+    }
+  }
+
+  _handleWorkerMessage(event) {
+    const { type, data } = event.data;
+    
+    if (type === 'ready') {
+      console.log('✓ Worker listo y modelos cargados');
+      if (this._resolveWorkerReady) this._resolveWorkerReady();
+    }
+    
+    if (type === 'detection') {
+      // Procesar detecciones del worker
+      const { name, room } = data;
+      this._onPersonDetected(name, room);
+    }
+  }
+
+  async _startAutoDetection() {
+    try {
+      const readyPromises = this.videos.map(v => this._waitForVideoReady(v));
+      await Promise.all(readyPromises);
+
+      this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
+
+      const vids = this.videos.slice();
+
+      // Enviar videos al worker para detección en background
+      this.worker.postMessage({
+        type: 'startDetection',
+        data: {
+          videoIds: vids.map(v => v.id)
+        }
+      });
+
+      // periodic cleanup
+      setInterval(() => {
+        const now = Date.now();
+        for (const name in this.personState) {
+          const p = this.personState[name];
+          if (now - p.lastSeen > 2000) {
+            this._showOnce(`${name} salió de ${p.room}`, 'warning');
+            delete this.personState[name];
+            this._removeFromList(name);
+          }
+        }
+      }, 500);
+
+    } catch (e) {
+      console.error('Error iniciando detección automática', e);
     }
   }
 
@@ -333,29 +393,22 @@ _waitForVideoReady(video, timeout = 3000) {
   // -------------------------
 async _startAutoDetection() {
   try {
-    // ensure each video has metadata and canvas size set
     const readyPromises = this.videos.map(v => this._waitForVideoReady(v));
     await Promise.all(readyPromises);
 
-    // resize all canvases now that metadata is ready (best-effort)
     this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
 
-    // copy the current list
     const vids = this.videos.slice();
 
-    // start multi detection (non-blocking)
-    this.faceRec.startMultiDetection({
-      videos: vids,
-      getRoomByVideo: (vid) => {
-        if (!vid || !vid.dataset) return 'main';
-        return vid.dataset.feedId === 'local' ? 'local' : 'remote';
-      },
-      onDetect: (name, sala, vid) => {
-        this._onPersonDetected(name, sala);
+    // Enviar videos al worker para detección en background
+    this.worker.postMessage({
+      type: 'startDetection',
+      data: {
+        videoIds: vids.map(v => v.id)
       }
     });
 
-    // periodic cleanup for personState (detect desaparecer)
+    // periodic cleanup
     setInterval(() => {
       const now = Date.now();
       for (const name in this.personState) {
