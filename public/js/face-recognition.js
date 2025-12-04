@@ -87,6 +87,17 @@ export default class FaceRecognitionManager {
     await faceapi.nets.faceLandmark68Net.loadFromUri(this.modelPath);
     await faceapi.nets.faceRecognitionNet.loadFromUri(this.modelPath);
     await faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelPath);
+
+    console.log("Modelos cargados.");
+
+    if (!this.labeledFaceDescriptors || this.labeledFaceDescriptors.length === 0) {
+        console.warn("⚠ No hay descriptores cargados. El reconocedor NO se inicializará.");
+        this.recognizer = new faceapi.FaceMatcher([], 0.6);
+        return;
+    }
+
+    this.recognizer = new faceapi.FaceMatcher(this.labeledFaceDescriptors, 0.6);
+    console.log("Reconocedor inicializado.");
   }
 
   setThreshold(val) {
@@ -105,6 +116,7 @@ export default class FaceRecognitionManager {
 startMultiDetection({ videos, getRoomByVideo, onDetect }) {
   const process = async () => {
     for (const vid of videos) {
+      if (!this.recognizer) return; // Evita errores si se llama antes
       if (!vid._canvas || !vid.videoWidth) continue;
 
       const canvas = vid._canvas;
