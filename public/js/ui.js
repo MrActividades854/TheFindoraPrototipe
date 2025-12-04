@@ -358,7 +358,7 @@ async _startAutoDetection() {
     if (!this.lastNotify) this.lastNotify = {};
     if (now - last < 2000) {
       // solo actualizar última vez vista
-      if this.personState[name]) this.personState[name].lastSeen = now;
+      if (this.personState[name]) this.personState[name].lastSeen = now;
       return;
     }
 
