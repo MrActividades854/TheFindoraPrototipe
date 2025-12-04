@@ -79,6 +79,16 @@ export default class FaceRecognitionManager {
 
     console.log("[FaceRec] Perfiles cargados:", this.labeledDescriptors.length);
     this.updateMatcher();
+
+    // Descriptores YA están cargados aquí
+if (!this.labeledDescriptors || this.labeledDescriptors.length === 0) {
+    console.warn("⚠ No hay perfiles. Se crea un FaceMatcher vacío.");
+    this.faceMatcher = new faceapi.FaceMatcher([], this.threshold);
+} else {
+    this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors, this.threshold);
+    console.log("FaceMatcher inicializado con", this.labeledDescriptors.length, "personas.");
+}
+
 }
 
 
