@@ -105,6 +105,10 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
   this.detecting = true;
   this.detectionStartedAt = Date.now();
   
+  // Crear un tracking independiente POR VIDEO
+  this.trackedByVideo = new Map();
+  videos.forEach(vid => this.trackedByVideo.set(vid, []));
+  
   const process = async () => {
     while (this.detecting) {
       for (const vid of videos) {
@@ -113,28 +117,31 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
         const canvas = vid._canvas;
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
         
+        // LIMPIA CANVAS DE ESTE VIDEO
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
         try {
           const detections = await faceapi
             .detectAllFaces(vid)
             .withFaceLandmarks()
             .withFaceDescriptors();
           
-          if (!this.faceMatcher || detections.length === 0) continue;
+          if (!this.faceMatcher) continue;
           
-          // draw boxes and get labels
+          // Procesar detecciones de ESTE video
           for (const det of detections) {
             const bestMatch = this.faceMatcher.findBestMatch(det.descriptor);
             const label = bestMatch.distance < this.threshold ? bestMatch.label : "Desconocido";
             const room = getRoomByVideo(vid);
             
-            // call callback
+            // Callback con contexto del video
             if (onDetect) onDetect(label, room, vid);
             
-            // draw box
+            // Dibujar en canvas del video
             this.drawSingleBox(canvas, det, label);
           }
         } catch (e) {
-          console.warn("Error en detección:", e);
+          console.warn("Error en detección de", vid.id, e);
         }
       }
       
