@@ -223,27 +223,35 @@ export default class UIManager {
   // -------------------------
   async _createLocalCamera() {
     try {
-      // pick first available device
-      let stream = null;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      } catch (err) {
-        console.warn('No se pudo acceder a la cámara local', err);
+      // Obtener todas las cámaras disponibles
+      const devices = this.videoDevices || [];
+      const videoCameras = devices.filter(d => d.kind === 'videoinput');
+
+      if (videoCameras.length === 0) {
+        console.warn('No hay cámaras disponibles');
         return;
       }
 
-      const { video, canvas } = this.createVideoCanvasPair('local', stream, { muted: true });
-      this.localVideo = video;
-      this.localCanvas = canvas;
+      // Crear primer feed local
+      const stream1 = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: videoCameras[0].deviceId },
+        audio: false
+      });
+      const { video: video1 } = this.createVideoCanvasPair('local-1', stream1, { muted: true });
+      this.localVideo = video1;
 
-      // prefer local at front
-      // ensure only one 'local' exists
-      this.videos = this.videos.filter(v => v.dataset.feedId !== 'local');
-      this.videos.unshift(video);
+      // Crear segundo feed local si hay 2 o más cámaras
+      if (videoCameras.length > 1) {
+        const stream2 = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: videoCameras[1].deviceId },
+          audio: false
+        });
+        this.createVideoCanvasPair('local-2', stream2, { muted: true });
+      }
 
-      this._log('Cámara local creada.');
+      this._log('Cámaras locales creadas.');
     } catch (e) {
-      console.error('Error creando cámara local', e);
+      console.error('Error creando cámaras locales', e);
     }
   }
 
@@ -337,7 +345,7 @@ async _startAutoDetection() {
         try {
           this.faceRec.startMultiDetection({
             videos: vids,
-            getRoomByVideo: (vid) => vid.dataset.feedId === 'local' ? 'local' : 'remote',
+            getRoomByVideo: (vid) => vid.dataset.feedId.includes('local') ? 'local' : 'remote',
             onDetect: (name, room, vid) => this._onPersonDetected(name, room)
           });
         } catch (e) {
@@ -348,6 +356,8 @@ async _startAutoDetection() {
       }
     };
 
+    // ✅ ELIMINAR EL CLEANUP QUE BORRABA MINIATURAS
+    // El cleanup anterior ha sido removido
     detectLoop();
 
   } catch (e) {
