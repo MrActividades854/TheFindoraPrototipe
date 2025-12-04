@@ -136,26 +136,27 @@ export default class UIManager {
 
       const vids = this.videos.slice();
 
-      // Enviar videos al worker para detección en background
-      this.worker.postMessage({
-        type: 'startDetection',
-        data: {
-          videoIds: vids.map(v => v.id)
-        }
-      });
+      // Detección continua sin bloquear UI
+      const detectLoop = async () => {
+        while (this.detecting) {
+          // Ejecutar detección cuando el navegador esté idle
+          await new Promise(resolve => {
+            requestIdleCallback(() => {
+              this.faceRec.startMultiDetection({
+                videos: vids,
+                getRoomByVideo: (vid) => vid.dataset.feedId === 'local' ? 'local' : 'remote',
+                onDetect: (name, room, vid) => this._onPersonDetected(name, room)
+              });
+              resolve();
+            }, { timeout: 100 });
+          });
 
-      // periodic cleanup
-      setInterval(() => {
-        const now = Date.now();
-        for (const name in this.personState) {
-          const p = this.personState[name];
-          if (now - p.lastSeen > 2000) {
-            this._showOnce(`${name} salió de ${p.room}`, 'warning');
-            delete this.personState[name];
-            this._removeFromList(name);
-          }
+          await new Promise(r => setTimeout(r, 50));
         }
-      }, 500);
+      };
+
+      this.detecting = true;
+      detectLoop();
 
     } catch (e) {
       console.error('Error iniciando detección automática', e);
@@ -400,26 +401,27 @@ async _startAutoDetection() {
 
     const vids = this.videos.slice();
 
-    // Enviar videos al worker para detección en background
-    this.worker.postMessage({
-      type: 'startDetection',
-      data: {
-        videoIds: vids.map(v => v.id)
-      }
-    });
+    // Detección continua sin bloquear UI
+    const detectLoop = async () => {
+      while (this.detecting) {
+        // Ejecutar detección cuando el navegador esté idle
+        await new Promise(resolve => {
+          requestIdleCallback(() => {
+            this.faceRec.startMultiDetection({
+              videos: vids,
+              getRoomByVideo: (vid) => vid.dataset.feedId === 'local' ? 'local' : 'remote',
+              onDetect: (name, room, vid) => this._onPersonDetected(name, room)
+            });
+            resolve();
+          }, { timeout: 100 });
+        });
 
-    // periodic cleanup
-    setInterval(() => {
-      const now = Date.now();
-      for (const name in this.personState) {
-        const p = this.personState[name];
-        if (now - p.lastSeen > 2000) {
-          this._showOnce(`${name} salió de ${p.room}`, 'warning');
-          delete this.personState[name];
-          this._removeFromList(name);
-        }
+        await new Promise(r => setTimeout(r, 50));
       }
-    }, 500);
+    };
+
+    this.detecting = true;
+    detectLoop();
 
   } catch (e) {
     console.error('Error iniciando detección automática', e);
