@@ -8,7 +8,7 @@ export default class UIManager {
     // DOM
     this.container = document.getElementById('container');
     this.remoteList = document.getElementById('remoteList');
-    this.statusEl = document.getElementById('status') || { textContent: '' }; // fallback object
+    this.statusEl = document.getElementById('status') || { textContent: '' };
     this.camNameEl = document.getElementById('camName');
     this.thresholdInput = document.getElementById('threshold');
     this.thVal = document.getElementById('thVal');
@@ -18,24 +18,21 @@ export default class UIManager {
     this.modelPath = modelPath;
 
     // videos / canvases
-    this.videos = [];            // array of video elements (local + remotes)
+    this.videos = [];
     this.localVideo = null;
     this.localCanvas = null;
 
     // managers
     this.notifier = new NotificationManager();
-    this.personState = {};       // per-person state for notifications
-    this.lastNotify = {};        // debounce map
-    this.profileThumbs = {};     // label -> thumbnail URL (first image)
+    this.personState = {};
+    this.lastNotify = {};
+    this.profileThumbs = {};
 
     // webRTC + faceRec (created in init)
     this.webrtc = null;
     this.faceRec = null;
 
-    // binding
-    this._onRemoteFeed = this._onRemoteFeed.bind(this);
-    this._onPersonDetected = this._onPersonDetected.bind(this);
-    this._resizeCanvasToVideoElement = this._resizeCanvasToVideoElement.bind(this);
+    // ✅ NO HAGAS BINDING AQUÍ - hacerlo en init()
   }
 
   // -------------------------
@@ -43,6 +40,11 @@ export default class UIManager {
   // -------------------------
   async init() {
     try {
+      // ✅ HACER BINDING AQUÍ
+      this._onRemoteFeed = this._onRemoteFeed.bind(this);
+      this._onPersonDetected = this._onPersonDetected.bind(this);
+      this._resizeCanvasToVideoElement = this._resizeCanvasToVideoElement.bind(this);
+
       this.statusEl.textContent = 'Cargando modelos...';
 
       this.faceRec = new FaceRecognitionManager({
