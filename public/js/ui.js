@@ -90,6 +90,13 @@ export default class UIManager {
       window.ui = this;
       window.webrtc = this.webrtc;
 
+      // iniciar monitor de presencia después de iniciar detección
+      this._startPresenceMonitor();
+
+      // limpiar al cerrar
+      window.addEventListener('beforeunload', () => {
+        if (this._presenceInterval) clearInterval(this._presenceInterval);
+      });
     } catch (err) {
       console.error(err);
       this.statusEl.textContent = 'Error inicializando: ' + (err.message || err);
@@ -341,32 +348,63 @@ async _startAutoDetection() {
   // -------------------------
   // Handle person detected
   // -------------------------
-  _onPersonDetected(name, room) {
-    if (!name || name === 'Desconocido') return;
+  _onPersonDetected(name, room, vid) {
+    if (!name) return;
 
-    // Update person state
-    this.personState[name] = {
-      name,
-      room,
-      lastSeen: Date.now(),
-      thumbnail: this.profileThumbs[name] || null
-    };
+    const now = Date.now();
 
-    // Add to remote list if not already there
-    this._addToList(name);
+    // throttle notificaciones por persona (2s)
+    const last = this.lastNotify?.[name] || 0;
+    if (!this.lastNotify) this.lastNotify = {};
+    if (now - last < 2000) {
+      // solo actualizar última vez vista
+      if this.personState[name]) this.personState[name].lastSeen = now;
+      return;
+    }
 
-    // Show notification
-    this._showOnce(`✓ ${name} detectado en ${room}`, 'success');
+    const prev = this.personState[name];
+    if (!prev) {
+      // nueva entrada
+      this.personState[name] = { name, room, lastSeen: now };
+      this._addToList(name);
+      // Notificación y registro (NotificationManager guarda timestamp en local/server)
+      this.notifier.show(`${name} entró en ${room} — ${new Date(now).toLocaleString()}`, 'success', 4000);
+      this.lastNotify[name] = now;
+    } else {
+      // ya estaba, actualizar lastSeen y cambio de sala
+      prev.lastSeen = now;
+      if (prev.room !== room) {
+        this.notifier.show(`${name} cambió a ${room} — ${new Date(now).toLocaleString()}`, 'info', 3500);
+        prev.room = room;
+        this.lastNotify[name] = now;
+      }
+    }
   }
 
-  // -------------------------
-  // Add person to detected list
-  // -------------------------
+  // monitor que detecta salidas (no en cámara por >3s)
+  _startPresenceMonitor() {
+    const TIMEOUT_MS = 3000;
+    this._presenceInterval = setInterval(() => {
+      const now = Date.now();
+      for (const name of Object.keys(this.personState)) {
+        const p = this.personState[name];
+        if (!p) continue;
+        if (now - p.lastSeen > TIMEOUT_MS) {
+          // persona se fue
+          this.notifier.show(`${name} salió de ${p.room} — ${new Date(now).toLocaleString()}`, 'warning', 4000);
+          this._removeFromList(name);
+          delete this.personState[name];
+          // actualizar throttle para evitar doble notificación rápida al reentrar
+          this.lastNotify[name] = now;
+        }
+      }
+    }, 1000);
+  }
+
+  // helpers para añadir/quitar miniaturas (si no existen ya)
   _addToList(name) {
     if (!this.remoteList) return;
-
-    const existing = document.getElementById(`person-${name}`);
-    if (existing) return; // Ya existe
+    if (document.getElementById(`person-${name}`)) return;
 
     const item = document.createElement('div');
     item.id = `person-${name}`;
@@ -386,11 +424,8 @@ async _startAutoDetection() {
     this.remoteList.appendChild(item);
   }
 
-  // -------------------------
-  // Remove person from detected list
-  // -------------------------
   _removeFromList(name) {
-    const item = document.getElementById(`person-${name}`);
-    if (item) item.remove();
+    const el = document.getElementById(`person-${name}`);
+    if (el) el.remove();
   }
 }
