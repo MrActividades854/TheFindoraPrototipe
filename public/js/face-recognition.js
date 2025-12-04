@@ -140,7 +140,6 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
         const canvas = vid._canvas;
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
         
-        // LIMPIA
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         try {
@@ -154,7 +153,7 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
           for (const det of detections) {
             const bestMatch = this.faceMatcher.findBestMatch(det.descriptor);
             const label = bestMatch.distance < this.threshold ? bestMatch.label : "Desconocido";
-            const room = getRoomByVideo(vid);
+            const room = getRoomByVideo ? getRoomByVideo(vid) : 'unknown';
             
             if (onDetect) onDetect(label, room, vid);
             this.drawSingleBox(canvas, det, label);
@@ -164,9 +163,8 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
         }
       }
       
-      // mantén 60fps aproximadamente
       const elapsed = performance.now() - startTime;
-      const delay = Math.max(16, 33 - elapsed); // 30fps target
+      const delay = Math.max(16, 33 - elapsed);
       await this._sleep(delay);
     }
   };

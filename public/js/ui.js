@@ -144,32 +144,34 @@ export default class UIManager {
   // Create video+canvas pair and add to DOM
   // -------------------------
   createVideoCanvasPair(id, stream, opts = {}) {
+    // ✅ EVITAR DUPLICADOS
+    const existing = document.getElementById(id);
+    if (existing) {
+      console.warn(`Feed ${id} ya existe, no creando duplicado`);
+      return { video: existing, canvas: document.getElementById(`${id}-canvas`) };
+    }
+
     // wrapper grid item
     const wrapper = document.createElement('div');
+    wrapper.id = id;
     wrapper.className = 'feed';
-    wrapper.dataset.feedId = id;
 
     // video
     const video = document.createElement('video');
-    video.autoplay = true;
-    video.playsInline = true;
-    video.muted = opts.muted ?? true;
+    video.id = `${id}-video`;
     video.srcObject = stream;
-    video.style.width = '100%';
-    video.style.height = '100%';
-    video.style.objectFit = 'cover';
-    video.id = 'video-' + id;
+    video.dataset.feedId = id;
+    video.muted = opts.muted ?? false;
+    video.playsinline = true;
+    video.autoplay = true;
+    video.onloadedmetadata = () => {
+      console.log(`Video ${id} ready`);
+    };
 
     // canvas
     const canvas = document.createElement('canvas');
+    canvas.id = `${id}-canvas`;
     canvas.className = 'feed-canvas';
-    canvas.id = 'canvas-' + id;
-    canvas.style.position = 'absolute';
-    canvas.style.top = 0;
-    canvas.style.left = 0;
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    canvas.style.pointerEvents = 'none';
 
     // overlay container (video + canvas)
     const frame = document.createElement('div');
@@ -186,36 +188,14 @@ export default class UIManager {
     wrapper.appendChild(frame);
     wrapper.appendChild(canvas);
 
-    // label box for names + thumbnail
-    const labelBox = document.createElement('div');
-    labelBox.className = 'feed-labels';
-    wrapper.appendChild(labelBox);
-
-    // make sure canvas sits above the video
-    canvas.style.zIndex = 5;
-    frame.style.zIndex = 1;
-
-    // assign references for face-recognition
-    video._canvas = canvas;
-    video._wrapper = wrapper;
-    video._labelBox = labelBox;
-
-
     // insert into grid container
     this.container.appendChild(wrapper);
 
     // assign references
     video._canvas = canvas;
-    video._wrapper = wrapper;
-    video._labelBox = labelBox;
-
-    // when loadedmetadata → resize canvas
-    video.addEventListener('loadedmetadata', () => this._resizeCanvasToVideoElement(video));
-
-    // add to list
     this.videos.push(video);
 
-    return { video, canvas, wrapper, labelBox };
+    return { video, canvas };
   }
 
   // -------------------------
@@ -340,125 +320,19 @@ async _startAutoDetection() {
 
     const vids = this.videos.slice();
 
-    const detectLoop = async () => {
-      while (this.detecting) {
-        try {
-          this.faceRec.startMultiDetection({
-            videos: vids,
-            getRoomByVideo: (vid) => vid.dataset.feedId.includes('local') ? 'local' : 'remote',
-            onDetect: (name, room, vid) => this._onPersonDetected(name, room)
-          });
-        } catch (e) {
-          console.warn('Error en detección:', e);
-        }
-
-        await new Promise(r => setTimeout(r, 100));
-      }
-    };
-
-    // ✅ ELIMINAR EL CLEANUP QUE BORRABA MINIATURAS
-    // El cleanup anterior ha sido removido
-    detectLoop();
+    // ✅ INICIAR DETECCIÓN SOLO UNA VEZ
+    this.faceRec.startMultiDetection({
+      videos: vids,
+      getRoomByVideo: (vid) => {
+        // ✅ Verificar que vid existe y tiene feedId
+        if (!vid || !vid.dataset) return 'unknown';
+        return vid.dataset.feedId && vid.dataset.feedId.includes('local') ? 'local' : 'remote';
+      },
+      onDetect: (name, room, vid) => this._onPersonDetected(name, room)
+    });
 
   } catch (e) {
     console.error('Error iniciando detección automática', e);
   }
 }
-
-
-  // -------------------------
-  // When face-recognition reports someone
-  // -------------------------
-  _onPersonDetected(name, sala) {
-    const now = Date.now();
-    if (!name) name = 'Desconocido';
-
-    // per-person state
-    if (!this.personState[name]) {
-      // first time
-      this.personState[name] = { room: sala, lastSeen: now };
-      this._showOnce(`${name} está en ${sala}`, 'success');
-      this._addOrUpdateList(name, sala, now);
-      return;
-    }
-
-    const person = this.personState[name];
-
-    // changed room?
-    if (person.room !== sala) {
-      this._showOnce(`${name} salió de ${person.room} y entró a ${sala}`, 'success');
-      person.room = sala;
-    }
-
-    person.lastSeen = now;
-    this._addOrUpdateList(name, sala, now);
-  }
-
-  // -------------------------
-  // UI: list of detected persons (mini thumbnails + name + last seen)
-  // -------------------------
-  _addOrUpdateList(name, sala, lastSeen) {
-    const list = document.getElementById('remoteList'); // reuse remoteList area
-    if (!list) return;
-
-    let item = list.querySelector(`[data-name="${CSS.escape(name)}"]`);
-    if (!item) {
-      item = document.createElement('div');
-      item.className = 'detected-item';
-      item.dataset.name = name;
-
-      const img = document.createElement('img');
-      img.className = 'detected-thumb';
-      img.style.width = '48px';
-      img.style.height = '48px';
-      img.style.objectFit = 'cover';
-      img.style.borderRadius = '6px';
-      img.style.marginRight = '8px';
-      img.alt = name;
-
-      const text = document.createElement('div');
-      text.className = 'detected-text';
-
-      const nameEl = document.createElement('div');
-      nameEl.className = 'detected-name';
-      nameEl.textContent = name;
-
-      const metaEl = document.createElement('div');
-      metaEl.className = 'detected-meta';
-      metaEl.style.fontSize = '12px';
-      metaEl.style.opacity = '0.8';
-      metaEl.textContent = `en ${sala}`;
-
-      text.appendChild(nameEl);
-      text.appendChild(metaEl);
-
-      item.appendChild(img);
-      item.appendChild(text);
-      list.appendChild(item);
-
-      // set thumbnail if available
-      if (this.profileThumbs[name]) {
-        img.src = this.profileThumbs[name];
-      } else {
-        img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect width="48" height="48" fill="%23ddd"/></svg>';
-      }
-    } else {
-      // update meta
-      const metaEl = item.querySelector('.detected-meta');
-      if (metaEl) metaEl.textContent = `en ${sala}`;
-      const img = item.querySelector('img.detected-thumb');
-      if (img && this.profileThumbs[name]) img.src = this.profileThumbs[name];
-    }
-
-    // update lastSeen attr for cleanup
-    item.dataset.lastSeen = String(lastSeen);
-  }
-
-  _removeFromList(name) {
-    const list = document.getElementById('remoteList');
-    if (!list) return;
-    const item = list.querySelector(`[data-name="${CSS.escape(name)}"]`);
-    if (item) item.remove();
-  }
-
 }
