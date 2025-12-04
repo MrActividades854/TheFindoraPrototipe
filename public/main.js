@@ -4,20 +4,25 @@ import { initBackgroundDetection } from './js/background-init.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
   try {
+    // Esperar a que face-api esté disponible
+    if (!window.faceapi) {
+      console.warn('⏳ Esperando face-api.js...');
+      await new Promise(resolve => {
+        const checkInterval = setInterval(() => {
+          if (window.faceapi) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 100);
+      });
+    }
+
     const ui = new UIManager({
       wsUrl: 'https://thefindoraprototipe.onrender.com/ws',
       modelPath: '/models'
     });
 
-    // Exponer para debug
     window.ui = ui;
-
-    // ui.init() ahora hace TODO:
-    // - cargar modelos
-    // - cargar perfiles desde la base de datos
-    // - iniciar WebRTC
-    // - crear la cámara local
-    // - detectar en todas las cámaras automáticamente
     await ui.init();
 
     await initBackgroundDetection();
@@ -29,7 +34,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// Manejo global de errores opcional
 window.addEventListener("error", (e) => {
   console.error("⚠️ Error global:", e.message, e.filename, e.lineno);
 });
