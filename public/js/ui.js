@@ -438,4 +438,30 @@ async _startAutoDetection() {
     const el = document.getElementById(`person-${name}`);
     if (el) el.remove();
   }
+
+  // Method to detect faces for background use
+  async detectFaces() {
+    if (!this.faceRec || !this.faceRec.faceMatcher) return [];
+
+    const vid = this.getActiveVideo();
+    if (!vid || vid.readyState < 2) return [];
+
+    try {
+      const detections = await faceapi
+        .detectAllFaces(vid, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptors();
+
+      const results = [];
+      for (const det of detections) {
+        const bestMatch = this.faceRec.faceMatcher.findBestMatch(det.descriptor);
+        const label = bestMatch.distance < this.faceRec.threshold ? bestMatch.label : "Desconocido";
+        results.push({ label, detection: det });
+      }
+      return results;
+    } catch (e) {
+      console.error('Error in detectFaces:', e);
+      return [];
+    }
+  }
 }
