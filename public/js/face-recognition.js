@@ -72,7 +72,7 @@ export default class FaceRecognitionManager {
 
         if (descriptors.length > 0) {
             this.labeledDescriptors.push(
-                new faceapi.LabeledFaceDescriptors(p.name, descriptors)
+                new faceapi.this.labeledDescriptors(p.name, descriptors)
             );
         }
     }
@@ -90,13 +90,13 @@ export default class FaceRecognitionManager {
 
     console.log("Modelos cargados.");
 
-    if (!this.labeledFaceDescriptors || this.labeledFaceDescriptors.length === 0) {
+    if (!this.this.labeledDescriptors || this.this.labeledDescriptors.length === 0) {
         console.warn("⚠ No hay descriptores cargados. El reconocedor NO se inicializará.");
         this.recognizer = new faceapi.FaceMatcher([], 0.6);
         return;
     }
 
-    this.recognizer = new faceapi.FaceMatcher(this.labeledFaceDescriptors, 0.6);
+    this.recognizer = new faceapi.FaceMatcher(this.this.labeledDescriptors, 0.6);
     console.log("Reconocedor inicializado.");
   }
 
@@ -133,7 +133,7 @@ startMultiDetection({ videos, getRoomByVideo, onDetect }) {
 
       // 3. Comparar TODAS las detecciones con perfiles
       for (const d of detections) {
-        const best = this.recognizer.findBestMatch(d.descriptor);
+        const best = this.faceMatcher.findBestMatch(d.descriptor);
         const label = best.toString();
         const nombre = label === "unknown" ? "Desconocido" : label;
 
