@@ -71,10 +71,8 @@ export default class FaceRecognitionManager {
         }
 
         if (descriptors.length > 0) {
-            this.labeledDescriptors.push({
-                label: p.name,
-                descriptors: descriptors
-            });
+          const labeled = new faceapi.LabeledFaceDescriptors(p.name,descriptors);
+          this.labeledDescriptors.push({labeled});
         }
     }
 
