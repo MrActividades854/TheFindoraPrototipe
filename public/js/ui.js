@@ -337,4 +337,60 @@ async _startAutoDetection() {
     console.error('Error iniciando detección automática', e);
   }
 }
+
+  // -------------------------
+  // Handle person detected
+  // -------------------------
+  _onPersonDetected(name, room) {
+    if (!name || name === 'Desconocido') return;
+
+    // Update person state
+    this.personState[name] = {
+      name,
+      room,
+      lastSeen: Date.now(),
+      thumbnail: this.profileThumbs[name] || null
+    };
+
+    // Add to remote list if not already there
+    this._addToList(name);
+
+    // Show notification
+    this._showOnce(`✓ ${name} detectado en ${room}`, 'success');
+  }
+
+  // -------------------------
+  // Add person to detected list
+  // -------------------------
+  _addToList(name) {
+    if (!this.remoteList) return;
+
+    const existing = document.getElementById(`person-${name}`);
+    if (existing) return; // Ya existe
+
+    const item = document.createElement('div');
+    item.id = `person-${name}`;
+    item.className = 'detected-item';
+
+    const thumb = document.createElement('img');
+    thumb.className = 'detected-thumb';
+    thumb.src = this.profileThumbs[name] || '/default-avatar.png';
+    thumb.alt = name;
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'detected-name';
+    nameEl.textContent = name;
+
+    item.appendChild(thumb);
+    item.appendChild(nameEl);
+    this.remoteList.appendChild(item);
+  }
+
+  // -------------------------
+  // Remove person from detected list
+  // -------------------------
+  _removeFromList(name) {
+    const item = document.getElementById(`person-${name}`);
+    if (item) item.remove();
+  }
 }
