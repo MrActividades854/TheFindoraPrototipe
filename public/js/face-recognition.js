@@ -351,6 +351,8 @@ drawSingleBox(canvas, detection, label) {
 
       resizeCanvasToVideoElement(vid);
 
+      canvasCtx.clearRect(0, 0, canvasCtx.canvas.width, canvasCtx.canvas.height);
+
       const results = await faceapi
         .detectAllFaces(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.6 }))
         .withFaceLandmarks()
