@@ -103,48 +103,43 @@ export default class FaceRecognitionManager {
   }
 
 startMultiDetection({ videos, getRoomByVideo, onDetect }) {
-    this.stopDetection();
-    this.detecting = true;
+  const process = async () => {
+    for (const vid of videos) {
+      if (!vid._canvas || !vid.videoWidth) continue;
 
-    const loop = async () => {
-        if (!this.detecting) return;
+      const canvas = vid._canvas;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-for (const vid of videos) {
-
-    if (!vid.videoWidth) continue;
-
-    const detections = await faceapi
-        .detectAllFaces(vid, new faceapi.TinyFaceDetectorOptions())
+      // 1. Obtener TODAS las detecciones
+      const detections = await faceapi
+        .detectAllFaces(vid, this.options)
         .withFaceLandmarks()
         .withFaceDescriptors();
 
-    const sala = getRoomByVideo(vid);
+      // 2. Limpiar canvas SOLO UNA VEZ antes de dibujar
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-const canvas = this.getCanvasForVideo(vid);
-if (canvas) {
-    canvas.width = vid.videoWidth;
-    canvas.height = vid.videoHeight;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // 3. Comparar TODAS las detecciones con perfiles
+      for (const d of detections) {
+        const best = this.recognizer.findBestMatch(d.descriptor);
+        const label = best.toString();
+        const nombre = label === "unknown" ? "Desconocido" : label;
+
+        // Dibujar sin borrar lo anterior
+        this.drawSingleBox(canvas, d, nombre);
+
+        // Enviar evento si es necesario
+        const sala = getRoomByVideo(vid);
+        onDetect(nombre, sala);
+      }
+    }
+
+    requestAnimationFrame(process);
+  };
+
+  process();
 }
 
-for (const det of detections) {
-    const best = this.faceMatcher
-        ? this.faceMatcher.findBestMatch(det.descriptor)
-        : { label: "Desconocido" };
-
-    this.drawSingleBox(vid, det, best.label);
-    onDetect(best.label, sala);
-}
-
-}
-
-
-        requestAnimationFrame(loop);
-    };
-
-    loop();
-}
 
   updatePersonLocation(name, room) {
     if (!name || name === "Desconocido") return;
@@ -310,23 +305,23 @@ for (const det of detections) {
 
   }
 
-drawSingleBox(video, detection, label = "") {
-    const canvas = this.getCanvasForVideo(video);
-    if (!canvas) return;
+drawSingleBox(canvas, detection, label) {
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const box = detection.detection.box;
 
-    const dims = faceapi.matchDimensions(canvas, video, true);
-    const resized = faceapi.resizeResults(detection, dims);
+  ctx.strokeStyle = "#00FF00";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(box.x, box.y, box.width, box.height);
 
-    faceapi.draw.drawDetections(canvas, resized);
-    faceapi.draw.drawFaceLandmarks(canvas, resized);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+  ctx.fillRect(box.x, box.y - 20, box.width, 20);
 
-    if (label) {
-        new faceapi.draw.DrawTextField([label], resized.detection.box.bottomLeft)
-            .draw(canvas);
-    }
+  ctx.fillStyle = "#00FF00";
+  ctx.font = "16px Arial";
+  ctx.fillText(label, box.x + 4, box.y - 5);
 }
+
 
 
 
