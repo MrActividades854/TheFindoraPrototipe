@@ -153,6 +153,12 @@ export default class UIManager {
   // Create video+canvas pair and add to DOM
   // -------------------------
   createVideoCanvasPair(id, stream, opts = {}) {
+    // ✅ EVITAR SI NO EXISTE CONTENEDOR
+    if (!this.container) {
+      console.warn(`No hay contenedor #container, saltando video ${id}`);
+      return { video: null, canvas: null };
+    }
+
     // ✅ EVITAR DUPLICADOS
     const existing = document.getElementById(id);
     if (existing) {
@@ -173,9 +179,6 @@ export default class UIManager {
     video.muted = opts.muted ?? false;
     video.playsinline = true;
     video.autoplay = true;
-    video.onloadedmetadata = () => {
-      console.log(`Video ${id} ready`);
-    };
 
     // canvas
     const canvas = document.createElement('canvas');
@@ -212,7 +215,12 @@ export default class UIManager {
   // -------------------------
   async _createLocalCamera() {
     try {
-      // Obtener todas las cámaras disponibles
+      // ✅ SALTAR SI NO HAY CONTENEDOR
+      if (!this.container) {
+        console.warn('No hay contenedor, saltando creación de cámaras locales');
+        return;
+      }
+
       const devices = this.videoDevices || [];
       const videoCameras = devices.filter(d => d.kind === 'videoinput');
 
