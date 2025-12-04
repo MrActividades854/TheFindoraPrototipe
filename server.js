@@ -48,6 +48,15 @@ async function initDB() {
         );
     `);
 
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS notificaciones (
+            id SERIAL PRIMARY KEY,
+            message TEXT NOT NULL,
+            type TEXT DEFAULT 'info',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    `);
+
     console.log("✓ PostgreSQL conectado y listo");
 }
 initDB();
@@ -259,6 +268,67 @@ app.delete("/api/delete_profile/:id", async (req, res) => {
         res.json({ success: true });
 
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ---------------------------------------------------------
+// API: GUARDAR NOTIFICACIONES
+// ---------------------------------------------------------
+app.post("/api/notifications", async (req, res) => {
+    const { message, type } = req.body;
+
+    if (!message) {
+        return res.status(400).json({ error: "Falta mensaje" });
+    }
+
+    try {
+        await pool.query(
+            "INSERT INTO notificaciones (message, type) VALUES ($1, $2)",
+            [message, type || 'info']
+        );
+
+        res.json({ success: true });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ---------------------------------------------------------
+// API: OBTENER NOTIFICACIONES
+// ---------------------------------------------------------
+app.get("/api/notifications", async (req, res) => {
+    const limit = req.query.limit || 100;
+
+    try {
+        const result = await pool.query(
+            "SELECT * FROM notificaciones ORDER BY created_at DESC LIMIT $1",
+            [limit]
+        );
+
+        res.json(result.rows);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ---------------------------------------------------------
+// API: LIMPIAR NOTIFICACIONES ANTIGUAS (más de 7 días)
+// ---------------------------------------------------------
+app.delete("/api/notifications/cleanup", async (req, res) => {
+    try {
+        await pool.query(
+            "DELETE FROM notificaciones WHERE created_at < NOW() - INTERVAL '7 days'"
+        );
+
+        res.json({ success: true });
+
+    } catch (err) {
+        console.error(err);
         res.status(500).json({ error: err.message });
     }
 });
