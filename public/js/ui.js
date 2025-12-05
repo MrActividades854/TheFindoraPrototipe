@@ -5,6 +5,9 @@ import FaceRecognitionManager from './face-recognition.js';
 import NotificationManager from './notifications.js';
 import { CONFIG } from './config.js';
 
+window.addEventListener("beforeunload", () => uiManager.stop());
+
+
 export default class UIManager {
     constructor({ wsUrl = CONFIG.WS_URL, modelPath = '/models', notificationsMode = 'live' } = {}) {
 
@@ -40,13 +43,14 @@ export default class UIManager {
         try {
             this.statusEl.textContent = 'Cargando modelos...';
 
+            this.notifier = new NotificationManager('/api/notifications', this.notificationsMode);
+
             // Face recognition system
             this.faceRec = new FaceRecognitionManager({
                 modelPath: this.modelPath,
                 onNotification: (msg, type) => this.notifier.show(msg, type)
             });
 
-            this.notifier = new NotificationManager('/api/notifications', this.notificationsMode);
 
             await this.faceRec.loadModels();
             this.statusEl.textContent = 'Cargando perfiles...';
@@ -91,6 +95,8 @@ export default class UIManager {
     // ---------------------------------------------------------------------------------------------
     // UTILIDADES
     // ---------------------------------------------------------------------------------------------
+
+    
     _log(msg) {
         console.log('[UI]', msg);
         if (this.statusEl) this.statusEl.textContent = msg;
@@ -134,7 +140,7 @@ export default class UIManager {
             const device = this.videoDevices[i];
             const id = `local-${i + 1}`;
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { deviceId: device.deviceId },
+                video: { deviceId: { exact: device.deviceId } },
                 audio: false
             });
 
@@ -236,6 +242,11 @@ export default class UIManager {
 
         this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
 
+        if (this.videos.length === 0) {
+    console.warn("No hay cámaras disponibles, no inicio detección.");
+    return;
+}
+
         this.faceRec.startMultiDetection({
             videos: this.videos,
             getRoomByVideo: vid => {
@@ -271,8 +282,33 @@ export default class UIManager {
         lbl.className = 'detected-name';
         lbl.textContent = name;
 
+        const activeIds = new Set(trackedPeople.map(p => p.id));
+
+Array.from(this.remoteList.children).forEach(node => {
+    const id = node.dataset.personId;
+    if (!activeIds.has(id)) {
+        node.remove();
+    }
+});
+
+
         item.appendChild(img);
         item.appendChild(lbl);
         this.remoteList.appendChild(item);
     }
+
+    stop() {
+    // detener face recognition
+    if (this.faceRec) this.faceRec.stopDetection();
+
+    // detener cámaras locales
+    for (const v of this.videos) {
+        if (v.srcObject) {
+            v.srcObject.getTracks().forEach(t => t.stop());
+        }
+    }
+
+    this.videos = [];
+}
+
 }
