@@ -40,7 +40,7 @@ export default class FaceRecognitionManager {
         this.unconfirmedUnknownFrames = 0;
         this.confirmUnknownAfter = 5;
 
-        this.lastRoomDetected = null;
+        this.personLastRoom = {};
     }
 
     async loadModels() {
@@ -242,15 +242,18 @@ export default class FaceRecognitionManager {
     }
 
     updatePersonLocation(name, room) {
-        if (!this.lastRoomDetected) {
-            this.lastRoomDetected = room;
-            return;
-        }
+        if (!this.personLastRoom[name]) {
+    // Primera vez que vemos a esta persona, solo guardamos la sala
+    this.personLastRoom[name] = room;
+    return;
+}
 
-        if (this.lastRoomDetected !== room) {
-            this.onNotification(`${name} se movió a ${room}`, "info");
-            this.lastRoomDetected = room;
-        }
+// Si la sala cambió realmente, notificamos
+if (this.personLastRoom[name] !== room) {
+    this.onNotification(`${name} se movió a ${room}`, "info");
+    this.personLastRoom[name] = room;
+}
+
     }
 
     checkAllGone() {
