@@ -30,20 +30,19 @@ if (forced) {
 // Se usa un 'else' para asegurar que SOLO se ejecuta la detección automática si 'forced' no aplica.
 else {
     // Localhost o 127.0.0.1
-    alert(hostname);
     if (hostname === "localhost" || hostname === "127.0.0.1") {
-        WS_BASE = "ws://localhost:8000/ws";  
-        API_BASE = "https://thefindoraprototipe.onrender.com";
+        WS_BASE = "ws://localhost:8080/ws";
+        API_BASE = "http://localhost:8080";
     }
     // LAN (192.168.x.x / 10.x.x.x / 172.x.x.x)
     else if (/^(192\\.168|10\\.|172\\.)/.test(hostname)) {
-        WS_BASE = `ws://${hostname}:8000/ws`; // Usamos 8000 en el ejemplo original
-        API_BASE = ""; // O la URL de tu API en LAN
+        WS_BASE = `ws://${hostname}:8080/ws`;
+        API_BASE = `http://${hostname}:8080`;
     }
     // Producción (cualquier otro dominio)
     else if (hostname === "thefindoraprototipe.onrender.com") {
-        WS_BASE = "wss://thefindoraprototipe.onrender.com/ws";  
-        API_BASE = ""; // O la URL de tu API en producción
+        WS_BASE = "wss://thefindoraprototipe.onrender.com/ws";
+        API_BASE = "https://thefindoraprototipe.onrender.com";
     }
 }
 
