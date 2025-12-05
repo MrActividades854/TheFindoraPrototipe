@@ -5,6 +5,8 @@
 // - Ignora detecciones pequeñas y arranque inicial
 // - Mantiene alertas de entrada, salida y regreso
 
+import { CONFIG } from "./config.js";
+
 export default class FaceRecognitionManager {
   constructor({ modelPath = '/models', getActiveVideo = ()=>null, onNotification = ()=>{} } = {}) {
     this.modelPath = modelPath;
@@ -47,7 +49,7 @@ export default class FaceRecognitionManager {
   async loadProfilesFromServer() {
     console.log("[FaceRec] Cargando perfiles desde API…");
 
-    const res = await fetch("/api/profiles_full");
+    const res = await fetch(`${CONFIG.API_URL}/api/profiles_full`);
     const profiles = await res.json();
 
     this.labeledDescriptors = [];

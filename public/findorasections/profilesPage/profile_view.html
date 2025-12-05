@@ -85,11 +85,12 @@
   </div>
 
   <script>
+    import { CONFIG } from "./config.js";
     const urlParams = new URLSearchParams(window.location.search);
     const profileId = urlParams.get('id');
 
     async function loadProfile() {
-      const res = await fetch(`/api/profile/${profileId}`);
+      const res = await fetch(`${CONFIG.API_BASE}/api/profile/${profileId}`);
       const data = await res.json();
 
       document.getElementById('name').textContent = data.name;
@@ -117,7 +118,7 @@
       const name = document.getElementById("editName").value.trim();
       const age = parseInt(document.getElementById("editAge").value.trim());
 
-      const res = await fetch(`/api/edit_profile/${profileId}`, {
+      const res = await fetch(`${CONFIG.API_BASE}/api/edit_profile/${profileId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, age })
@@ -142,7 +143,7 @@
       const form = new FormData();
       for (let f of files) form.append("refs", f);
 
-      const res = await fetch(`/api/add_images/${profileId}`, {
+      const res = await fetch(`${CONFIG.API_BASE}/api/add_images/${profileId}`, {
         method: "POST",
         body: form
       });
@@ -158,7 +159,7 @@
     document.getElementById('deleteBtn').onclick = async () => {
       if (!confirm('¿Eliminar este perfil permanentemente?')) return;
 
-      const res = await fetch(`/api/delete_profile/${profileId}`, {
+      const res = await fetch(`${CONFIG.API_BASE}/api/delete_profile/${profileId}`, {
         method: 'DELETE'
       });
 

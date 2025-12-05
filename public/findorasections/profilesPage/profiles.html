@@ -81,8 +81,9 @@
   </section>
 
   <script>
+    import { CONFIG } from "./config.js";
     async function fetchProfiles() {
-      const res = await fetch('/api/profiles');
+      const res = await fetch(`${CONFIG.API_BASE}/api/profiles`);
       const list = await res.json();
 
       const container = document.getElementById('profilesContainer');
@@ -112,7 +113,7 @@
       form.append('age', age);
       for (let f of files) form.append('refs', f);
 
-      const res = await fetch('/api/new_profile', {
+      const res = await fetch(`${CONFIG.API_BASE}/api/new_profile`, {
         method: 'POST',
         body: form
       });
