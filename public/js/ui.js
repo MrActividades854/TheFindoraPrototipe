@@ -4,36 +4,39 @@ import FaceRecognitionManager from './face-recognition.js';
 import NotificationManager from './notifications.js';
 
 export default class UIManager {
-  constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com/ws', modelPath = '/models' } = {}) {
-    // DOM
-    this.container = document.getElementById('container');
-    this.remoteList = document.getElementById('remoteList');
-    this.statusEl = document.getElementById('status') || { textContent: '' };
-    this.camNameEl = document.getElementById('camName');
-    this.thresholdInput = document.getElementById('threshold');
-    this.thVal = document.getElementById('thVal');
+  // en ui.js, constructor
+constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com/ws', modelPath = '/models', notificationsMode = 'live' } = {}) {
+  // DOM
+  this.container = document.getElementById('container');
+  this.remoteList = document.getElementById('remoteList');
+  this.statusEl = document.getElementById('status') || { textContent: '' };
+  this.camNameEl = document.getElementById('camName');
+  this.thresholdInput = document.getElementById('threshold');
+  this.thVal = document.getElementById('thVal');
 
-    // config/state
-    this.wsUrl = wsUrl;
-    this.modelPath = modelPath;
+  // config/state
+  this.wsUrl = wsUrl;
+  this.modelPath = modelPath;
+  this.notificationsMode = notificationsMode;
 
-    // videos / canvases
-    this.videos = [];
-    this.localVideo = null;
-    this.localCanvas = null;
+  // videos / canvases
+  this.videos = [];
+  this.localVideo = null;
+  this.localCanvas = null;
 
-    // managers
-    this.notifier = new NotificationManager('/api/notifications', "live");
-    this.personState = {};
-    this.lastNotify = {};
-    this.profileThumbs = {};
+  // managers will be created in init()
+  this.notifier = null;
+  this.personState = {};
+  this.lastNotify = {};
+  this.profileThumbs = {};
 
-    // webRTC + faceRec (created in init)
-    this.webrtc = null;
-    this.faceRec = null;
+  // webRTC + faceRec (created in init)
+  this.webrtc = null;
+  this.faceRec = null;
 
-    // ✅ NO HAGAS BINDING AQUÍ - hacerlo en init()
-  }
+  // ✅ NO HAGAS BINDING AQUÍ - hacerlo en init()
+}
+
 
   // -------------------------
   // Initialization
