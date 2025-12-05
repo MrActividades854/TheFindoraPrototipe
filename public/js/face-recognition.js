@@ -148,7 +148,8 @@ export default class FaceRecognitionManager {
         this.activeAlerts = {};
         this.knownPeople = new Set();
         this.unconfirmedUnknownFrames = 0;
-        this.lastRoomDetected = null;
+        this.personLastRoom = {};
+
     }
 
     // ------------------------------------------------------------------------------------
@@ -179,6 +180,22 @@ export default class FaceRecognitionManager {
 
                 t.lastSeen = Date.now();
                 return t;
+
+                const newT = {
+    smoothedX: x,
+    smoothedY: y,
+    smoothedWidth: w,
+    smoothedHeight: h,
+    color: colors[this.tracked.length % colors.length],
+    stabilityFrames: 0,
+    lastSeen: Date.now(),
+    lastLabel: "Desconocido",
+
+    // Añadir:
+    unknownFrames: 0,
+    unknownShown: false,
+};
+
             }
         }
 
@@ -220,6 +237,10 @@ export default class FaceRecognitionManager {
 
         if (label !== "Desconocido") {
 
+              // Resetear unknown si antes era desconocido
+    track.unknownFrames = 0;
+    track.unknownShown = false;
+
             track.lastLabel = label;
             track.lastSeen = now;
 
@@ -231,14 +252,15 @@ export default class FaceRecognitionManager {
             return;
         }
 
-        // desconocido
-        track.unconfirm = (track.unconfirm || 0) + 1;
-        track.lastSeen = now;
+track.unknownFrames++;
+track.lastSeen = now;
 
-        if (track.unconfirm >= this.confirmUnknownAfter && !track.unknownShown) {
-            track.unknownShown = true;
-            this.onNotification(`Desconocido detectado`, "warning");
-        }
+// Solo mostrar una vez por track
+if (track.unknownFrames >= this.confirmUnknownAfter && !track.unknownShown) {
+    track.unknownShown = true;
+    this.onNotification(`Desconocido detectado`, "warning");
+}
+
     }
 
     updatePersonLocation(name, room) {
