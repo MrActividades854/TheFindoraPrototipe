@@ -23,7 +23,7 @@ export default class UIManager {
     this.localCanvas = null;
 
     // managers
-    this.notifier = new NotificationManager();
+    this.notifier = new NotificationManager('/api/notifications', "live");
     this.personState = {};
     this.lastNotify = {};
     this.profileThumbs = {};
@@ -47,6 +47,7 @@ export default class UIManager {
 
       this.statusEl.textContent = 'Cargando modelos...';
 
+      
       this.faceRec = new FaceRecognitionManager({
         modelPath: this.modelPath,
         getActiveVideo: () => this.getActiveVideo(),

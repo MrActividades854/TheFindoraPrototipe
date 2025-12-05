@@ -1,9 +1,11 @@
 export default class NotificationManager {
-    constructor(apiUrl = '/api/notifications') {
-        this.apiUrl = apiUrl;
+    constructor(apiUrl = '/api/notifications', mode = "live") {
+    this.apiUrl = apiUrl;
+    this.mode = mode;
+
+    if (this.mode === "live") {
         this.container = document.getElementById('notificationContainer');
 
-        // Si no existe el contenedor en el DOM, créalo y añade estilos básicos
         if (!this.container) {
             this.container = document.createElement('div');
             this.container.id = 'notificationContainer';
@@ -20,6 +22,8 @@ export default class NotificationManager {
             document.body.appendChild(this.container);
         }
     }
+}
+
 
     async show(message, type = 'success', duration = 2500) {
         // Guardar en servidor (intento, no bloquee UI si falla)
@@ -42,40 +46,43 @@ export default class NotificationManager {
         list.push({ message, type, time: Date.now() });
         localStorage.setItem('findora_notifications', JSON.stringify(list));
 
-        // Mostrar UI: crear elemento con estilos por defecto
-        const notif = document.createElement('div');
-        notif.className = `notification ${type}`;
-        notif.textContent = message;
+        // Si estamos en modo historial, NO mostrar pop-ups
+if (this.mode === "history") {
+    return;
+}
 
-        // estilos inline para asegurar visibilidad
-        const bgMap = {
-            success: '#2ecc71',
-            info: '#3498db',
-            warning: '#f39c12',
-            error: '#e74c3c'
-        };
-        Object.assign(notif.style, {
-            background: bgMap[type] || '#333',
-            color: '#fff',
-            padding: '8px 12px',
-            borderRadius: '8px',
-            boxShadow: '0 6px 18px rgba(0,0,0,0.2)',
-            fontFamily: 'Arial, Helvetica, sans-serif',
-            fontSize: '14px',
-            pointerEvents: 'auto',
-            opacity: '0',
-            transition: 'opacity 180ms ease'
-        });
+// Mostrar pop-up (modo live)
+const notif = document.createElement('div');
+notif.className = `notification ${type}`;
+notif.textContent = message;
 
-        this.container.appendChild(notif);
+const bgMap = {
+    success: '#2ecc71',
+    info: '#3498db',
+    warning: '#f39c12',
+    error: '#e74c3c'
+};
 
-        // forzar reflow y animar entrada
-        requestAnimationFrame(() => { notif.style.opacity = '1'; });
+Object.assign(notif.style, {
+    background: bgMap[type] || '#333',
+    color: '#fff',
+    padding: '8px 12px',
+    borderRadius: '8px',
+    boxShadow: '0 6px 18px rgba(0,0,0,0.2)',
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '14px',
+    pointerEvents: 'auto',
+    opacity: '0',
+    transition: 'opacity 180ms ease'
+});
 
-        // eliminar después de duration
-        setTimeout(() => {
-            notif.style.opacity = '0';
-            setTimeout(() => notif.remove(), 200);
-        }, duration);
+this.container.appendChild(notif);
+
+requestAnimationFrame(() => { notif.style.opacity = '1'; });
+
+setTimeout(() => {
+    notif.style.opacity = '0';
+    setTimeout(() => notif.remove(), 200);
+}, duration);
     }
 }

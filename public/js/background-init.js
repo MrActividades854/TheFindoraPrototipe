@@ -41,6 +41,12 @@ export async function initBackgroundDetection() {
 
     console.log('[BG] Background detection lista.');
 
+    const ui = new UIManager({
+   notificationsMode: "history"
+});
+
+this.notifier = new NotificationManager('/api/notifications', this.config.notificationsMode);
+
   } catch (e) {
     console.error('Error background init:', e);
   }
