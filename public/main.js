@@ -1,28 +1,18 @@
-// main.js (simple, estable y compatible con la nueva UI)
+// main.js — versión correcta sin window.faceapi
 import { CONFIG } from "./js/config.js";
 import UIManager from './js/ui.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
   try {
-    // Esperar a que face-api esté disponible
-    if (!window.faceapi) {
-      console.warn('⏳ Esperando face-api.js...');
-      await new Promise(resolve => {
-        const checkInterval = setInterval(() => {
-          if (window.faceapi) {
-            clearInterval(checkInterval);
-            resolve();
-          }
-        }, 100);
-      });
-    }
-
+    // Crear UIManager directamente (solo usa ES modules)
     const ui = new UIManager({
       wsUrl: CONFIG.WS_URL,
       modelPath: '/models'
     });
 
     window.ui = ui;
+
+    // Inicializar UI
     await ui.init();
 
   } catch (err) {
