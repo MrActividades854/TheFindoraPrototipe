@@ -81,7 +81,7 @@
   </section>
 
   <script>
-    import { CONFIG } from "./config.js";
+    import { CONFIG } from "../../js/config.js";
     async function fetchProfiles() {
       const res = await fetch(`${CONFIG.API_BASE}/api/profiles`);
       const list = await res.json();
