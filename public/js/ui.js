@@ -47,7 +47,7 @@ export default class UIManager {
 
       this.statusEl.textContent = 'Cargando modelos...';
 
-      
+
       this.faceRec = new FaceRecognitionManager({
         modelPath: this.modelPath,
         getActiveVideo: () => this.getActiveVideo(),
@@ -297,6 +297,8 @@ export default class UIManager {
     // set canvas native size (not CSS)
     canvas.width = vid.videoWidth;
     canvas.height = vid.videoHeight;
+
+    faceapi.matchDimensions(canvas, { width: vid.videoWidth, height: vid.videoHeight });
   }
 
   // Espera hasta que el video tenga dimensiones nativas (videoWidth/videoHeight)
