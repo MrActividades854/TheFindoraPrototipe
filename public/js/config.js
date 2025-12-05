@@ -13,12 +13,15 @@ if (forced) {
     if (forced === "local") {
         WS_BASE = "ws://localhost:8000/ws";
         API_BASE = "https://thefindoraprototipe.onrender.com"; // Si el API de perfiles está en Render
+        console.log(hostname, forced);
     } else if (forced === "lan") {
         WS_BASE = `ws://${hostname}:5501/ws`; // Si tu servidor LAN usa 5501
         API_BASE = `http://${hostname}:8000`; // Asumiendo que el API está en LAN
+        console.log(hostname, forced);
     } else if (forced === "production") {
         WS_BASE = "wss://thefindoraprototipe.onrender.com/ws";
         API_BASE = "https://thefindoraprototipe.onrender.com";
+        console.log(hostname, forced);
     }
     // NOTA: Con la estructura de abajo no necesitas un 'return'
     // porque los 'else if' detienen la ejecución de esa parte.
@@ -29,17 +32,20 @@ else {
     // Localhost o 127.0.0.1
     if (hostname === "localhost" || hostname === "127.0.0.1") {
         WS_BASE = "ws://localhost:8000/ws";  
-        API_BASE = "https://thefindoraprototipe.onrender.com";  
+        API_BASE = "https://thefindoraprototipe.onrender.com";
+        console.log(hostname);
     }
     // LAN (192.168.x.x / 10.x.x.x / 172.x.x.x)
     else if (/^(192\\.168|10\\.|172\\.)/.test(hostname)) {
         WS_BASE = `ws://${hostname}:8000/ws`; // Usamos 8000 en el ejemplo original
         API_BASE = ""; // O la URL de tu API en LAN
+        console.log(hostname);
     }
     // Producción (cualquier otro dominio)
     else {
         WS_BASE = "wss://thefindoraprototipe.onrender.com/ws";  
         API_BASE = ""; // O la URL de tu API en producción
+        console.log(hostname);
     }
 }
 

@@ -132,6 +132,7 @@ constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com/ws', modelPath =
   async _loadProfileThumbs() {
     try {
       const res = await fetch(`${CONFIG.API_BASE}/api/profiles_full`);
+      console.log('Cargando miniaturas de perfiles desde', `${CONFIG.API_BASE}/api/profiles_full`);
       if (!res.ok) return;
       const profiles = await res.json();
       for (const p of profiles) {
