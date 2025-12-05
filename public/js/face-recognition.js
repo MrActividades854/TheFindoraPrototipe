@@ -2,7 +2,7 @@
 // Un solo pipeline TinyFaceDetector para TODO el sistema
 
 import { CONFIG } from "./config.js";
-import * as faceapi from 'face-api.js';
+import * as faceapi from 'https://cdn.jsdelivr.net/npm/face-api.js';
 
 export default class FaceRecognitionManager {
     constructor({ modelPath = '/models', getActiveVideo = () => null, onNotification = () => {} } = {}) {
