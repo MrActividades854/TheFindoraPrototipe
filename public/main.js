@@ -1,4 +1,5 @@
 // main.js (simple, estable y compatible con la nueva UI)
+import { CONFIG } from "./js/config.js";
 import UIManager from './js/ui.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -17,7 +18,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     const ui = new UIManager({
-      wsUrl: 'https://thefindoraprototipe.onrender.com/ws',
+      wsUrl: CONFIG.WS_URL,
       modelPath: '/models'
     });
 

@@ -2,6 +2,7 @@
 import WebRTCManager from './webrtc.js';
 import FaceRecognitionManager from './face-recognition.js';
 import NotificationManager from './notifications.js';
+import { CONFIG } from './config.js';
 
 export default class UIManager {
   // en ui.js, constructor
@@ -44,6 +45,7 @@ constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com/ws', modelPath =
   async init() {
     try {
       // ✅ HACER BINDING AQUÍ
+      this.n
       this._onRemoteFeed = this._onRemoteFeed.bind(this);
       this._onPersonDetected = this._onPersonDetected.bind(this);
       this._resizeCanvasToVideoElement = this._resizeCanvasToVideoElement.bind(this);

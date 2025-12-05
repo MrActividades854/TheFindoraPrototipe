@@ -1,5 +1,5 @@
 // background-init.js (versión corregida)
-// Solo corre en páginas que NO son index.html
+import { CONFIG } from "./js/config.js";
 
 (function() {
   const path = window.location.pathname;
@@ -19,8 +19,6 @@
   initBackgroundDetection();
 })();
 
-// -------------------------
-
 export async function initBackgroundDetection() {
   try {
     if (!window.faceapi) {
@@ -28,25 +26,28 @@ export async function initBackgroundDetection() {
       await waitFor(() => !!window.faceapi);
     }
 
-    const UIManager = (await import('./ui.js')).default;
 
-    // Crear UIManager solo una vez
+    const UIManager = (await import('./ui.js') ).default;
+
+
+    // Crear UIManager solo una vez, pasando modo 'history'
     if (!window.__uiManagerBG) {
       window.__uiManagerBG = new UIManager({
-        wsUrl: 'https://thefindoraprototipe.onrender.com/ws',
-        modelPath: '/models'
+        wsUrl: CONFIG.WS_URL,
+        modelPath: '/models',
+        notificationsMode: 'history'   // <-- evita pop-ups, guarda solo historial
       });
       await window.__uiManagerBG.init();
+    } else {
+      console.log('[BG] UIManager ya existía, reusando instancia.');
+      // si quieres forzar modo history en una instancia existente:
+      if (window.__uiManagerBG.notifier) {
+        // reemplaza el notifier si es necesario
+        window.__uiManagerBG.notifier = new (await import('./notifications.js')).default('/api/notifications', 'history');
+      }
     }
 
     console.log('[BG] Background detection lista.');
-
-    const ui = new UIManager({
-   notificationsMode: "history"
-});
-
-this.notifier = new NotificationManager('/api/notifications', this.config.notificationsMode);
-
   } catch (e) {
     console.error('Error background init:', e);
   }
