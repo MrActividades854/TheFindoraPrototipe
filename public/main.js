@@ -1,6 +1,5 @@
 // main.js (simple, estable y compatible con la nueva UI)
 import UIManager from './js/ui.js';
-import { initBackgroundDetection } from './js/background-init.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -24,8 +23,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     window.ui = ui;
     await ui.init();
-
-    await initBackgroundDetection();
 
   } catch (err) {
     console.error("❌ Error crítico inicializando la app:", err);
