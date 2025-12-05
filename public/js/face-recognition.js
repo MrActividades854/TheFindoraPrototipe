@@ -47,7 +47,7 @@ export default class FaceRecognitionManager {
         await faceapi.nets.tinyFaceDetector.loadFromUri(this.modelPath);
         await faceapi.nets.faceLandmark68Net.loadFromUri(this.modelPath);
         await faceapi.nets.faceRecognitionNet.loadFromUri(this.modelPath);
-
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelPath); 
         console.log("Modelos cargados (solo TinyFaceDetector).");
     }
 
