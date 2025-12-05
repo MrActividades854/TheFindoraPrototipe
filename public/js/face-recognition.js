@@ -180,22 +180,6 @@ export default class FaceRecognitionManager {
 
                 t.lastSeen = Date.now();
                 return t;
-
-                const newT = {
-    smoothedX: x,
-    smoothedY: y,
-    smoothedWidth: w,
-    smoothedHeight: h,
-    color: colors[this.tracked.length % colors.length],
-    stabilityFrames: 0,
-    lastSeen: Date.now(),
-    lastLabel: "Desconocido",
-
-    // Añadir:
-    unknownFrames: 0,
-    unknownShown: false,
-};
-
             }
         }
 
@@ -208,7 +192,15 @@ export default class FaceRecognitionManager {
             color: colors[this.tracked.length % colors.length],
             stabilityFrames: 0,
             lastSeen: Date.now(),
-            lastLabel: "Desconocido"
+            lastLabel: "Desconocido",
+
+            // Añadir:
+            unknownFrames: 0,
+            unknownShown: false,
+
+
+            hasLeft: false,
+
         };
 
         this.tracked.push(newT);
@@ -278,15 +270,25 @@ if (this.personLastRoom[name] !== room) {
 
     }
 
-    checkAllGone() {
-        const now = Date.now();
+checkAllGone() {
+    const now = Date.now();
 
-        for (const t of this.tracked) {
-            if (now - t.lastSeen > this.ALERT_TIMEOUT) {
-                this.onNotification(`${t.lastLabel} salió`, "warning");
-            }
+    for (const t of this.tracked) {
+
+        // Si ya notificamos que se fue, no volver a hacerlo
+        if (t.hasLeft) continue;
+
+        if (now - t.lastSeen > this.ALERT_TIMEOUT) {
+            t.hasLeft = true; // Marcar como salida notificada
+            this.onNotification(`${t.lastLabel} salió`, "warning");
         }
     }
+
+    // Limpieza opcional: eliminar tracks con hasLeft = true
+this.tracked = this.tracked.filter(t => !t.hasLeft);
+
+}
+
 
     // ------------------------------------------------------------------------------------
     // DIBUJAR
