@@ -57,6 +57,15 @@ async function initDB() {
         );
     `);
 
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS ubicaciones (
+    profile_id INTEGER REFERENCES perfiles(id),
+    last_room TEXT,
+    last_seen TIMESTAMP,
+    CONSTRAINT unique_profile UNIQUE(profile_id)
+        );
+    `);
+
     console.log("✓ PostgreSQL conectado y listo");
 }
 initDB();
@@ -159,6 +168,9 @@ app.get("/api/profiles_full", async (req, res) => {
                 age: p.age,
                 images: refs.rows.map(r => r.file_path)
             });
+
+            this.profileMap[p.name] = p.id;
+
         }
 
         res.json(finalList);
@@ -254,6 +266,47 @@ app.post("/api/add_images/:id", upload.array("refs", 5), async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+app.post("/api/update_location", async (req, res) => {
+    const { profile_id, last_room } = req.body;
+
+    if (!profile_id || !last_room) {
+        return res.status(400).json({ error: "Faltan datos" });
+    }
+
+    try {
+        await pool.query(`
+            INSERT INTO ubicaciones (profile_id, last_room, last_seen)
+            VALUES ($1, $2, NOW())
+            ON CONFLICT (profile_id)
+            DO UPDATE SET last_room = EXCLUDED.last_room, last_seen = NOW()
+        `, [profile_id, last_room]);
+
+        res.json({ success: true });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get("/api/location/:profileId", async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT last_room, last_seen FROM ubicaciones WHERE profile_id = $1",
+            [req.params.profileId]
+        );
+
+        if (result.rows.length === 0) return res.json(null);
+
+        res.json(result.rows[0]);
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
 
 // ---------------------------------------------------------
 // API: ELIMINAR PERFIL (NO es necesario borrar archivo en Supabase)

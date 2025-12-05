@@ -57,6 +57,8 @@ export default class FaceRecognitionManager {
 
         this.labeledDescriptors = [];
 
+        this.profileMap = {}; // nombre → id
+
         for (const p of profiles) {
             if (!p.images || p.images.length === 0) continue;
 
@@ -259,16 +261,36 @@ if (track.unknownFrames >= this.confirmUnknownAfter && !track.unknownShown) {
         if (!this.personLastRoom[name]) {
     // Primera vez que vemos a esta persona, solo guardamos la sala
     this.personLastRoom[name] = room;
+    this._sendLocationUpdate(name, room);
     return;
+    
 }
+
+
 
 // Si la sala cambió realmente, notificamos
 if (this.personLastRoom[name] !== room) {
     this.onNotification(`${name} se movió a ${room}`, "info");
     this.personLastRoom[name] = room;
+    this._sendLocationUpdate(name, room);
 }
 
-    }
+}
+
+async _sendLocationUpdate(name, room) {
+    const profile_id = this.profileMap[name];
+    if (!profile_id) return;
+
+    fetch('/api/update_location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            profile_id,
+            last_room: room
+        })
+    });
+}
+
 
 checkAllGone() {
     const now = Date.now();
