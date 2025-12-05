@@ -47,6 +47,10 @@ else {
     }
 }
 
+console.log(`Configuración final - WS_BASE: ${WS_BASE}, API_BASE: ${API_BASE}`);
+
+// 4. Exportar la configuración
+
 
 export const CONFIG = {
     WS_URL: WS_BASE,
