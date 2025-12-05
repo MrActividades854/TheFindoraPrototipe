@@ -1,58 +1,65 @@
-// config.js (VERSION CORREGIDA)
+// config.js – versión definitiva a prueba de undefined
 
-// 1. Declarar las variables una sola vez al principio
-let API_BASE = "";
-let WS_BASE = "";
+let WS_BASE = null;
+let API_BASE = null;
 
 const hostname = window.location.hostname;
 const params = new URLSearchParams(window.location.search);
-const forced = params.get("env");
+const forced = (params.get("env") || "").toLowerCase();
 
-// 2. PRIORIZAR la configuración forzada
-if (forced) {
-    if (forced === "local") {
-        WS_BASE = "ws://localhost:8000/ws";
-        API_BASE = "https://thefindoraprototipe.onrender.com"; // Si el API de perfiles está en Render
-        console.log(hostname, forced);
-    } else if (forced === "lan") {
-        WS_BASE = `ws://${hostname}:5501/ws`; // Si tu servidor LAN usa 5501
-        API_BASE = `http://${hostname}:8000`; // Asumiendo que el API está en LAN
-        console.log(hostname, forced);
-    } else if (forced === "production") {
-        WS_BASE = "wss://thefindoraprototipe.onrender.com/ws";
-        API_BASE = "https://thefindoraprototipe.onrender.com";
-        console.log(hostname, forced);
-    }
-    // NOTA: Con la estructura de abajo no necesitas un 'return'
-    // porque los 'else if' detienen la ejecución de esa parte.
-} 
-// 3. Si NO hay configuración forzada (o forced = null/otro valor), usar la detección automática
-// Se usa un 'else' para asegurar que SOLO se ejecuta la detección automática si 'forced' no aplica.
-else {
-    // Localhost o 127.0.0.1
+// ------------------------------------------------------------
+// 1. Modo forzado (?env=local / lan / production)
+// ------------------------------------------------------------
+if (forced === "local") {
+    WS_BASE = "ws://localhost:8080/ws";
+    API_BASE = "http://localhost:8080";
+}
+else if (forced === "lan") {
+    WS_BASE = `ws://${hostname}:8080/ws`;
+    API_BASE = `http://${hostname}:8080`;
+}
+else if (forced === "production") {
+    WS_BASE = "wss://thefindoraprototipe.onrender.com/ws";
+    API_BASE = "https://thefindoraprototipe.onrender.com";
+}
+
+// ------------------------------------------------------------
+// 2. Si NO hay forced válido → autodetección
+// ------------------------------------------------------------
+if (!WS_BASE || !API_BASE) {
+
+    // Localhost
     if (hostname === "localhost" || hostname === "127.0.0.1") {
-        WS_BASE = "ws://localhost:8080/ws";
-        API_BASE = "http://localhost:8080";
+        WS_BASE = WS_BASE || "ws://localhost:8080/ws";
+        API_BASE = API_BASE || "http://localhost:8080";
     }
-    // LAN (192.168.x.x / 10.x.x.x / 172.x.x.x)
-    else if (/^(192\\.168|10\\.|172\\.)/.test(hostname)) {
-        WS_BASE = `ws://${hostname}:8080/ws`;
-        API_BASE = `http://${hostname}:8080`;
+
+    // LAN privadas
+    else if (/^(192\.168|10\.|172\.)/.test(hostname)) {
+        WS_BASE = WS_BASE || `ws://${hostname}:8080/ws`;
+        API_BASE = API_BASE || `http://${hostname}:8080`;
     }
-    // Producción (cualquier otro dominio)
+
+    // Producción oficial
     else if (hostname === "thefindoraprototipe.onrender.com") {
-        WS_BASE = "wss://thefindoraprototipe.onrender.com/ws";
-        API_BASE = "https://thefindoraprototipe.onrender.com";
+        WS_BASE = WS_BASE || "wss://thefindoraprototipe.onrender.com/ws";
+        API_BASE = API_BASE || "https://thefindoraprototipe.onrender.com";
     }
 }
 
-console.log(`Configuración final - WS_BASE: ${WS_BASE}, API_BASE: ${API_BASE}`);
+// ------------------------------------------------------------
+// 3. Fallback GLOBAL (último recurso, nunca undefined)
+// ------------------------------------------------------------
+if (!WS_BASE) WS_BASE = "wss://thefindoraprototipe.onrender.com/ws";
+if (!API_BASE) API_BASE = "https://thefindoraprototipe.onrender.com";
 
-// 4. Exportar la configuración
-
+// ------------------------------------------------------------
+// 4. Export final
+// ------------------------------------------------------------
+console.log(`CONFIG FINAL → WS: ${WS_BASE} | API: ${API_BASE}`);
 
 export const CONFIG = {
     WS_URL: WS_BASE,
-    API_URL: API_BASE, // ¡Asegúrate de exportar también la URL del API!
-    MODEL_PATH: '/models' // Puedes mover esto aquí también si quieres
+    API_URL: API_BASE,
+    MODEL_PATH: "/models"
 };
