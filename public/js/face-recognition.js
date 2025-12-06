@@ -53,7 +53,31 @@ export default class FaceRecognitionManager {
 
     async loadProfilesFromServer() {
         const res = await fetch(`${CONFIG.API_URL}/api/profiles_full`);
-        const profiles = await res.json();
+
+if (!response.ok) {
+    console.error("Error cargando perfiles:", response.status);
+    this.onNotification("Error cargando perfiles", "error");
+    return [];
+}
+
+        let profiles;
+
+        try {
+            profiles = await res.json();
+        } catch (e) {
+            console.error("Error parseando perfiles:", e);
+            this.onNotification("Error parseando perfiles", "error");
+            return [];
+        }
+
+        if (!Array.isArray(profiles)) {
+            console.error("Perfiles inválidos recibidos:", profiles);
+            this.onNotification("Perfiles inválidos recibidos", "error");
+            return [];
+        }
+
+        console.log("PERFILES RECIBIDOS:", profiles);
+
 
         this.labeledDescriptors = [];
 

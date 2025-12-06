@@ -169,8 +169,6 @@ app.get("/api/profiles_full", async (req, res) => {
                 images: refs.rows.map(r => r.file_path)
             });
 
-            this.profileMap[p.name] = p.id;
-
         }
 
         res.json(finalList);
