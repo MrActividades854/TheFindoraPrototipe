@@ -55,8 +55,15 @@ h1, h2, h3 {
     width: 100%;
     height: 100%;
     /* CLAVE: Hace que el video cubra el contenedor sin distorsionar la relación de aspecto */
-    object-fit: cover; 
+    object-fit: contain; 
 }
+
+canvas, video {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
 
 .feed-frame canvas {
     position: absolute; /* CLAVE: Para superponerse al video */

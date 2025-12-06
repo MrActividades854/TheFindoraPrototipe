@@ -164,7 +164,7 @@ export default class UIManager {
         video.playsinline = true;
         video.muted = opts.muted ?? false;
 
-        const canvas = document.createElement('canvas');
+        
         canvas.className = 'feed-canvas';
 
         const frame = document.createElement('div');
