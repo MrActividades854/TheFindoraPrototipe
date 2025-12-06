@@ -110,7 +110,7 @@ export default class UIManager {
             const profiles = await res.json();
             for (const p of profiles) {
                 if (p.images && p.images.length) {
-                    this.profileThumbs[this._normalizeName(p.name)] = `${CONFIG.API_URL}/${p.images[0]}`;
+                    this.profileThumbs[this._normalizeName(p.name)] = p.images[0];
                 }
             }
         } catch (e) {
