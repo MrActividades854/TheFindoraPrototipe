@@ -110,7 +110,7 @@ export default class UIManager {
             const profiles = await res.json();
             for (const p of profiles) {
                 if (p.images && p.images.length) {
-                    this.profileThumbs[p.name] = p.images[0];
+                    this.profileThumbs[this._normalizeName(p.name)] = `${CONFIG.API_URL}/${p.images[0]}`;
                 }
             }
         } catch (e) {
@@ -272,6 +272,11 @@ wrapper.addEventListener('click', () => {
         });
     }
 
+    _normalizeName(name) {
+    return name.trim().toLowerCase();
+}
+
+
     // ---------------------------------------------------------------------------------------------
     // LISTA DE DETECTADOS (SOLO UI, YA NO DECIDE LÓGICA)
     // ---------------------------------------------------------------------------------------------
@@ -287,20 +292,20 @@ wrapper.addEventListener('click', () => {
 
         const img = document.createElement('img');
         img.className = 'detected-thumb';
-        img.src = this.profileThumbs[name] || '/default-avatar.png';
+        const key = this._normalizeName(name);
+        img.src = this.profileThumbs[key] || '/default-avatar.png';
 
         const lbl = document.createElement('div');
         lbl.className = 'detected-name';
         lbl.textContent = name;
 
-        const activeIds = new Set(trackedPeople.map(p => p.id));
-
+        // (opcional) limpiar duplicados:
 Array.from(this.remoteList.children).forEach(node => {
-    const id = node.dataset.personId;
-    if (!activeIds.has(id)) {
+    if (node.id !== `person-${name}`) {
         node.remove();
     }
 });
+
 
 
         item.appendChild(img);
