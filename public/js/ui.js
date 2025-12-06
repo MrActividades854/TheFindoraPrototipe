@@ -27,6 +27,7 @@ export default class UIManager {
         this.videos = [];
         this.profileThumbs = {};
 
+        // managers
         this.notifier = null;
         this.webrtc = null;
         this.faceRec = null;
@@ -148,54 +149,42 @@ export default class UIManager {
         }
     }
 
-    _createVideoCanvasPair(id, stream, opts = {}) {
-        if (!this.container) return;
+_createVideoCanvasPair(id, stream, opts = {}) {
+    if (!this.container) return;
 
-        if (document.getElementById(id)) return;
+    if (document.getElementById(id)) return;
 
-        const wrapper = document.createElement('div');
-        wrapper.className = 'feed';
-        wrapper.id = id;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'feed';
+    wrapper.id = id;
 
-        const video = document.createElement('video');
-        video.srcObject = stream;
-        video.dataset.feedId = id;
-        video.autoplay = true;
-        video.playsinline = true;
-        video.muted = opts.muted ?? false;
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.dataset.feedId = id;
+    video.autoplay = true;
+    video.playsinline = true;
+    video.muted = opts.muted ?? false;
 
-        
-        canvas.className = 'feed-canvas';
+    const frame = document.createElement('div');
+    frame.className = 'feed-frame';
+    frame.appendChild(video);
 
-        const frame = document.createElement('div');
-        frame.className = 'feed-frame';
-        frame.appendChild(video);
+    wrapper.appendChild(frame);
+    this.container.appendChild(wrapper);
 
-        canvas.style.position = 'absolute';
-        canvas.style.top = 0;
-        canvas.style.left = 0;
+    // para abrir vista grande
+    wrapper.addEventListener('click', () => {
+        localStorage.setItem('selectedFeed', video.dataset.feedId);
+        const allIds = this.videos.map(v => v.dataset.feedId);
+        localStorage.setItem('feedList', JSON.stringify(allIds));
+        window.location.href = './findorasections/camera/camara.html';
+    });
 
-        wrapper.appendChild(frame);
-        wrapper.appendChild(canvas);
+    this.videos.push(video);
 
-        this.container.appendChild(wrapper);
-        // --- CLICK: Abrir feed en camara.html ---
-wrapper.addEventListener('click', () => {
-    localStorage.setItem('selectedFeed', video.dataset.feedId);
+    return { video };
+}
 
-    // Guardar la lista completa de feeds para navegar
-    const allIds = this.videos.map(v => v.dataset.feedId);
-    localStorage.setItem('feedList', JSON.stringify(allIds));
-
-    window.location.href = './findorasections/camera/camara.html';
-});
-
-
-        video._canvas = canvas;
-        this.videos.push(video);
-
-        return { video, canvas };
-    }
 
     // ---------------------------------------------------------------------------------------------
     // REMOTE FEEDS

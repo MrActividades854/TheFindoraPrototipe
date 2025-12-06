@@ -115,6 +115,7 @@ if (!res.ok) {
     // PIPELINE ÚNICO: startMultiDetection()
     // ------------------------------------------------------------------------------------
     startMultiDetection({ videos, getRoomByVideo, onDetect }) {
+
         if (this.detecting) return;
 
         this.detecting = true;
@@ -124,6 +125,20 @@ if (!res.ok) {
 
                 for (const vid of videos) {
                     if (!vid || !vid._canvas || vid.readyState < 2) continue;
+
+                        // CREAR CANVAS AQUÍ
+    if (!vid._canvas) {
+        const c = faceapi.createCanvasFromMedia(vid);
+        vid._canvas = c;
+        vid.parentNode.appendChild(c); // overlay correcto encima del video
+
+        // evitar estiramientos CSS
+        c.style.position = "absolute";
+        c.style.top = "0";
+        c.style.left = "0";
+        c.style.width = "100%";
+        c.style.height = "100%";
+    }
 
                     const canvas = vid._canvas;
                     const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -172,31 +187,12 @@ for (let i = 0; i < detections.length; i++) {
     this._drawTracked(canvas, track, label);
 }
 
-
-                        for (const det of results) {
-                            const room = getRoomByVideo ? getRoomByVideo(vid) : "unknown";
-
-                            // IDENTIFICACIÓN
-                            const match = this.faceMatcher.findBestMatch(det.descriptor);
-                            const label = match.distance < this.threshold ? match.label : "Desconocido";
-
-                            // TRACKING
-                            const track = this._applyTracking(det);
-
-                            // LÓGICA DE NOTIFICACIONES
-                            this._applyPersonLogic(track, label, room);
-
-                            // CALLBACK A UI
-                            if (onDetect) onDetect(label, room, vid);
-
-                            // DIBUJO
-                            this._drawTracked(canvas, track, label);
-                        }
-
                     } catch (e) {
                         console.warn("Error pipeline detección:", e);
                     }
                 }
+
+
 
                 await this._sleep(40);
             }
