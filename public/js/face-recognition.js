@@ -131,22 +131,47 @@ if (!res.ok) {
 
                     try {
                         const results = await faceapi
-                            .detectAllFaces(vid, this.detectorOptions)
-                            .withFaceLandmarks()
-                            .withFaceDescriptors();
+    .detectAllFaces(vid, this.detectorOptions)
+    .withFaceLandmarks()
+    .withFaceDescriptors();
 
-                            // 2. NORMALIZAR el tamaño visible del video
+// normalizar
 const displaySize = { width: vid.videoWidth, height: vid.videoHeight };
 faceapi.matchDimensions(canvas, displaySize);
 
-// 3. REDIMENSIONAR detecciones al tamaño visible
+// reescalar detecciones
 const detections = faceapi.resizeResults(results, displaySize);
-// 4. limpiar canvas
+
+// limpiar canvas
 const ctx = canvas.getContext("2d");
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-// 5. dibujar correctamente ajustado
-faceapi.draw.drawDetections(canvas, detections);
+// ❌ borrar esta línea:
+// faceapi.draw.drawDetections(canvas, detections);
+
+// ahora usar SOLO detections
+for (let i = 0; i < detections.length; i++) {
+    const det = detections[i];
+
+    const room = getRoomByVideo ? getRoomByVideo(vid) : "unknown";
+
+    // IDENTIFICACIÓN
+    const match = this.faceMatcher.findBestMatch(det.descriptor);
+    const label = match.distance < this.threshold ? match.label : "Desconocido";
+
+    // TRACKING basado en coordenadas REALES del canvas
+    const track = this._applyTracking(det);
+
+    // LÓGICA
+    this._applyPersonLogic(track, label, room);
+
+    // UI
+    if (onDetect) onDetect(label, room, vid);
+
+    // DIBUJAR SOLO tracking
+    this._drawTracked(canvas, track, label);
+}
+
 
                         for (const det of results) {
                             const room = getRoomByVideo ? getRoomByVideo(vid) : "unknown";
