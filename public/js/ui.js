@@ -187,7 +187,7 @@ wrapper.addEventListener('click', () => {
     const allIds = this.videos.map(v => v.dataset.feedId);
     localStorage.setItem('feedList', JSON.stringify(allIds));
 
-    window.location.href = 'camara.html';
+    window.location.href = './findorasections/camera/camara.html';
 });
 
 
