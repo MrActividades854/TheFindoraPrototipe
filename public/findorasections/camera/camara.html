@@ -23,11 +23,52 @@
         </div>
      <div class="camara">
         <h3>Camara #1</h3>
-        <img src="salon.jpeg">
+        <video id="bigFeed" autoplay playsinline></video>
      </div>
         <div class="siguiente">
             <div class="flechaD"></div>
         </div>
      </div>
+     <script type="module">
+import WebRTCManager from "./webrtc.js";
+import { CONFIG } from "./config.js";
+
+// 1. Obtener selección
+const selectedId = localStorage.getItem("selectedFeed");
+const feedList = JSON.parse(localStorage.getItem("feedList") || "[]");
+
+const videoEl = document.getElementById("bigFeed");
+
+// 2. Mostrar nombre
+document.querySelector(".camara h3").textContent = selectedId || "Cámara";
+
+// 3. Iniciar WebRTC (solo recepción)
+const webrtc = new WebRTCManager({
+    wsUrl: CONFIG.WS_URL,
+    onRemoteFeed: (senderId, stream) => {
+        if (senderId === selectedId) {
+            videoEl.srcObject = stream;
+        }
+    }
+});
+webrtc.init();
+
+// --- Flechas ---
+function goTo(offset) {
+    const index = feedList.indexOf(selectedId);
+    if (index === -1) return;
+
+    let newIndex = index + offset;
+    if (newIndex < 0) newIndex = feedList.length - 1;
+    if (newIndex >= feedList.length) newIndex = 0;
+
+    const newId = feedList[newIndex];
+    localStorage.setItem("selectedFeed", newId);
+    window.location.reload();
+}
+
+document.querySelector(".flechaI").addEventListener("click", () => goTo(-1));
+document.querySelector(".flechaD").addEventListener("click", () => goTo(1));
+</script>
     </body>
     </html>

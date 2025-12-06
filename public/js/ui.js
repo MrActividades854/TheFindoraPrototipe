@@ -179,6 +179,17 @@ export default class UIManager {
         wrapper.appendChild(canvas);
 
         this.container.appendChild(wrapper);
+        // --- CLICK: Abrir feed en camara.html ---
+wrapper.addEventListener('click', () => {
+    localStorage.setItem('selectedFeed', video.dataset.feedId);
+
+    // Guardar la lista completa de feeds para navegar
+    const allIds = this.videos.map(v => v.dataset.feedId);
+    localStorage.setItem('feedList', JSON.stringify(allIds));
+
+    window.location.href = 'camara.html';
+});
+
 
         video._canvas = canvas;
         this.videos.push(video);
