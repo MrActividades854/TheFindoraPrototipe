@@ -135,6 +135,19 @@ if (!res.ok) {
                             .withFaceLandmarks()
                             .withFaceDescriptors();
 
+                            // 2. NORMALIZAR el tamaño visible del video
+const displaySize = { width: vid.videoWidth, height: vid.videoHeight };
+faceapi.matchDimensions(canvas, displaySize);
+
+// 3. REDIMENSIONAR detecciones al tamaño visible
+const detections = faceapi.resizeResults(results, displaySize);
+// 4. limpiar canvas
+const ctx = canvas.getContext("2d");
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+// 5. dibujar correctamente ajustado
+faceapi.draw.drawDetections(canvas, detections);
+
                         for (const det of results) {
                             const room = getRoomByVideo ? getRoomByVideo(vid) : "unknown";
 
