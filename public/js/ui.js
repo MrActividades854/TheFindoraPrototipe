@@ -280,38 +280,39 @@ wrapper.addEventListener('click', () => {
     // ---------------------------------------------------------------------------------------------
     // LISTA DE DETECTADOS (SOLO UI, YA NO DECIDE LÓGICA)
     // ---------------------------------------------------------------------------------------------
-    _updateList(name) {
-        if (!this.remoteList) return;
+_updateList(name, room, video) {
 
-        const id = `person-${name}`;
-        if (document.getElementById(id)) return;
+    if (!this.remoteList) return;
 
-        const item = document.createElement('div');
-        item.className = 'detected-item';
-        item.id = id;
+    const normalized = name.trim().toLowerCase();
 
-        const img = document.createElement('img');
-        img.className = 'detected-thumb';
-        const key = this._normalizeName(name);
-        img.src = this.profileThumbs[key] || '/default-avatar.png';
+    // Buscar si ya existe el item
+    let item = document.getElementById(`person-${normalized}`);
 
-        const lbl = document.createElement('div');
-        lbl.className = 'detected-name';
-        lbl.textContent = name;
+    if (!item) {
+        item = document.createElement("div");
+        item.id = `person-${normalized}`;
+        item.className = "person-item";
 
-        // (opcional) limpiar duplicados:
-Array.from(this.remoteList.children).forEach(node => {
-    if (node.id !== `person-${name}`) {
-        node.remove();
-    }
-});
+        const img = document.createElement("img");
+        img.className = "person-thumb";
 
+        // si hay thumbnail -> úsalo
+        img.src = this.profileThumbs[normalized] || "/default-avatar.png";
 
+        const label = document.createElement("span");
+        label.textContent = name;
 
         item.appendChild(img);
-        item.appendChild(lbl);
+        item.appendChild(label);
+
         this.remoteList.appendChild(item);
     }
+
+    // actualizar sala si quieres mostrarla
+    //item.dataset.room = room;
+}
+
 
     stop() {
     // detener face recognition
