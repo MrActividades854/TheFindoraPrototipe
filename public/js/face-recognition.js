@@ -124,7 +124,7 @@ if (!res.ok) {
             while (this.detecting) {
 
                 for (const vid of videos) {
-                    if (!vid || !vid._canvas || vid.readyState < 2) continue;
+                    if (!vid || vid.readyState < 2) continue;
 
                         // CREAR CANVAS AQUÍ
     if (!vid._canvas) {
