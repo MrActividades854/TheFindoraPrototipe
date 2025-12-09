@@ -9,7 +9,7 @@ window.addEventListener("beforeunload", () => uiManager.stop());
 
 
 export default class UIManager {
-    constructor({ wsUrl = CONFIG.WS_URL, modelPath = '/models', notificationsMode = 'live' } = {}) {
+    constructor({ wsUrl = CONFIG.WS_URL, modelPath = CONFIG.MODEL_PATH, notificationsMode = 'live' } = {}) {
 
         // DOM
         this.container = document.getElementById('container');
@@ -105,7 +105,7 @@ export default class UIManager {
 
     async _loadProfileThumbs() {
         try {
-            const res = await fetch(`${CONFIG.API_URL}/api/profiles_full`);
+            const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles_full`);
             if (!res.ok) return;
 
             const profiles = await res.json();

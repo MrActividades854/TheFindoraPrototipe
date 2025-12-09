@@ -6,8 +6,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     // Crear UIManager directamente (solo usa ES modules)
     const ui = new UIManager({
-      wsUrl: CONFIG.WS_URL,
-      modelPath: '/models'
+      wsUrl: "wss://thefindoraprototipe.onrender.com/ws",
+      modelPath: CONFIG.MODEL_PATH,
     });
 
     window.ui = ui;

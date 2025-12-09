@@ -27,7 +27,7 @@ export async function initBackgroundDetection() {
         if (!window.__uiManagerBG) {
             window.__uiManagerBG = new UIManager({
                 wsUrl: CONFIG.WS_URL,
-                modelPath: "/models",
+                modelPath: CONFIG.MODEL_PATH,
                 notificationsMode: "history" // modo silencioso
             });
 

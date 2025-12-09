@@ -5,7 +5,7 @@ import { CONFIG } from "./config.js";
 import * as faceapi from 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.esm.js';
 
 export default class FaceRecognitionManager {
-    constructor({ modelPath = '/models', getActiveVideo = () => null, onNotification = () => {} } = {}) {
+    constructor({ modelPath = CONFIG.MODEL_PATH, getActiveVideo = () => null, onNotification = () => {} } = {}) {
 
         this.modelPath = modelPath;
         this.getActiveVideo = getActiveVideo;
@@ -44,15 +44,16 @@ export default class FaceRecognitionManager {
     }
 
     async loadModels() {
-        await faceapi.nets.tinyFaceDetector.loadFromUri(this.modelPath);
-        await faceapi.nets.faceLandmark68Net.loadFromUri(this.modelPath);
-        await faceapi.nets.faceRecognitionNet.loadFromUri(this.modelPath);
-        await faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelPath); 
+        await faceapi.nets.tinyFaceDetector.loadFromUri(CONFIG.MODEL_PATH);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(CONFIG.MODEL_PATH);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(CONFIG.MODEL_PATH);
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(CONFIG.MODEL_PATH); 
         console.log("Modelos cargados (solo TinyFaceDetector).");
     }
 
     async loadProfilesFromServer() {
-        const res = await fetch(`${CONFIG.API_URL}/api/profiles_full`);
+        const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles_full`);
+
 
 if (!res.ok) {
     console.error("Error cargando perfiles:", response.status);
