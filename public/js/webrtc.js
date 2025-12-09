@@ -1,8 +1,10 @@
 // webrtc.js (versión corregida)
 // Manejo de señalización WebSocket + múltiples PeerConnections receptoras (one receiver PC per sender)
 
+import { CONFIG } from "./config";
+
 export default class WebRTCManager {
-  constructor({ wsUrl = 'https://thefindoraprototipe.onrender.com/ws', onRemoteFeed = ()=>{}, onLog = ()=>{}, maxFeeds = 5 } = {}) {
+  constructor({ wsUrl = CONFIG.WS_URL, onRemoteFeed = ()=>{}, onLog = ()=>{}, maxFeeds = 5 } = {}) {
     this.wsUrl = wsUrl;
     this.onRemoteFeed = onRemoteFeed;
     this.onLog = onLog;
@@ -98,9 +100,9 @@ export default class WebRTCManager {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         {
-      urls: "turn:relay.metered.ca:80",
-      username: "openai",
-      credential: "openai"
+      urls: "turn:global.relay.metered.ca:80",
+      username: "f6f49a7dd1c325de460d699c",
+      credential: "xrtjuvhIYURQq7mg"
     }
       ]
     });
