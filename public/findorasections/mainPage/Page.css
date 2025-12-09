@@ -38,11 +38,11 @@ nav img {
 }
 
 .bell {
-    margin-left: 55%;
+    margin-left: auto;
 }
 
 .perfil {
-    transform: scale(200%);
+    transform: scale(2);
     border-radius: 10px;
     border: none;
 }
@@ -68,11 +68,11 @@ h1 {
     background-color: rgb(49, 49, 161);
     border-radius: 10px;
     box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.1s ease-in-out;
 }
 
 .boxes:hover {
     transform: scale(1.01);
-    transition: all 0.1s ease-in-out;
     box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.4);
 }
 
