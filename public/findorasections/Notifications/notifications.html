@@ -209,13 +209,21 @@ window.onload = function() {
 
 <script type="module">
     import { initBackgroundDetection } from '../../js/background-init.js';
+    // Leer modo WebSocket desde settings
+    const allowWS = localStorage.getItem("useWebSocket") === "true";
+
+    // Si WebSocket está desactivado → NO cargar background remoto
+    if (!allowWS) {
+        console.log("[BG] WebSocket desactivado → solo modo local. No iniciar background.");
+        return;
+    }
     initBackgroundDetection();
   </script>
   <script type="module">
 import NotificationManager from "./notifications.js";
 
 // Solo historial, sin pop-ups
-const notifier = new NotificationManager('/api/notifications', "history");
+const notifier = new NotificationManager(`${CONFIG.API_BASE}/api/notifications`, "history");
 
 // Mostrar historial
 const list = JSON.parse(localStorage.getItem("findora_notifications") || "[]").reverse();

@@ -44,7 +44,7 @@ export default class UIManager {
         try {
             this.statusEl.textContent = 'Cargando modelos...';
 
-            this.notifier = new NotificationManager('/api/notifications', this.notificationsMode);
+            this.notifier = new NotificationManager('https://thefindoraprototipe.onrender.com/api/notifications', this.notificationsMode);
 
             // Face recognition system
             this.faceRec = new FaceRecognitionManager({
@@ -164,6 +164,7 @@ _createVideoCanvasPair(id, stream, opts = {}) {
     video.autoplay = true;
     video.playsinline = true;
     video.muted = opts.muted ?? false;
+    video.dataset.type = "local";
 
     const frame = document.createElement('div');
     frame.className = 'feed-frame';

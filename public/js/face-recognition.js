@@ -1,6 +1,8 @@
 // face-recognition.js — VERSIÓN OFICIAL UNIFICADA
 // Un solo pipeline TinyFaceDetector para TODO el sistema
 
+const useWS = localStorage.getItem("useWebSocket") === "true";
+
 import { CONFIG } from "./config.js";
 import * as faceapi from 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.esm.js';
 
@@ -52,6 +54,12 @@ export default class FaceRecognitionManager {
     }
 
     async loadProfilesFromServer() {
+        if (!useWS) {
+        console.warn("[FaceRec] WebSocket OFF → No se cargarán perfiles del servidor.");
+        this.labeledDescriptors = [];
+        this.faceMatcher = new faceapi.FaceMatcher([], this.threshold);
+        return [];
+    }
         const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles_full`);
 
 
@@ -116,6 +124,14 @@ if (!res.ok) {
     // PIPELINE ÚNICO: startMultiDetection()
     // ------------------------------------------------------------------------------------
     startMultiDetection({ videos, getRoomByVideo, onDetect }) {
+        
+    const useWS = localStorage.getItem("useWebSocket") === "true";
+
+    // Si WebSocket está apagado → filtrar SOLO videos locales
+    if (!useWS) {
+        videos = videos.filter(v => v.dataset.type !== "remote");
+        console.log("[FaceRec] Modo local: filtrando cámaras remotas.");
+    }
 
         if (this.detecting) return;
 
@@ -273,6 +289,12 @@ for (let i = 0; i < detections.length; i++) {
     // ------------------------------------------------------------------------------------
     _applyPersonLogic(track, label, room) {
 
+        if (!useWS) {
+    // Solo lógica local, sin reportar a servidor
+    this.updateTrackedPersonDetection(track, label);
+    return;
+}
+
         // 1. actualización interna
         this.updateTrackedPersonDetection(track, label);
 
@@ -337,10 +359,11 @@ if (this.personLastRoom[name] !== room) {
 }
 
 async _sendLocationUpdate(name, room) {
+    if (!useWS) return; // <-- evitar fetch innecesario cuando WS está desactivado
     const profile_id = this.profileMap[name];
     if (!profile_id) return;
 
-    fetch('/api/update_location', {
+    fetch('https://thefindoraprototipe.onrender.com/api/update_location', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

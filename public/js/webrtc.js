@@ -1,7 +1,7 @@
 // webrtc.js (versión corregida)
 // Manejo de señalización WebSocket + múltiples PeerConnections receptoras (one receiver PC per sender)
 
-import { CONFIG } from "./config";
+import { CONFIG } from "./config.js";
 
 export default class WebRTCManager {
   constructor({ wsUrl = CONFIG.WS_URL, onRemoteFeed = ()=>{}, onLog = ()=>{}, maxFeeds = 5 } = {}) {
@@ -245,6 +245,7 @@ export default class WebRTCManager {
     videoEl.className = 'remote-video';
     videoEl.id = `remote-${senderId}`;
     videoEl.srcObject = stream;
+    videoEl.dataset.type = "remote";
 
     // estilo básico para que el UI pueda colocarlo bien (UI podrá sobreescribir)
     videoEl.style.position = 'absolute';

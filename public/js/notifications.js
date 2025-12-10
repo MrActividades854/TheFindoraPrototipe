@@ -1,5 +1,5 @@
 export default class NotificationManager {
-    constructor(apiUrl = '/api/notifications', mode = "live") {
+    constructor(apiUrl = `https://thefindoraprototipe.onrender.com/api/notifications`, mode = "live") {
     this.apiUrl = apiUrl;
     this.mode = mode;
 
