@@ -1,0 +1,60 @@
+header {
+    background-color: blue;
+}
+
+header nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+}
+
+header nav > div:first-child {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+nav a {
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+nav a:hover {
+    background-color: aqua;
+}
+
+nav img {
+    width: 40px;
+    height: 40px;
+}
+
+.nav-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 60px;
+}
+
+.bell {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+}
+
+.perfil {
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+}
+
+.logo {
+    width: 60px;
+    height: 60px;
+}
