@@ -27,5 +27,22 @@
         <h3>Ver perfiles</h3>
     </div>
     </div> 
+<script type="module">
+    import { initBackgroundDetection } from '../../js/background-init.js';
+
+    function start() {
+        const allowWS = localStorage.getItem("useWebSocket") === "true";
+
+        if (!allowWS) {
+            console.log("[BG] WebSocket desactivado → solo modo local. No iniciar background.");
+            return;
+        }
+
+        initBackgroundDetection();
+    }
+
+    start();
+</script>
+
 </body>
 </html>

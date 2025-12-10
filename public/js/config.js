@@ -79,7 +79,6 @@ if (depth > 2) MODEL_PATH = "../../models";
 // -----------------------------
 // 3. Export final
 // -----------------------------
-console.log(`CONFIG:\nWS → ${WS_BASE}\nAPI → ${API_BASE}\nMODELS → ${MODEL_PATH}`);
 
 export const CONFIG = {
     WS_URL: WS_BASE,
