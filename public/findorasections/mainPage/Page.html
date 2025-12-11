@@ -9,7 +9,9 @@
     <title>Seleccionar</title>
 </head>
 <body>
-    <div hx-get="/public/header.html" hx-trigger="load"></div>
+
+    <!-- Cargar header por HTMX -->
+    <div hx-get="/header.html" hx-trigger="load"></div>
 
 
     <h1>Bienvenido de nuevo, Admin</h1>
@@ -43,6 +45,5 @@
 
     start();
 </script>
-
 </body>
 </html>
