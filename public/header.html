@@ -1,26 +1,175 @@
 <header>
+    <style>
+        header {
+            background-color: rgb(49, 49, 174);
+            width: 100%;
+        }
+
+        header nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
+
+        header nav > div:first-child {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .hoverable:hover {
+            background-color: aqua;
+        }
+
+        nav img {
+            width: 40px;
+            height: 40px;
+        }
+
+        .nav-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            height: 60px;
+        }
+
+        .bell {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+        }
+
+        .perfil {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+        }
+
+        .profile-options {
+            height: 60px;
+            background-color: rgb(49, 49, 113);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-radius: 20px;
+            padding: 5px 15px;
+            cursor: pointer;
+        }
+
+        #usuario-name {
+            color: white;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+
+        .profile-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 70px;
+            right: 0;
+            background-color: rgb(49, 49, 113);
+            border-radius: 10px;
+            min-width: 150px;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: dropdown 0.2s ease-out;
+        }
+
+        .dropdown-menu a {
+            padding: 12px 15px;
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: rgb(60, 60, 180);
+        }
+
+        @keyframes dropdown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
     <nav>
         <div>
-            <img src="Findora.png" class="logo" alt="Logo">
-            <a class="hoverable" href="./mainPage/Page.html">Inicio</a>
-            <a class="hoverable" href="./../index.html">Cámara</a>
-            <a class="hoverable" href="./profilesPage/profiles.html">Perfiles</a>
+            <img src="/public/findorasections/mainPage/Findora.png" class="logo" alt="Logo">
+
+            <a class="hoverable" href="/mainPage/Page.html">Inicio</a>
+            <a class="hoverable" href="/index.html">Cámara</a>
+            <a class="hoverable" href="/profilesPage/profiles.html">Perfiles</a>
         </div>
+
         <div class="nav-right">        
-            <a href="./Notifications/notifications.html">
-                <img src="Bell.png" class="bell" alt="Notificaciones">
-            </a> 
+            <a href="/Notifications/notifications.html" class="hoverable notification-link">
+                <img src="/public/findorasections/mainPage/Bell.png" class="bell" alt="Notificaciones">
+            </a>
+
             <div class="profile-dropdown">
-    <div class="profile-options">
-        <img src="profile.png" class="perfil" alt="Perfil">
-        <span id="usuario-name">Usuario</span>
-    </div>
+                <div class="profile-options">
+                    <img src="/public/findorasections/mainPage/profile.png" class="perfil" alt="Perfil">
+                    <span id="usuario-name">Usuario</span>
+                </div>
 
-    <div class="dropdown-menu">
-        <a href="./settings.html">⚙️ Settings</a>
-        <a href="./logout.html">🔓 Cerrar sesión</a>
-    </div>
+                <div class="dropdown-menu">
+                    <a href="/settings/settings.html">⚙️ Settings</a>
+                    <a href="/logout.html">🔓 Cerrar sesión</a>
+                </div>
+            </div>
         </div>
-
     </nav>
 </header>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const profile = document.querySelector(".profile-options");
+    const menu = document.querySelector(".dropdown-menu");
+
+    if (!profile || !menu) return;
+
+    profile.addEventListener("click", () => {
+        menu.style.display =
+            menu.style.display === "flex" ? "none" : "flex";
+    });
+
+    document.addEventListener("click", (e) => {
+        const inside = profile.contains(e.target) ||
+                       menu.contains(e.target);
+
+        if (!inside) menu.style.display = "none";
+    });
+});
+</script>

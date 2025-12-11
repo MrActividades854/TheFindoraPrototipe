@@ -34,32 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             el.innerHTML = await resp.text();
 
-            // Muy importante: solo inicializar dropdown cuando ya se cargó el header
-            initializeProfileDropdown();
-
         } catch (error) {
             el.innerHTML = "Error cargando el archivo.";
         }
     });
 });
-
-function initializeProfileDropdown() {
-    const profile = document.querySelector(".profile-options");
-    const menu = document.querySelector(".dropdown-menu");
-
-    if (!profile || !menu) {
-        console.warn("profile-options o dropdown-menu no encontrados aún");
-        return;
-    }
-
-    // toggle
-    profile.addEventListener("click", () => {
-        menu.style.display = menu.style.display === "flex" ? "none" : "flex";
-    });
-
-    // cerrar al hacer clic afuera
-    document.addEventListener("click", (e) => {
-        const isInside = profile.contains(e.target) || menu.contains(e.target);
-        if (!isInside) menu.style.display = "none";
-    });
-}

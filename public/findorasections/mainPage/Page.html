@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="Page.css">
-    <link rel="stylesheet" href="../header.css">
+    <script src="https://unpkg.com/htmx.org@1.9.5"></script>
     <link rel="icon" href="./../../../src/favicon.ico" type="image/x-icon">
     <title>Seleccionar</title>
 </head>
 <body>
-    <div include-html="../header.html"></div>
-    <script src="../include.js"></script>
+    <div hx-get="/public/header.html" hx-trigger="load"></div>
+
 
     <h1>Bienvenido de nuevo, Admin</h1>
     <div class="main">
