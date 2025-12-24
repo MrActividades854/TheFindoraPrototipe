@@ -198,11 +198,16 @@ function loadNotifications() {
 window.onload = function() {
     loadNotifications();
     // Escuchar cambios en localStorage para actualizar en tiempo real
-    window.addEventListener('storage', function(e) {
-        if (e.key === 'findora_notifications') {
-            loadNotifications();
-        }
-    });
+    const storageHandler = (e) => {
+    if (e.key === 'findora_notifications') {
+        loadNotifications();
+    }
+};
+
+window.addEventListener('storage', storageHandler);
+window.addEventListener('beforeunload', () => {
+    window.removeEventListener('storage', storageHandler);
+});
 };
 </script>
 
@@ -218,6 +223,7 @@ window.onload = function() {
 
         initBackgroundDetection();
     }
+    start();
   </script>
   <script type="module">
 import { CONFIG } from "/js/config.js";

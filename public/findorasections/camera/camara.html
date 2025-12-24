@@ -7,8 +7,6 @@
     <title>Seleccionar</title>
 </head>
 <body>
-    <div include-html="../../header.html"></div>
-    <script src="../../include.js"></script>
     <div class="main">
         <div class="anterior">
             <div class="flechaI"></div>
@@ -22,8 +20,8 @@
         </div>
      </div>
      <script type="module">
-import WebRTCManager from "./webrtc.js";
-import { CONFIG } from "./config.js";
+import WebRTCManager from "/../../js/webrtc.js";
+import { CONFIG } from "/../../js/config.js";
 
 // 1. Obtener selección
 const selectedId = localStorage.getItem("selectedFeed");

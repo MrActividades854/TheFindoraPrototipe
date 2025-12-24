@@ -46,6 +46,7 @@ export default class FaceRecognitionManager {
     }
 
     async loadModels() {
+        console.log(CONFIG.MODEL_PATH);
         await faceapi.nets.tinyFaceDetector.loadFromUri(CONFIG.MODEL_PATH);
         await faceapi.nets.faceLandmark68Net.loadFromUri(CONFIG.MODEL_PATH);
         await faceapi.nets.faceRecognitionNet.loadFromUri(CONFIG.MODEL_PATH);

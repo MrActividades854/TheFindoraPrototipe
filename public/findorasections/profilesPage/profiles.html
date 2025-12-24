@@ -82,7 +82,7 @@
     <div id="profilesContainer">Cargando...</div>
   </section>
 
-  <script>
+  <script type="module">
     import { CONFIG } from "../../js/config.js";
     async function fetchProfiles() {
       const res = await fetch(`${CONFIG.API_BASE}/api/profiles`);
