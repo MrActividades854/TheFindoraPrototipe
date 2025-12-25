@@ -1,13 +1,12 @@
-// face-recognition.js — VERSIÓN OFICIAL UNIFICADA
-// Un solo pipeline TinyFaceDetector para TODO el sistema
-
-const useWS = localStorage.getItem("useWebSocket") === "true";
+// face-recognition.js — VERSIÓN OPTIMIZADA SIN DIAGNÓSTICO PESADO
 
 import { CONFIG } from "./config.js";
 import * as faceapi from 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.esm.js';
 
 export default class FaceRecognitionManager {
     constructor({ modelPath = CONFIG.MODEL_PATH, getActiveVideo = () => null, onNotification = () => {} } = {}) {
+        console.log("🔧 FaceRecognitionManager constructor");
+        console.log("📁 ModelPath:", modelPath);
 
         this.modelPath = modelPath;
         this.getActiveVideo = getActiveVideo;
@@ -15,6 +14,7 @@ export default class FaceRecognitionManager {
 
         this.labeledDescriptors = [];
         this.faceMatcher = null;
+        this.profileMap = {};
 
         this.detecting = false;
         this.showDebugPoint = false;
@@ -27,7 +27,6 @@ export default class FaceRecognitionManager {
         this.activeAlerts = {};
         this.knownPeople = new Set();
 
-        // Detector único para todo
         this.detectorOptions = new faceapi.TinyFaceDetectorOptions({
             inputSize: 416,
             scoreThreshold: 0.5
@@ -43,183 +42,292 @@ export default class FaceRecognitionManager {
         this.confirmUnknownAfter = 5;
 
         this.personLastRoom = {};
+        
+        console.log("✅ FaceRecognitionManager creado");
+    }
+
+    async testModelAvailability() {
+        console.log("🔍 Verificación rápida de modelos...");
+        
+        const manifestsToTest = [
+            'tiny_face_detector_model-weights_manifest.json',
+            'face_landmark_68_model-weights_manifest.json',
+            'face_recognition_model-weights_manifest.json',
+            'ssd_mobilenetv1_model-weights_manifest.json'
+        ];
+
+        let allOk = true;
+
+        for (const manifest of manifestsToTest) {
+            const fullPath = `${this.modelPath}/${manifest}`;
+            
+            try {
+                const response = await fetch(fullPath, { 
+                    method: 'HEAD' // Solo verificar headers, no descargar contenido
+                });
+                
+                if (response.ok) {
+                    console.log(`  ✅ ${manifest}`);
+                } else {
+                    console.log(`  ❌ ${manifest} - Status: ${response.status}`);
+                    allOk = false;
+                }
+            } catch (error) {
+                console.log(`  ❌ ${manifest} - Error: ${error.message}`);
+                allOk = false;
+            }
+        }
+        
+        return allOk;
     }
 
     async loadModels() {
-        console.log(CONFIG.MODEL_PATH);
-        await faceapi.nets.tinyFaceDetector.loadFromUri(CONFIG.MODEL_PATH);
-        await faceapi.nets.faceLandmark68Net.loadFromUri(CONFIG.MODEL_PATH);
-        await faceapi.nets.faceRecognitionNet.loadFromUri(CONFIG.MODEL_PATH);
-        await faceapi.nets.ssdMobilenetv1.loadFromUri(CONFIG.MODEL_PATH); 
-        console.log("Modelos cargados (solo TinyFaceDetector).");
+        console.log("🔄 Iniciando carga de modelos...");
+        console.log("📍 Ruta de modelos:", this.modelPath);
+        
+        // Verificación rápida primero
+        const modelsAvailable = await this.testModelAvailability();
+        
+        if (!modelsAvailable) {
+            console.error("❌ Algunos modelos no están disponibles");
+            console.log("💡 SOLUCIONES POSIBLES:");
+            console.log("  1. Verifica que la carpeta /models existe");
+            console.log("  2. Descarga los modelos de: https://github.com/justadudewhohacks/face-api.js-models");
+            console.log("  3. Colócalos en /public/models/");
+            console.log("  4. O cambia MODEL_PATH en config.js");
+            throw new Error("Modelos no disponibles en la ruta especificada");
+        }
+        
+        try {
+            console.log("\n⏳ Cargando TinyFaceDetector...");
+            await faceapi.nets.tinyFaceDetector.loadFromUri(this.modelPath);
+            console.log("✅ TinyFaceDetector cargado");
+            
+            console.log("⏳ Cargando FaceLandmark68Net...");
+            await faceapi.nets.faceLandmark68Net.loadFromUri(this.modelPath);
+            console.log("✅ FaceLandmark68Net cargado");
+            
+            console.log("⏳ Cargando FaceRecognitionNet...");
+            await faceapi.nets.faceRecognitionNet.loadFromUri(this.modelPath);
+            console.log("✅ FaceRecognitionNet cargado");
+            
+            console.log("⏳ Cargando SsdMobilenetv1...");
+            await faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelPath);
+            console.log("✅ SsdMobilenetv1 cargado");
+            
+            console.log("🎉 TODOS LOS MODELOS CARGADOS EXITOSAMENTE");
+            return true;
+            
+        } catch (error) {
+            console.error("\n❌ ERROR CRÍTICO cargando modelos:");
+            console.error("Tipo:", error.constructor.name);
+            console.error("Mensaje:", error.message);
+            
+            if (error.message.includes('fetch')) {
+                console.error("\n💡 Error de red detectado. Posibles causas:");
+                console.error("  - Los archivos .bin son muy grandes y tardaron mucho");
+                console.error("  - Problema de conectividad");
+                console.error("  - CORS bloqueando la carga");
+            }
+            
+            throw error;
+        }
     }
 
     async loadProfilesFromServer() {
+        console.log("🔄 Iniciando carga de perfiles...");
+        const useWS = localStorage.getItem("useWebSocket") === "true";
+        console.log("🌐 WebSocket activado:", useWS);
+        
         if (!useWS) {
-        console.warn("[FaceRec] WebSocket OFF → No se cargarán perfiles del servidor.");
-        this.labeledDescriptors = [];
-        this.faceMatcher = new faceapi.FaceMatcher([], this.threshold);
-        return [];
-    }
-        const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles_full`);
-
-
-if (!res.ok) {
-    console.error("Error cargando perfiles:", response.status);
-    this.onNotification("Error cargando perfiles", "error");
-    return [];
-}
-
-        let profiles;
+            console.warn("⚠️ WebSocket OFF → Inicializando sin perfiles");
+            this.labeledDescriptors = [];
+            this.faceMatcher = new faceapi.FaceMatcher([], this.threshold);
+            console.log("✅ FaceMatcher vacío inicializado");
+            return [];
+        }
 
         try {
-            profiles = await res.json();
-        } catch (e) {
-            console.error("Error parseando perfiles:", e);
-            this.onNotification("Error parseando perfiles", "error");
-            return [];
-        }
+            console.log("📡 Solicitando perfiles del servidor...");
+            const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles_full`);
+            console.log("📥 Respuesta recibida - Status:", res.status);
 
-        if (!Array.isArray(profiles)) {
-            console.error("Perfiles inválidos recibidos:", profiles);
-            this.onNotification("Perfiles inválidos recibidos", "error");
-            return [];
-        }
-
-        console.log("PERFILES RECIBIDOS:", profiles);
-
-
-        this.labeledDescriptors = [];
-
-        this.profileMap = {}; // nombre → id
-
-        for (const p of profiles) {
-            if (!p.images || p.images.length === 0) continue;
-
-            const descriptors = [];
-
-            for (const imgUrl of p.images) {
-                try {
-                    const img = await faceapi.fetchImage(imgUrl);
-                    const det = await faceapi
-                        .detectSingleFace(img)
-                        .withFaceLandmarks()
-                        .withFaceDescriptor();
-
-                    if (det) descriptors.push(det.descriptor);
-                } catch { }
+            if (!res.ok) {
+                console.error("❌ Error HTTP:", res.status, res.statusText);
+                this.labeledDescriptors = [];
+                this.faceMatcher = new faceapi.FaceMatcher([], this.threshold);
+                this.onNotification("Error cargando perfiles", "error");
+                return [];
             }
 
-            if (descriptors.length > 0) {
-                this.labeledDescriptors.push(
-                    new faceapi.LabeledFaceDescriptors(p.name, descriptors)
-                );
-            }
-        }
+            const profiles = await res.json();
+            console.log("📊 Perfiles recibidos:", profiles.length);
 
-        this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors, this.threshold);
-        console.log(`[FaceRec] Perfiles cargados: ${this.labeledDescriptors.length}`);
+            if (!Array.isArray(profiles)) {
+                console.error("❌ Formato de perfiles inválido");
+                this.labeledDescriptors = [];
+                this.faceMatcher = new faceapi.FaceMatcher([], this.threshold);
+                return [];
+            }
+
+            this.labeledDescriptors = [];
+            this.profileMap = {};
+
+            for (const p of profiles) {
+                if (!p.images || p.images.length === 0) {
+                    console.warn(`⚠️ Perfil ${p.name} sin imágenes`);
+                    continue;
+                }
+
+                const descriptors = [];
+
+                for (const imgUrl of p.images) {
+                    try {
+                        const img = await faceapi.fetchImage(imgUrl);
+                        const det = await faceapi
+                            .detectSingleFace(img)
+                            .withFaceLandmarks()
+                            .withFaceDescriptor();
+
+                        if (det) {
+                            descriptors.push(det.descriptor);
+                        }
+                    } catch (err) {
+                        console.warn(`  ❌ Error procesando imagen:`, err.message);
+                    }
+                }
+
+                if (descriptors.length > 0) {
+                    this.labeledDescriptors.push(
+                        new faceapi.LabeledFaceDescriptors(p.name, descriptors)
+                    );
+                    this.profileMap[p.name] = p.id;
+                    console.log(`✅ Perfil ${p.name}: ${descriptors.length} descriptores`);
+                }
+            }
+
+            this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors, this.threshold);
+            console.log(`🎉 ${this.labeledDescriptors.length} perfiles listos`);
+            
+            return profiles;
+            
+        } catch (error) {
+            console.error("❌ Error en loadProfilesFromServer:", error.message);
+            
+            this.labeledDescriptors = [];
+            this.faceMatcher = new faceapi.FaceMatcher([], this.threshold);
+            this.onNotification("Error cargando perfiles del servidor", "error");
+            return [];
+        }
     }
 
-    // ------------------------------------------------------------------------------------
-    // PIPELINE ÚNICO: startMultiDetection()
-    // ------------------------------------------------------------------------------------
     startMultiDetection({ videos, getRoomByVideo, onDetect }) {
+        console.log("🎬 Iniciando detección múltiple");
+        console.log("📹 Videos:", videos.length);
         
-    const useWS = localStorage.getItem("useWebSocket") === "true";
+        const useWS = localStorage.getItem("useWebSocket") === "true";
 
-    // Si WebSocket está apagado → filtrar SOLO videos locales
-    if (!useWS) {
-        videos = videos.filter(v => v.dataset.type !== "remote");
-        console.log("[FaceRec] Modo local: filtrando cámaras remotas.");
-    }
+        if (!useWS) {
+            const before = videos.length;
+            videos = videos.filter(v => v.dataset.type !== "remote");
+            console.log(`🔍 Modo local: ${before} → ${videos.length} videos`);
+        }
 
-        if (this.detecting) return;
+        if (this.detecting) {
+            console.warn("⚠️ Detección ya activa");
+            return;
+        }
+
+        if (!this.faceMatcher) {
+            console.error("❌ FaceMatcher no inicializado");
+            return;
+        }
 
         this.detecting = true;
+        console.log("✅ Detección iniciada");
 
         const loop = async () => {
+            let frameCount = 0;
+            
             while (this.detecting) {
+                frameCount++;
+                
+                if (frameCount === 1 || frameCount % 100 === 0) {
+                    console.log(`📊 Frame ${frameCount}`);
+                }
 
                 for (const vid of videos) {
                     if (!vid || vid.readyState < 2) continue;
 
-                        // CREAR CANVAS AQUÍ
-    if (!vid._canvas) {
-        const c = faceapi.createCanvasFromMedia(vid);
-        vid._canvas = c;
-        vid.parentNode.appendChild(c); // overlay correcto encima del video
+                    if (!vid._canvas) {
+                        const c = faceapi.createCanvasFromMedia(vid);
+                        vid._canvas = c;
+                        vid.parentNode.appendChild(c);
 
-        // evitar estiramientos CSS
-        c.style.position = "absolute";
-        c.style.top = "0";
-        c.style.left = "0";
-        c.style.width = "100%";
-        c.style.height = "100%";
-    }
+                        c.style.position = "absolute";
+                        c.style.top = "0";
+                        c.style.left = "0";
+                        c.style.width = "100%";
+                        c.style.height = "100%";
+                        
+                        console.log(`🎨 Canvas creado: ${vid.dataset.feedId}`);
+                    }
 
                     const canvas = vid._canvas;
                     const ctx = canvas.getContext("2d", { willReadFrequently: true });
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                     try {
                         const results = await faceapi
-    .detectAllFaces(vid, this.detectorOptions)
-    .withFaceLandmarks()
-    .withFaceDescriptors();
+                            .detectAllFaces(vid, this.detectorOptions)
+                            .withFaceLandmarks()
+                            .withFaceDescriptors();
 
-// normalizar
-const displaySize = { width: vid.videoWidth, height: vid.videoHeight };
-faceapi.matchDimensions(canvas, displaySize);
+                        if (results.length > 0 && frameCount % 50 === 0) {
+                            console.log(`👤 ${results.length} rostro(s) en ${vid.dataset.feedId}`);
+                        }
 
-// reescalar detecciones
-const detections = faceapi.resizeResults(results, displaySize);
+                        const displaySize = { width: vid.videoWidth, height: vid.videoHeight };
+                        faceapi.matchDimensions(canvas, displaySize);
 
-// limpiar canvas
-const ctx = canvas.getContext("2d");
-ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        const detections = faceapi.resizeResults(results, displaySize);
 
-// ❌ borrar esta línea:
-// faceapi.draw.drawDetections(canvas, detections);
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-// ahora usar SOLO detections
-for (let i = 0; i < detections.length; i++) {
-    const det = detections[i];
+                        for (let i = 0; i < detections.length; i++) {
+                            const det = detections[i];
 
-    const room = getRoomByVideo ? getRoomByVideo(vid) : "unknown";
+                            const room = getRoomByVideo ? getRoomByVideo(vid) : "unknown";
 
-    // IDENTIFICACIÓN
-    const match = this.faceMatcher.findBestMatch(det.descriptor);
-    const label = match.distance < this.threshold ? match.label : "Desconocido";
+                            const match = this.faceMatcher.findBestMatch(det.descriptor);
+                            const label = match.distance < this.threshold ? match.label : "Desconocido";
 
-    // TRACKING basado en coordenadas REALES del canvas
-    const track = this._applyTracking(det);
+                            const track = this._applyTracking(det);
 
-    // LÓGICA
-    this._applyPersonLogic(track, label, room);
+                            this._applyPersonLogic(track, label, room);
 
-    // UI
-    if (onDetect) onDetect(label, room, vid);
+                            if (onDetect) onDetect(label, room, vid);
 
-    // DIBUJAR SOLO tracking
-    this._drawTracked(canvas, track, label);
-}
+                            this._drawTracked(canvas, track, label);
+                        }
 
                     } catch (e) {
-                        console.warn("Error pipeline detección:", e);
+                        if (frameCount % 100 === 0) {
+                            console.warn("⚠️ Error frame:", e.message);
+                        }
                     }
                 }
 
-
-
                 await this._sleep(40);
             }
+            
+            console.log("🛑 Loop detenido");
         };
 
         loop();
     }
 
     stopDetection() {
+        console.log("🛑 Deteniendo detección...");
         this.detecting = false;
         this.tracked = [];
         this.peopleLastSeen = {};
@@ -227,15 +335,11 @@ for (let i = 0; i < detections.length; i++) {
         this.knownPeople = new Set();
         this.unconfirmedUnknownFrames = 0;
         this.personLastRoom = {};
-
+        console.log("✅ Detección detenida");
     }
 
-    // ------------------------------------------------------------------------------------
-    // TRACKING
-    // ------------------------------------------------------------------------------------
     _applyTracking(det) {
         const box = det.detection.box;
-
         this.lastBoxWidth = box.width;
         this.lastBoxHeight = box.height;
 
@@ -249,13 +353,11 @@ for (let i = 0; i < detections.length; i++) {
         for (const t of this.tracked) {
             const dist = Math.hypot(t.smoothedX - x, t.smoothedY - y);
             if (dist < this.MAX_DIST) {
-
                 const f = 0.65;
                 t.smoothedX = t.smoothedX * (1 - f) + x * f;
                 t.smoothedY = t.smoothedY * (1 - f) + y * f;
                 t.smoothedWidth = t.smoothedWidth * (1 - f) + w * f;
                 t.smoothedHeight = t.smoothedHeight * (1 - f) + h * f;
-
                 t.lastSeen = Date.now();
                 return t;
             }
@@ -271,40 +373,29 @@ for (let i = 0; i < detections.length; i++) {
             stabilityFrames: 0,
             lastSeen: Date.now(),
             lastLabel: "Desconocido",
-
-            // Añadir:
             unknownFrames: 0,
             unknownShown: false,
-
-
             hasLeft: false,
-
         };
 
         this.tracked.push(newT);
         return newT;
     }
 
-    // ------------------------------------------------------------------------------------
-    // LÓGICA DE PERSONAS
-    // ------------------------------------------------------------------------------------
     _applyPersonLogic(track, label, room) {
+        const useWS = localStorage.getItem("useWebSocket") === "true";
 
         if (!useWS) {
-    // Solo lógica local, sin reportar a servidor
-    this.updateTrackedPersonDetection(track, label);
-    return;
-}
+            this.updateTrackedPersonDetection(track, label);
+            return;
+        }
 
-        // 1. actualización interna
         this.updateTrackedPersonDetection(track, label);
 
-        // 2. ubicación en sala
         if (label !== "Desconocido") {
             this.updatePersonLocation(label, room);
         }
 
-        // 3. limpiar personas salidas
         this.checkAllGone();
     }
 
@@ -312,11 +403,8 @@ for (let i = 0; i < detections.length; i++) {
         const now = Date.now();
 
         if (label !== "Desconocido") {
-
-              // Resetear unknown si antes era desconocido
-    track.unknownFrames = 0;
-    track.unknownShown = false;
-
+            track.unknownFrames = 0;
+            track.unknownShown = false;
             track.lastLabel = label;
             track.lastSeen = now;
 
@@ -328,76 +416,62 @@ for (let i = 0; i < detections.length; i++) {
             return;
         }
 
-track.unknownFrames++;
-track.lastSeen = now;
+        track.unknownFrames++;
+        track.lastSeen = now;
 
-// Solo mostrar una vez por track
-if (track.unknownFrames >= this.confirmUnknownAfter && !track.unknownShown) {
-    track.unknownShown = true;
-    this.onNotification(`Desconocido detectado`, "warning");
-}
-
+        if (track.unknownFrames >= this.confirmUnknownAfter && !track.unknownShown) {
+            track.unknownShown = true;
+            this.onNotification(`Desconocido detectado`, "warning");
+        }
     }
 
     updatePersonLocation(name, room) {
         if (!this.personLastRoom[name]) {
-    // Primera vez que vemos a esta persona, solo guardamos la sala
-    this.personLastRoom[name] = room;
-    this._sendLocationUpdate(name, room);
-    return;
-    
-}
+            this.personLastRoom[name] = room;
+            this._sendLocationUpdate(name, room);
+            return;
+        }
 
-
-
-// Si la sala cambió realmente, notificamos
-if (this.personLastRoom[name] !== room) {
-    this.onNotification(`${name} se movió a ${room}`, "info");
-    this.personLastRoom[name] = room;
-    this._sendLocationUpdate(name, room);
-}
-
-}
-
-async _sendLocationUpdate(name, room) {
-    if (!useWS) return; // <-- evitar fetch innecesario cuando WS está desactivado
-    const profile_id = this.profileMap[name];
-    if (!profile_id) return;
-
-    fetch('https://thefindoraprototipe.onrender.com/api/update_location', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            profile_id,
-            last_room: room
-        })
-    });
-}
-
-
-checkAllGone() {
-    const now = Date.now();
-
-    for (const t of this.tracked) {
-
-        // Si ya notificamos que se fue, no volver a hacerlo
-        if (t.hasLeft) continue;
-
-        if (now - t.lastSeen > this.ALERT_TIMEOUT) {
-            t.hasLeft = true; // Marcar como salida notificada
-            this.onNotification(`${t.lastLabel} salió`, "warning");
+        if (this.personLastRoom[name] !== room) {
+            this.onNotification(`${name} se movió a ${room}`, "info");
+            this.personLastRoom[name] = room;
+            this._sendLocationUpdate(name, room);
         }
     }
 
-    // Limpieza opcional: eliminar tracks con hasLeft = true
-this.tracked = this.tracked.filter(t => !t.hasLeft);
+    async _sendLocationUpdate(name, room) {
+        const useWS = localStorage.getItem("useWebSocket") === "true";
+        if (!useWS) return;
+        
+        const profile_id = this.profileMap[name];
+        if (!profile_id) return;
 
-}
+        try {
+            await fetch('https://thefindoraprototipe.onrender.com/api/update_location', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profile_id, last_room: room })
+            });
+        } catch (error) {
+            console.warn("⚠️ Error actualizando ubicación:", error.message);
+        }
+    }
 
+    checkAllGone() {
+        const now = Date.now();
 
-    // ------------------------------------------------------------------------------------
-    // DIBUJAR
-    // ------------------------------------------------------------------------------------
+        for (const t of this.tracked) {
+            if (t.hasLeft) continue;
+
+            if (now - t.lastSeen > this.ALERT_TIMEOUT) {
+                t.hasLeft = true;
+                this.onNotification(`${t.lastLabel} salió`, "warning");
+            }
+        }
+
+        this.tracked = this.tracked.filter(t => !t.hasLeft);
+    }
+
     _drawTracked(canvas, track, label) {
         const ctx = canvas.getContext("2d");
 
@@ -416,5 +490,7 @@ this.tracked = this.tracked.filter(t => !t.hasLeft);
         ctx.fillText(label, x + 5, y - 5);
     }
 
-    _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    _sleep(ms) { 
+        return new Promise(r => setTimeout(r, ms)); 
+    }
 }

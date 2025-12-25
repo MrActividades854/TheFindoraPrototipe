@@ -71,6 +71,10 @@ if (!API_BASE) {
  */
 function calculateModelPath() {
     const currentPath = window.location.pathname;
+
+    if (navigator.onLine) {
+        return 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+    }
     
     // Casos especiales
     if (currentPath === '/' || currentPath === '/index.html' || currentPath === '/public/index.html') {
@@ -200,7 +204,7 @@ function resolveImportPath(relativePath) {
 export const CONFIG = {
     WS_URL: WS_BASE,
     API_URL: API_BASE,
-    MODEL_PATH,
+    MODEL_PATH: MODEL_PATH,
     IS_RENDER,
     
     // Utilidades de rutas
