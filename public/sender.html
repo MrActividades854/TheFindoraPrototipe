@@ -42,8 +42,8 @@
   <p id="log" style="color:#ddd;"></p>
 
 <script>
-const protocol = location.protocol === "https:" ? "wss://" : "ws://";
-const ws = new WebSocket(protocol + "thefindoraprototipe.onrender.com" + "/ws");
+import { CONFIG } from './js/config.js';
+const ws = new WebSocket(CONFIG.WS_URL);
 
 
 const senderId = Math.random().toString(36).slice(2, 9);

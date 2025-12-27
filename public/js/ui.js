@@ -1,4 +1,4 @@
-// ui.js — versión unificada, limpia y totalmente compatible con pipeline único
+// ui.js — versión con debug extensivo
 
 import WebRTCManager from './webrtc.js';
 import FaceRecognitionManager from './face-recognition.js';
@@ -7,203 +7,282 @@ import { CONFIG } from './config.js';
 
 window.addEventListener("beforeunload", () => uiManager.stop());
 
-
 export default class UIManager {
     constructor({ wsUrl = CONFIG.WS_URL, modelPath = CONFIG.MODEL_PATH, notificationsMode = 'live' } = {}) {
+        console.log("🏗️ UIManager constructor");
+        console.log("  WS URL:", wsUrl);
+        console.log("  Model Path:", modelPath);
+        console.log("  Notifications Mode:", notificationsMode);
 
-        // DOM
         this.container = document.getElementById('container');
         this.remoteList = document.getElementById('remoteList');
         this.statusEl = document.getElementById('status') || { textContent: '' };
         this.thresholdInput = document.getElementById('threshold');
         this.thVal = document.getElementById('thVal');
 
-        // config/state
         this.wsUrl = wsUrl;
         this.modelPath = modelPath;
         this.notificationsMode = notificationsMode;
 
-        // videos
         this.videos = [];
         this.profileThumbs = {};
 
-        // managers
         this.notifier = null;
         this.webrtc = null;
         this.faceRec = null;
 
-        // bindings
         this._onRemoteFeed = this._onRemoteFeed.bind(this);
         this._resizeCanvasToVideoElement = this._resizeCanvasToVideoElement.bind(this);
+        
+        console.log("✅ UIManager creado");
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // INIT
-    // ---------------------------------------------------------------------------------------------
     async init() {
+        console.log("🚀 UIManager.init() - INICIANDO");
+        
         try {
-            this.statusEl.textContent = 'Cargando modelos...';
+            this._updateStatus('🔧 Inicializando sistema...');
+            console.log("=" .repeat(60));
 
-            this.notifier = new NotificationManager('https://thefindoraprototipe.onrender.com/api/notifications', this.notificationsMode);
+            // 1. Notificaciones
+            console.log("📢 Paso 1/7: Inicializando notificaciones");
+            this._updateStatus('Configurando notificaciones...');
+            this.notifier = new NotificationManager(
+                'https://thefindoraprototipe.onrender.com/api/notifications', 
+                this.notificationsMode
+            );
+            console.log("✅ Notificaciones listas");
 
-            // Face recognition system
+            // 2. Face Recognition Manager
+            console.log("🤖 Paso 2/7: Creando FaceRecognitionManager");
+            this._updateStatus('Inicializando reconocimiento facial...');
             this.faceRec = new FaceRecognitionManager({
                 modelPath: this.modelPath,
-                onNotification: (msg, type) => this.notifier.show(msg, type)
+                onNotification: (msg, type) => {
+                    console.log(`📢 Notificación: [${type}] ${msg}`);
+                    this.notifier.show(msg, type);
+                }
             });
+            console.log("✅ FaceRecognitionManager creado");
 
-
+            // 3. Cargar modelos
+            console.log("📦 Paso 3/7: Cargando modelos de IA");
+            this._updateStatus('⏳ Cargando modelos de IA...');
             await this.faceRec.loadModels();
-            this.statusEl.textContent = 'Cargando perfiles...';
+            console.log("✅ Modelos cargados");
+
+            // 4. Cargar perfiles
+            console.log("👥 Paso 4/7: Cargando perfiles");
+            this._updateStatus('⏳ Cargando perfiles...');
             await this.faceRec.loadProfilesFromServer();
+            console.log("✅ Perfiles cargados");
 
+            // 5. Thumbnails
+            console.log("🖼️ Paso 5/7: Cargando miniaturas");
+            this._updateStatus('Cargando miniaturas...');
             await this._loadProfileThumbs();
+            console.log("✅ Miniaturas cargadas");
 
-            // WebRTC
-            this.statusEl.textContent = 'Conectando cámaras...';
+            // 6. Cámaras
+            console.log("📹 Paso 6/7: Configurando cámaras");
+            this._updateStatus('⏳ Conectando cámaras...');
             await this._loadCameras();
             await this._createLocalCameras();
+            console.log(`✅ ${this.videos.length} cámara(s) configurada(s)`);
 
-            // WS + p2p
-            this.statusEl.textContent = 'Conectando señalización...';
-            this.webrtc = new WebRTCManager({
-                wsUrl: this.wsUrl,
-                onRemoteFeed: this._onRemoteFeed,
-                onLog: m => this._log(m)
-            });
-            await this.webrtc.init();
+            // 7. WebRTC (opcional según config)
+            console.log("🌐 Paso 7/7: Configurando WebRTC");
+            this._updateStatus('Conectando señalización...');
+            
+            const useWS = localStorage.getItem("useWebSocket") === "true";
+            console.log("  WebSocket habilitado:", useWS);
+            
+            if (useWS) {
+                this.webrtc = new WebRTCManager({
+                    wsUrl: this.wsUrl,
+                    onRemoteFeed: this._onRemoteFeed,
+                    onLog: m => this._log(m)
+                });
+                await this.webrtc.init();
+                console.log("✅ WebRTC conectado");
+            } else {
+                console.log("⚠️ WebRTC deshabilitado (modo local)");
+            }
 
-            // detection
-            this.statusEl.textContent = 'Iniciando detección...';
+            // 8. Iniciar detección
+            console.log("🎬 Iniciando detección facial");
+            this._updateStatus('⏳ Iniciando detección...');
             await this._startAutoDetection();
+            console.log("✅ Detección activa");
 
+            // 9. Threshold control
             if (this.thresholdInput) {
                 this.thresholdInput.addEventListener('input', () => {
                     const v = parseFloat(this.thresholdInput.value);
                     this.faceRec.threshold = v;
                     if (this.thVal) this.thVal.textContent = v.toFixed(2);
+                    console.log("🎚️ Umbral ajustado a:", v);
                 });
             }
 
-            this.statusEl.textContent = '✔ Listo';
+            this._updateStatus('✅ Sistema listo');
+            console.log("=" .repeat(60));
+            console.log("🎉 INICIALIZACIÓN COMPLETA");
+            console.log("=" .repeat(60));
 
         } catch (err) {
-            console.error(err);
-            this.statusEl.textContent = 'Error: ' + err.message;
+            console.error("❌ ERROR CRÍTICO EN INIT:");
+            console.error("Tipo:", err.constructor.name);
+            console.error("Mensaje:", err.message);
+            console.error("Stack:", err.stack);
+            
+            this._updateStatus('❌ Error: ' + err.message);
+            throw err;
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // UTILIDADES
-    // ---------------------------------------------------------------------------------------------
+    _updateStatus(msg) {
+        if (this.statusEl) {
+            this.statusEl.textContent = msg;
+        }
+        console.log("📊 Status:", msg);
+    }
 
-    
     _log(msg) {
         console.log('[UI]', msg);
-        if (this.statusEl) this.statusEl.textContent = msg;
+        this._updateStatus(msg);
     }
 
     async _loadProfileThumbs() {
         try {
             const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles_full`);
-            if (!res.ok) return;
+            if (!res.ok) {
+                console.warn("⚠️ No se pudieron cargar thumbnails");
+                return;
+            }
 
             const profiles = await res.json();
+            console.log(`🖼️ Procesando ${profiles.length} thumbnails`);
+            
             for (const p of profiles) {
                 if (p.images && p.images.length) {
                     this.profileThumbs[this._normalizeName(p.name)] = p.images[0];
                 }
             }
+            
+            console.log(`✅ ${Object.keys(this.profileThumbs).length} thumbnails cargados`);
         } catch (e) {
-            console.warn('No se pudieron cargar miniaturas de perfiles', e);
+            console.warn('⚠️ Error cargando miniaturas:', e.message);
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // CÁMARAS
-    // ---------------------------------------------------------------------------------------------
     async _loadCameras() {
+        console.log("📹 Solicitando acceso a cámaras...");
+        
         try {
             await navigator.mediaDevices.getUserMedia({ video: true });
+            console.log("✅ Permiso de cámara otorgado");
+            
             const devices = await navigator.mediaDevices.enumerateDevices();
             this.videoDevices = devices.filter(d => d.kind === 'videoinput');
+            
+            console.log(`📹 ${this.videoDevices.length} cámara(s) detectada(s):`);
+            this.videoDevices.forEach((d, i) => {
+                console.log(`  ${i + 1}. ${d.label || 'Cámara sin nombre'}`);
+            });
+            
         } catch (err) {
-            console.warn('Error listando cámaras', err);
+            console.error('❌ Error accediendo a cámaras:', err.message);
             this.videoDevices = [];
         }
     }
 
     async _createLocalCameras() {
-        if (!this.container) return;
+        if (!this.container) {
+            console.error("❌ Container no encontrado");
+            return;
+        }
+
+        console.log(`🎥 Creando ${this.videoDevices.length} feed(s) de cámara local`);
 
         for (let i = 0; i < this.videoDevices.length; i++) {
-
             const device = this.videoDevices[i];
             const id = `local-${i + 1}`;
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { deviceId: { exact: device.deviceId } },
-                audio: false
-            });
+            
+            console.log(`  Configurando ${id}: ${device.label}`);
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: { exact: device.deviceId } },
+                    audio: false
+                });
 
-            this._createVideoCanvasPair(id, stream, { muted: true });
+                this._createVideoCanvasPair(id, stream, { muted: true });
+                console.log(`  ✅ ${id} listo`);
+                
+            } catch (err) {
+                console.error(`  ❌ Error configurando ${id}:`, err.message);
+            }
         }
     }
 
-_createVideoCanvasPair(id, stream, opts = {}) {
-    if (!this.container) return;
+    _createVideoCanvasPair(id, stream, opts = {}) {
+        if (!this.container) return;
 
-    if (document.getElementById(id)) return;
+        if (document.getElementById(id)) {
+            console.warn(`⚠️ Feed ${id} ya existe`);
+            return;
+        }
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'feed';
-    wrapper.id = id;
+        console.log(`🎬 Creando feed: ${id}`);
 
-    const video = document.createElement('video');
-    video.srcObject = stream;
-    video.dataset.feedId = id;
-    video.autoplay = true;
-    video.playsinline = true;
-    video.muted = opts.muted ?? false;
-    video.dataset.type = "local";
+        const wrapper = document.createElement('div');
+        wrapper.className = 'feed';
+        wrapper.id = id;
 
-    const frame = document.createElement('div');
-    frame.className = 'feed-frame';
-    frame.appendChild(video);
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.dataset.feedId = id;
+        video.autoplay = true;
+        video.playsinline = true;
+        video.muted = opts.muted ?? false;
+        video.dataset.type = "local";
 
-    wrapper.appendChild(frame);
-    this.container.appendChild(wrapper);
+        const frame = document.createElement('div');
+        frame.className = 'feed-frame';
+        frame.appendChild(video);
 
-    // para abrir vista grande
-    wrapper.addEventListener('click', () => {
-        localStorage.setItem('selectedFeed', video.dataset.feedId);
-        const allIds = this.videos.map(v => v.dataset.feedId);
-        localStorage.setItem('feedList', JSON.stringify(allIds));
-        window.location.href = './findorasections/camera/camara.html';
-    });
+        wrapper.appendChild(frame);
+        this.container.appendChild(wrapper);
 
-    this.videos.push(video);
+        wrapper.addEventListener('click', () => {
+            localStorage.setItem('selectedFeed', video.dataset.feedId);
+            const allIds = this.videos.map(v => v.dataset.feedId);
+            localStorage.setItem('feedList', JSON.stringify(allIds));
+            window.location.href = './findorasections/camera/camara.html';
+        });
 
-    return { video };
-}
+        this.videos.push(video);
+        console.log(`✅ Feed ${id} agregado (total: ${this.videos.length})`);
 
+        return { video };
+    }
 
-    // ---------------------------------------------------------------------------------------------
-    // REMOTE FEEDS
-    // ---------------------------------------------------------------------------------------------
     _onRemoteFeed(senderId, stream) {
+        console.log(`📡 Feed remoto recibido de: ${senderId}`);
+        
         const existing = this.videos.find(v => v.dataset.feedId === senderId);
 
         if (existing) {
+            console.log(`  Actualizando feed existente`);
             existing.srcObject = stream;
             return;
         }
 
+        console.log(`  Creando nuevo feed remoto`);
         this._createVideoCanvasPair(senderId, stream, { muted: false });
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // DIMENSIONES
-    // ---------------------------------------------------------------------------------------------
     _resizeCanvasToVideoElement(vid) {
         if (!vid || !vid._canvas) return;
 
@@ -234,20 +313,24 @@ _createVideoCanvasPair(id, stream, opts = {}) {
         });
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // DETECCIÓN ÚNICA
-    // ---------------------------------------------------------------------------------------------
     async _startAutoDetection() {
-        const readiness = this.videos.map(v => this._waitVideoReady(v));
-        await Promise.all(readiness);
-
-        this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
+        console.log("🎬 Preparando detección automática");
+        console.log(`  Videos a procesar: ${this.videos.length}`);
 
         if (this.videos.length === 0) {
-    console.warn("No hay cámaras disponibles, no inicio detección.");
-    return;
-}
+            console.warn("⚠️ No hay cámaras disponibles, no inicio detección");
+            return;
+        }
 
+        console.log("⏳ Esperando que videos estén listos...");
+        const readiness = this.videos.map(v => this._waitVideoReady(v));
+        await Promise.all(readiness);
+        console.log("✅ Todos los videos listos");
+
+        console.log("📐 Ajustando dimensiones de canvas...");
+        this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
+
+        console.log("🚀 Iniciando pipeline de detección");
         this.faceRec.startMultiDetection({
             videos: this.videos,
             getRoomByVideo: vid => {
@@ -255,67 +338,59 @@ _createVideoCanvasPair(id, stream, opts = {}) {
                 return vid.dataset.feedId.includes('local') ? 'local' : 'remote';
             },
             onDetect: (name, room) => {
-                // UIManager ya NO decide; solo muestra
-                // FaceRec se encarga de notificaciones
-                if (name !== "Desconocido") this._updateList(name);
+                if (name !== "Desconocido") {
+                    this._updateList(name);
+                }
             }
         });
+        
+        console.log("✅ Pipeline activo");
     }
 
     _normalizeName(name) {
-    return name.trim().toLowerCase();
-}
-
-
-    // ---------------------------------------------------------------------------------------------
-    // LISTA DE DETECTADOS (SOLO UI, YA NO DECIDE LÓGICA)
-    // ---------------------------------------------------------------------------------------------
-_updateList(name, room, video) {
-
-    if (!this.remoteList) return;
-
-    const normalized = name.trim().toLowerCase();
-
-    // Buscar si ya existe el item
-    let item = document.getElementById(`person-${normalized}`);
-
-    if (!item) {
-        item = document.createElement("div");
-        item.id = `person-${normalized}`;
-        item.className = "person-item";
-
-        const img = document.createElement("img");
-        img.className = "person-thumb";
-
-        // si hay thumbnail -> úsalo
-        img.src = this.profileThumbs[normalized] || "/default-avatar.png";
-
-        const label = document.createElement("span");
-        label.textContent = name;
-
-        item.appendChild(img);
-        item.appendChild(label);
-
-        this.remoteList.appendChild(item);
+        return name.trim().toLowerCase();
     }
 
-    // actualizar sala si quieres mostrarla
-    //item.dataset.room = room;
-}
+    _updateList(name, room, video) {
+        if (!this.remoteList) return;
 
+        const normalized = name.trim().toLowerCase();
 
-    stop() {
-    // detener face recognition
-    if (this.faceRec) this.faceRec.stopDetection();
+        let item = document.getElementById(`person-${normalized}`);
 
-    // detener cámaras locales
-    for (const v of this.videos) {
-        if (v.srcObject) {
-            v.srcObject.getTracks().forEach(t => t.stop());
+        if (!item) {
+            item = document.createElement("div");
+            item.id = `person-${normalized}`;
+            item.className = "person-item";
+
+            const img = document.createElement("img");
+            img.className = "person-thumb";
+            img.src = this.profileThumbs[normalized] || "/default-avatar.png";
+
+            const label = document.createElement("span");
+            label.textContent = name;
+
+            item.appendChild(img);
+            item.appendChild(label);
+
+            this.remoteList.appendChild(item);
         }
     }
 
-    this.videos = [];
-}
+    stop() {
+        console.log("🛑 Deteniendo UIManager");
+        
+        if (this.faceRec) {
+            this.faceRec.stopDetection();
+        }
 
+        for (const v of this.videos) {
+            if (v.srcObject) {
+                v.srcObject.getTracks().forEach(t => t.stop());
+            }
+        }
+
+        this.videos = [];
+        console.log("✅ UIManager detenido");
+    }
 }
