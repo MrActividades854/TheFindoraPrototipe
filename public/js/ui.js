@@ -322,15 +322,11 @@ export default class UIManager {
             return;
         }
 
-        console.log("⏳ Esperando que videos estén listos...");
         const readiness = this.videos.map(v => this._waitVideoReady(v));
         await Promise.all(readiness);
-        console.log("✅ Todos los videos listos");
 
-        console.log("📐 Ajustando dimensiones de canvas...");
         this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
 
-        console.log("🚀 Iniciando pipeline de detección");
         this.faceRec.startMultiDetection({
             videos: this.videos,
             getRoomByVideo: vid => {

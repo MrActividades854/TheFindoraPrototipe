@@ -137,7 +137,7 @@ function resolvePath(path) {
     
     // En local: agregar /public/
     // En Render: no agregar nada (NGINX ya sirve desde /public)
-    return IS_RENDER ? `/${path}` : `/public/${path}`;
+    return IS_RENDER ? `/${path}` : `/${path}`;
 }
 
 /**
@@ -205,7 +205,8 @@ export const CONFIG = {
     WS_URL: WS_BASE,
     API_URL: API_BASE,
     MODEL_PATH: MODEL_PATH,
-    IS_RENDER,
+    IS_RENDER : IS_RENDER,
+    ROOT_PATH: IS_RENDER ? 'https://thefindoraprototipe.onrender.com/' : 'http://127.0.0.1:5501/',
     
     // Utilidades de rutas
     resolvePath,

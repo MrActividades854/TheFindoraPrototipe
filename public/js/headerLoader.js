@@ -1,6 +1,6 @@
 // header-loader-inline.js - Versión sin fetch, HTML inline
 
-import { IS_RENDER } from './config.js';
+import {resolvePath} from './config.js';
 
 class HeaderManager {
     constructor() {
@@ -329,11 +329,11 @@ class HeaderManager {
         };
 
         const routes = {
-            mainPage: getNavPath('findorasections/mainPage/Page.html'),
-            camera: getNavPath('index.html'),
-            profiles: getNavPath('findorasections/profilesPage/profiles.html'),
-            notifications: getNavPath('findorasections/Notifications/notifications.html'),
-            settings: getNavPath('findorasections/settings/settings.html'),
+            mainPage: getNavPath('mainPage/Page.html'),
+            camera: resolvePath('index.html'),
+            profiles: getNavPath('profilesPage/profiles.html'),
+            notifications: getNavPath('Notifications/notifications.html'),
+            settings: getNavPath('settings/settings.html'),
             logout: this._handleLogout.bind(this)
         };
 

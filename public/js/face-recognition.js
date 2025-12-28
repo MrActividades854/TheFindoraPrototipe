@@ -5,8 +5,6 @@ import * as faceapi from 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist
 
 export default class FaceRecognitionManager {
     constructor({ modelPath = CONFIG.MODEL_PATH, getActiveVideo = () => null, onNotification = () => {} } = {}) {
-        console.log("🔧 FaceRecognitionManager constructor");
-        console.log("📁 ModelPath:", modelPath);
 
         this.modelPath = modelPath;
         this.getActiveVideo = getActiveVideo;
@@ -42,12 +40,9 @@ export default class FaceRecognitionManager {
         this.confirmUnknownAfter = 5;
 
         this.personLastRoom = {};
-        
-        console.log("✅ FaceRecognitionManager creado");
     }
 
     async testModelAvailability() {
-        console.log("🔍 Verificación rápida de modelos...");
         
         const manifestsToTest = [
             'tiny_face_detector_model-weights_manifest.json',
@@ -82,49 +77,32 @@ export default class FaceRecognitionManager {
     }
 
     async loadModels() {
-        console.log("🔄 Iniciando carga de modelos...");
-        console.log("📍 Ruta de modelos:", this.modelPath);
         
         // Verificación rápida primero
         const modelsAvailable = await this.testModelAvailability();
         
         if (!modelsAvailable) {
-            console.error("❌ Algunos modelos no están disponibles");
-            console.log("💡 SOLUCIONES POSIBLES:");
-            console.log("  1. Verifica que la carpeta /models existe");
-            console.log("  2. Descarga los modelos de: https://github.com/justadudewhohacks/face-api.js-models");
-            console.log("  3. Colócalos en /public/models/");
-            console.log("  4. O cambia MODEL_PATH en config.js");
             throw new Error("Modelos no disponibles en la ruta especificada");
         }
         
         try {
-            console.log("\n⏳ Cargando TinyFaceDetector...");
             await faceapi.nets.tinyFaceDetector.loadFromUri(this.modelPath);
-            console.log("✅ TinyFaceDetector cargado");
             
-            console.log("⏳ Cargando FaceLandmark68Net...");
             await faceapi.nets.faceLandmark68Net.loadFromUri(this.modelPath);
-            console.log("✅ FaceLandmark68Net cargado");
-            
-            console.log("⏳ Cargando FaceRecognitionNet...");
+         
             await faceapi.nets.faceRecognitionNet.loadFromUri(this.modelPath);
-            console.log("✅ FaceRecognitionNet cargado");
             
-            console.log("⏳ Cargando SsdMobilenetv1...");
             await faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelPath);
-            console.log("✅ SsdMobilenetv1 cargado");
             
-            console.log("🎉 TODOS LOS MODELOS CARGADOS EXITOSAMENTE");
             return true;
             
         } catch (error) {
-            console.error("\n❌ ERROR CRÍTICO cargando modelos:");
+            console.error("\n ERROR CRÍTICO cargando modelos:");
             console.error("Tipo:", error.constructor.name);
             console.error("Mensaje:", error.message);
             
             if (error.message.includes('fetch')) {
-                console.error("\n💡 Error de red detectado. Posibles causas:");
+                console.error("\n Error de red detectado. Posibles causas:");
                 console.error("  - Los archivos .bin son muy grandes y tardaron mucho");
                 console.error("  - Problema de conectividad");
                 console.error("  - CORS bloqueando la carga");
@@ -135,9 +113,8 @@ export default class FaceRecognitionManager {
     }
 
     async loadProfilesFromServer() {
-        console.log("🔄 Iniciando carga de perfiles...");
         const useWS = localStorage.getItem("useWebSocket") === "true";
-        console.log("🌐 WebSocket activado:", useWS);
+        console.log(" WebSocket activado:", useWS);
         
         if (!useWS) {
             console.warn("⚠️ WebSocket OFF → Inicializando sin perfiles");
