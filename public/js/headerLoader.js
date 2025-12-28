@@ -330,7 +330,7 @@ class HeaderManager {
 
         const routes = {
             mainPage: getNavPath('mainPage/Page.html'),
-            camera: resolvePath('index.html'),
+            camera: getNavPath('index/index.html'),
             profiles: getNavPath('profilesPage/profiles.html'),
             notifications: getNavPath('Notifications/notifications.html'),
             settings: getNavPath('settings/settings.html'),
