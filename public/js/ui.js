@@ -238,9 +238,28 @@ export default class UIManager {
             console.log(`  Configurando ${id}: ${device.label}`);
             
             try {
+                // ✅ IMPORTANTE: Especificar constraints correctos para evitar que se apague
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { deviceId: { exact: device.deviceId } },
+                    video: { 
+                        deviceId: { exact: device.deviceId },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 }
+                    },
                     audio: false
+                });
+
+                // ✅ Verificar que el stream está activo
+                const videoTrack = stream.getVideoTracks()[0];
+                if (!videoTrack || videoTrack.readyState !== 'live') {
+                    console.error(`  ❌ Track no está activo para ${id}`);
+                    continue;
+                }
+
+                console.log(`  ✅ Stream activo para ${id}:`, {
+                    readyState: videoTrack.readyState,
+                    enabled: videoTrack.enabled,
+                    muted: videoTrack.muted
                 });
 
                 this._createVideoCanvasPair(id, stream, { muted: true });
@@ -277,6 +296,29 @@ export default class UIManager {
         video.playsinline = true;
         video.muted = opts.muted ?? false;
         video.dataset.type = opts.type || "local";
+
+        // ✅ CRÍTICO: Asegurar que el video se reproduce
+        video.onloadedmetadata = () => {
+            console.log(`📹 Metadata cargada para ${id}, intentando play...`);
+            video.play()
+                .then(() => console.log(`▶️ Video ${id} reproduciéndose`))
+                .catch(err => console.error(`❌ Error play ${id}:`, err));
+        };
+
+        // ✅ Monitorear si el stream se detiene inesperadamente
+        stream.getVideoTracks().forEach(track => {
+            track.onended = () => {
+                console.warn(`⚠️ Track de video terminó inesperadamente para ${id}`);
+            };
+            
+            track.onmute = () => {
+                console.warn(`⚠️ Track de video muteado para ${id}`);
+            };
+
+            track.onunmute = () => {
+                console.log(`✅ Track de video desmuteado para ${id}`);
+            };
+        });
 
         const frame = document.createElement('div');
         frame.className = 'feed-frame';

@@ -11,7 +11,7 @@ class HeaderManager {
 
     _calculateAssetsPath() {
         const path = window.location.pathname;
-        const depth = path.split('/').filter(s => s && s !== 'index.html').length;
+        const depth = path.split('/').filter(s => s).length;
         
         if (depth === 0 || depth === 1) return './src';
         if (depth === 2) return '../src';
