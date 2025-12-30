@@ -1,4 +1,4 @@
-// background-init.js — versión final sin CDN ni doble faceapi
+// background-init.js — versión con backgroundMode habilitado
 import { CONFIG } from "./config.js";
 
 (function () {
@@ -20,24 +20,38 @@ import { CONFIG } from "./config.js";
 
 export async function initBackgroundDetection() {
     try {
+        // Verificar que WebSocket esté habilitado
+        const useWS = localStorage.getItem("useWebSocket") === "true";
+        
+        if (!useWS) {
+            console.log("[BG] WebSocket desactivado → Background detection no iniciada");
+            return;
+        }
+
+        console.log("[BG] WebSocket habilitado, iniciando background detection...");
+
         // Cargar UIManager normalmente (usa ES Modules)
         const UIManager = (await import("./ui.js")).default;
 
-        // Crear una instancia única
+        // Crear una instancia única con backgroundMode
         if (!window.__uiManagerBG) {
             window.__uiManagerBG = new UIManager({
                 wsUrl: CONFIG.WS_URL,
                 modelPath: CONFIG.MODEL_PATH,
-                notificationsMode: "history" // modo silencioso
+                notificationsMode: "history", // modo silencioso
+                backgroundMode: true          // ✅ NUEVO: Modo background habilitado
             });
 
+            console.log("[BG] Inicializando UIManager en modo background...");
             await window.__uiManagerBG.init();
+            console.log("[BG] ✅ Background detection inicializada");
         } else {
             console.log("[BG] UIManager ya existía, reusando instancia.");
         }
 
         console.log("[BG] Background detection lista.");
     } catch (e) {
-        console.error("Error background init:", e);
+        console.error("[BG] ❌ Error background init:", e);
+        console.error("[BG] Stack:", e.stack);
     }
 }

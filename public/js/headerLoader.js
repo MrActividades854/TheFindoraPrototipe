@@ -6,6 +6,7 @@ class HeaderManager {
     constructor() {
         this.headerLoaded = false;
         this.assetsPath = this._calculateAssetsPath();
+        console.log('🛠️ HeaderManager inicializado. Ruta de assets:', this.assetsPath);
     }
 
     _calculateAssetsPath() {
