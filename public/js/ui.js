@@ -1,19 +1,31 @@
-// ui.js — versión con debug extensivo
+// ui.js — Versión con background detection arreglado
 
 import WebRTCManager from './webrtc.js';
 import FaceRecognitionManager from './face-recognition.js';
 import NotificationManager from './notifications.js';
 import { CONFIG } from './config.js';
 
-window.addEventListener("beforeunload", () => uiManager.stop());
+window.addEventListener("beforeunload", () => {
+    if (window.uiManager) window.uiManager.stop();
+});
 
 export default class UIManager {
-    constructor({ wsUrl = CONFIG.WS_URL, modelPath = CONFIG.MODEL_PATH, notificationsMode = 'live' } = {}) {
+    constructor({ 
+        wsUrl = CONFIG.WS_URL, 
+        modelPath = CONFIG.MODEL_PATH, 
+        notificationsMode = 'live',
+        backgroundMode = false  // ✅ NUEVO: Modo background
+    } = {}) {
         console.log("🏗️ UIManager constructor");
         console.log("  WS URL:", wsUrl);
         console.log("  Model Path:", modelPath);
         console.log("  Notifications Mode:", notificationsMode);
+        console.log("  Background Mode:", backgroundMode);
 
+        // ✅ Modo background
+        this.backgroundMode = backgroundMode;
+
+        // Elementos del DOM (opcionales en background mode)
         this.container = document.getElementById('container');
         this.remoteList = document.getElementById('remoteList');
         this.statusEl = document.getElementById('status') || { textContent: '' };
@@ -39,6 +51,7 @@ export default class UIManager {
 
     async init() {
         console.log("🚀 UIManager.init() - INICIANDO");
+        console.log("  Modo Background:", this.backgroundMode);
         
         try {
             this._updateStatus('🔧 Inicializando sistema...');
@@ -77,18 +90,26 @@ export default class UIManager {
             await this.faceRec.loadProfilesFromServer();
             console.log("✅ Perfiles cargados");
 
-            // 5. Thumbnails
-            console.log("🖼️ Paso 5/7: Cargando miniaturas");
-            this._updateStatus('Cargando miniaturas...');
-            await this._loadProfileThumbs();
-            console.log("✅ Miniaturas cargadas");
+            // 5. Thumbnails (solo si hay remoteList)
+            if (this.remoteList) {
+                console.log("🖼️ Paso 5/7: Cargando miniaturas");
+                this._updateStatus('Cargando miniaturas...');
+                await this._loadProfileThumbs();
+                console.log("✅ Miniaturas cargadas");
+            } else {
+                console.log("⏭️ Paso 5/7: Saltando miniaturas (sin remoteList)");
+            }
 
-            // 6. Cámaras
-            console.log("📹 Paso 6/7: Configurando cámaras");
-            this._updateStatus('⏳ Conectando cámaras...');
-            await this._loadCameras();
-            await this._createLocalCameras();
-            console.log(`✅ ${this.videos.length} cámara(s) configurada(s)`);
+            // 6. Cámaras (solo si NO es background mode)
+            if (!this.backgroundMode) {
+                console.log("📹 Paso 6/7: Configurando cámaras locales");
+                this._updateStatus('⏳ Conectando cámaras...');
+                await this._loadCameras();
+                await this._createLocalCameras();
+                console.log(`✅ ${this.videos.length} cámara(s) configurada(s)`);
+            } else {
+                console.log("⏭️ Paso 6/7: Saltando cámaras locales (background mode)");
+            }
 
             // 7. WebRTC (opcional según config)
             console.log("🌐 Paso 7/7: Configurando WebRTC");
@@ -109,13 +130,17 @@ export default class UIManager {
                 console.log("⚠️ WebRTC deshabilitado (modo local)");
             }
 
-            // 8. Iniciar detección
-            console.log("🎬 Iniciando detección facial");
-            this._updateStatus('⏳ Iniciando detección...');
-            await this._startAutoDetection();
-            console.log("✅ Detección activa");
+            // 8. Iniciar detección (si hay videos o background mode)
+            if (this.videos.length > 0 || this.backgroundMode) {
+                console.log("🎬 Iniciando detección facial");
+                this._updateStatus('⏳ Iniciando detección...');
+                await this._startAutoDetection();
+                console.log("✅ Detección activa");
+            } else {
+                console.log("⚠️ No hay videos, detección no iniciada");
+            }
 
-            // 9. Threshold control
+            // 9. Threshold control (solo si existe el input)
             if (this.thresholdInput) {
                 this.thresholdInput.addEventListener('input', () => {
                     const v = parseFloat(this.thresholdInput.value);
@@ -198,8 +223,9 @@ export default class UIManager {
     }
 
     async _createLocalCameras() {
+        // ✅ VALIDACIÓN: Solo crear si hay container
         if (!this.container) {
-            console.error("❌ Container no encontrado");
+            console.warn("⚠️ Container no encontrado, saltando creación de feeds locales");
             return;
         }
 
@@ -212,9 +238,28 @@ export default class UIManager {
             console.log(`  Configurando ${id}: ${device.label}`);
             
             try {
+                // ✅ IMPORTANTE: Especificar constraints correctos para evitar que se apague
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { deviceId: { exact: device.deviceId } },
+                    video: { 
+                        deviceId: { exact: device.deviceId },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 }
+                    },
                     audio: false
+                });
+
+                // ✅ Verificar que el stream está activo
+                const videoTrack = stream.getVideoTracks()[0];
+                if (!videoTrack || videoTrack.readyState !== 'live') {
+                    console.error(`  ❌ Track no está activo para ${id}`);
+                    continue;
+                }
+
+                console.log(`  ✅ Stream activo para ${id}:`, {
+                    readyState: videoTrack.readyState,
+                    enabled: videoTrack.enabled,
+                    muted: videoTrack.muted
                 });
 
                 this._createVideoCanvasPair(id, stream, { muted: true });
@@ -227,11 +272,15 @@ export default class UIManager {
     }
 
     _createVideoCanvasPair(id, stream, opts = {}) {
-        if (!this.container) return;
+        // ✅ VALIDACIÓN: Solo crear si hay container
+        if (!this.container) {
+            console.warn(`⚠️ Container no encontrado, no se puede crear feed ${id}`);
+            return null;
+        }
 
         if (document.getElementById(id)) {
             console.warn(`⚠️ Feed ${id} ya existe`);
-            return;
+            return null;
         }
 
         console.log(`🎬 Creando feed: ${id}`);
@@ -246,7 +295,30 @@ export default class UIManager {
         video.autoplay = true;
         video.playsinline = true;
         video.muted = opts.muted ?? false;
-        video.dataset.type = "local";
+        video.dataset.type = opts.type || "local";
+
+        // ✅ CRÍTICO: Asegurar que el video se reproduce
+        video.onloadedmetadata = () => {
+            console.log(`📹 Metadata cargada para ${id}, intentando play...`);
+            video.play()
+                .then(() => console.log(`▶️ Video ${id} reproduciéndose`))
+                .catch(err => console.error(`❌ Error play ${id}:`, err));
+        };
+
+        // ✅ Monitorear si el stream se detiene inesperadamente
+        stream.getVideoTracks().forEach(track => {
+            track.onended = () => {
+                console.warn(`⚠️ Track de video terminó inesperadamente para ${id}`);
+            };
+            
+            track.onmute = () => {
+                console.warn(`⚠️ Track de video muteado para ${id}`);
+            };
+
+            track.onunmute = () => {
+                console.log(`✅ Track de video desmuteado para ${id}`);
+            };
+        });
 
         const frame = document.createElement('div');
         frame.className = 'feed-frame';
@@ -280,7 +352,27 @@ export default class UIManager {
         }
 
         console.log(`  Creando nuevo feed remoto`);
-        this._createVideoCanvasPair(senderId, stream, { muted: false });
+        const result = this._createVideoCanvasPair(senderId, stream, { 
+            muted: false, 
+            type: "remote" 
+        });
+
+        // ✅ Si no hay container, crear video oculto para detección
+        if (!result && this.backgroundMode) {
+            console.log(`  Creando video oculto para background detection`);
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.dataset.feedId = senderId;
+            video.autoplay = true;
+            video.playsinline = true;
+            video.muted = true;
+            video.dataset.type = "remote";
+            video.style.display = 'none';
+            
+            document.body.appendChild(video);
+            this.videos.push(video);
+            console.log(`✅ Video oculto creado para ${senderId}`);
+        }
     }
 
     _resizeCanvasToVideoElement(vid) {
@@ -316,19 +408,51 @@ export default class UIManager {
     async _startAutoDetection() {
         console.log("🎬 Preparando detección automática");
         console.log(`  Videos a procesar: ${this.videos.length}`);
+        console.log(`  Background mode: ${this.backgroundMode}`);
+
+        // ✅ En background mode, esperar por feeds remotos
+        if (this.backgroundMode && this.videos.length === 0) {
+            console.log("⏳ Background mode: esperando feeds remotos...");
+            
+            // Escuchar nuevos videos
+            const checkInterval = setInterval(() => {
+                if (this.videos.length > 0) {
+                    clearInterval(checkInterval);
+                    console.log(`✅ ${this.videos.length} feed(s) remoto(s) detectado(s)`);
+                    this._startDetectionLoop();
+                }
+            }, 1000);
+
+            // Timeout de 30 segundos
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                if (this.videos.length === 0) {
+                    console.warn("⚠️ No se detectaron feeds remotos después de 30s");
+                }
+            }, 30000);
+
+            return;
+        }
 
         if (this.videos.length === 0) {
             console.warn("⚠️ No hay cámaras disponibles, no inicio detección");
             return;
         }
 
+        await this._startDetectionLoop();
+    }
+
+    async _startDetectionLoop() {
         console.log("⏳ Esperando que videos estén listos...");
         const readiness = this.videos.map(v => this._waitVideoReady(v));
         await Promise.all(readiness);
         console.log("✅ Todos los videos listos");
 
-        console.log("📐 Ajustando dimensiones de canvas...");
-        this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
+        // ✅ Solo ajustar canvas si NO es background mode
+        if (!this.backgroundMode) {
+            console.log("📐 Ajustando dimensiones de canvas...");
+            this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
+        }
 
         console.log("🚀 Iniciando pipeline de detección");
         this.faceRec.startMultiDetection({
@@ -338,7 +462,7 @@ export default class UIManager {
                 return vid.dataset.feedId.includes('local') ? 'local' : 'remote';
             },
             onDetect: (name, room) => {
-                if (name !== "Desconocido") {
+                if (name !== "Desconocido" && this.remoteList) {
                     this._updateList(name);
                 }
             }
@@ -387,6 +511,10 @@ export default class UIManager {
         for (const v of this.videos) {
             if (v.srcObject) {
                 v.srcObject.getTracks().forEach(t => t.stop());
+            }
+            // Remover videos ocultos
+            if (v.style.display === 'none') {
+                v.remove();
             }
         }
 

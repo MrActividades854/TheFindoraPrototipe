@@ -1,15 +1,24 @@
 /* ============================================================
    ESTILOS GENERALES
 ============================================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: system-ui, Segoe UI, Roboto, Arial;
-    padding: 18px;
     display: flex;
     flex-direction: column;
     gap: 16px;
     align-items: center;
     background: #f7f7f7;
     color: #222;
+}
+
+main {
+    padding: 20px;
 }
 
 h1, h2, h3 {

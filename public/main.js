@@ -1,31 +1,41 @@
-// main.js — versión correcta sin window.faceapi
+// main.js — versión sin conflictos de cámara
 import { CONFIG } from "./js/config.js";
 import UIManager from './js/ui.js';
 
 window.addEventListener('DOMContentLoaded', async () => {
   try {
-    // Crear UIManager directamente (solo usa ES modules)
+    console.log('🚀 [MAIN] Iniciando aplicación principal...');
+
+    // ✅ Prevenir que background-init interfiera
+    window.__backgroundInit = true; // Marcar como ya inicializado
+    
+    // ✅ Crear UIManager en modo normal (con cámaras)
     const ui = new UIManager({
-      wsUrl: "wss://thefindoraprototipe.onrender.com/ws",
+      wsUrl: CONFIG.WS_URL,
       modelPath: CONFIG.MODEL_PATH,
+      notificationsMode: 'live', // ✅ Notificaciones visibles en index
+      backgroundMode: false       // ✅ Modo normal con UI
     });
 
-    window.ui = ui;
+    // ✅ Guardar instancia global
+    window.uiManager = ui;
+    window.ui = ui; // Alias
 
-    // Inicializar UI
+    console.log('🎬 [MAIN] Inicializando UI...');
     await ui.init();
+    console.log('✅ [MAIN] Aplicación lista');
 
   } catch (err) {
-    console.error("❌ Error crítico inicializando la app:", err);
+    console.error("❌ [MAIN] Error crítico:", err);
     const status = document.getElementById("status");
-    if (status) status.textContent = "Error: " + err;
+    if (status) status.textContent = "Error: " + err.message;
   }
 });
 
 window.addEventListener("error", (e) => {
-  console.error("⚠️ Error global:", e.message, e.filename, e.lineno);
+  console.error("⚠️ [MAIN] Error global:", e.message, e.filename, e.lineno);
 });
 
 window.addEventListener("unhandledrejection", (e) => {
-  console.error("⚠️ Promesa no manejada:", e.reason);
+  console.error("⚠️ [MAIN] Promesa no manejada:", e.reason);
 });

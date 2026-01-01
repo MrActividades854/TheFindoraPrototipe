@@ -4,11 +4,20 @@
   <meta charset="UTF-8" />
   <title>Gestor de Perfiles</title>
   <style>
+
+* {
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       background: #0d1117;
       color: #fff;
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
+    }
+
+    main {
       padding: 20px;
     }
     h1 { margin-top: 0; }
@@ -55,7 +64,7 @@
 </head>
 <body>
   
-
+  <main>
   <h1>Gestor de Perfiles</h1>
 
   <button onclick="location.href='../../index.html'">⬅ Volver</button>
@@ -82,10 +91,12 @@
     <div id="profilesContainer">Cargando...</div>
   </section>
 
+  </main>
+
   <script type="module">
     import { CONFIG } from "../../js/config.js";
     async function fetchProfiles() {
-      const res = await fetch(`${CONFIG.API_BASE}/api/profiles`);
+      const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles`);
       const list = await res.json();
 
       const container = document.getElementById('profilesContainer');
@@ -115,7 +126,7 @@
       form.append('age', age);
       for (let f of files) form.append('refs', f);
 
-      const res = await fetch(`${CONFIG.API_BASE}/api/new_profile`, {
+      const res = await fetch(`https://thefindoraprototipe.onrender.com/api/new_profile`, {
         method: 'POST',
         body: form
       });
@@ -131,17 +142,23 @@
     fetchProfiles();
   </script>
 
-  <script type="module">
-    import { initBackgroundDetection } from '../../js/background-init.js';
-    // Leer modo WebSocket desde settings
-const allowWS = localStorage.getItem("useWebSocket") === "true";
+<script type="module">
+import { initBackgroundDetection } from '../../js/background-init.js';
 
-// Si WebSocket está desactivado → NO cargar background remoto
-if (!allowWS) {
-    console.log("[BG] WebSocket desactivado → solo modo local. No iniciar background.");
-    return;
-}
+function initBG() {
+    const allowWS = localStorage.getItem("useWebSocket") === "true";
+
+    if (!allowWS) {
+        console.log("[BG] WebSocket desactivado → solo modo local. No iniciar background.");
+        return;
+    }
+
     initBackgroundDetection();
-  </script>
+}
+
+initBG();
+</script>
+
+  <script type="module" src="./../../js/headerLoader.js"></script>
 </body>
 </html>

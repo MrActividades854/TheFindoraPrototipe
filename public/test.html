@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Background Detection - Findora</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 5px;
+        }
+
+        .status-badge.active {
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        .status-badge.inactive {
+            background: #ef4444;
+        }
+
+        .status-badge.waiting {
+            background: #f59e0b;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .log-container {
+            background: #1e1e1e;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .log-line {
+            margin: 3px 0;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .log-line.error { 
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5; 
+        }
+
+        .log-line.success { 
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7; 
+        }
+
+        .log-line.warning { 
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d; 
+        }
+
+        .log-line.info { 
+            color: #d4d4d4; 
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .info-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #60a5fa;
+        }
+
+        .info-label {
+            font-size: 12px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .notification-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+            border-left: 4px solid #60a5fa;
+        }
+
+        .notification-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test de Background Detection</h1>
+
+        <div class="card">
+            <h2>📊 Estado del Sistema</h2>
+            <div style="margin-top: 15px;">
+                <span class="status-badge waiting" id="ws-status">WebSocket: Verificando...</span>
+                <span class="status-badge waiting" id="bg-status">Background: Inicializando...</span>
+                <span class="status-badge waiting" id="detection-status">Detección: Inactiva</span>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Feeds Remotos</div>
+                    <div class="info-value" id="feeds-count">0</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Detecciones</div>
+                    <div class="info-value" id="detections-count">0</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Notificaciones</div>
+                    <div class="info-value" id="notifications-count">0</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <button onclick="toggleWebSocket()">🔄 Toggle WebSocket</button>
+                <button onclick="clearLogs()">🗑️ Limpiar Logs</button>
+                <button onclick="testNotification()">🔔 Test Notificación</button>
+                <button onclick="location.reload()">♻️ Recargar</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📋 Últimas Notificaciones</h2>
+            <div id="notifications-list">
+                <p style="opacity: 0.6;">Sin notificaciones recientes</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🖥️ Console Log</h2>
+            <div class="log-container" id="console-output"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Capturar console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const consoleOutput = document.getElementById('console-output');
+        
+        let detectionsCount = 0;
+
+        function addToConsole(message, type = 'info') {
+            const line = document.createElement('div');
+            line.className = `log-line ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            line.textContent = `[${timestamp}] ${message}`;
+            consoleOutput.appendChild(line);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const msg = args.join(' ');
+            
+            // Detectar eventos importantes
+            if (msg.includes('✅') || msg.includes('listo') || msg.includes('inicializada')) {
+                addToConsole(msg, 'success');
+            } else if (msg.includes('⚠️') || msg.includes('warn')) {
+                addToConsole(msg, 'warning');
+            } else {
+                addToConsole(msg, 'info');
+            }
+
+            updateStatus(msg);
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('ERROR: ' + args.join(' '), 'error');
+            updateStatus(args.join(' '));
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole('WARN: ' + args.join(' '), 'warning');
+        };
+
+        function updateStatus(message) {
+            const wsStatus = document.getElementById('ws-status');
+            const bgStatus = document.getElementById('bg-status');
+            const detectionStatus = document.getElementById('detection-status');
+
+            // WebSocket
+            if (message.includes('WebSocket conectado') || message.includes('WebRTC conectado')) {
+                wsStatus.textContent = 'WebSocket: Conectado';
+                wsStatus.className = 'status-badge active';
+            }
+
+            // Background
+            if (message.includes('Background detection inicializada') || message.includes('Background detection lista')) {
+                bgStatus.textContent = 'Background: Activo';
+                bgStatus.className = 'status-badge active';
+            }
+
+            // Detección
+            if (message.includes('Pipeline activo') || message.includes('Detección activa')) {
+                detectionStatus.textContent = 'Detección: Activa';
+                detectionStatus.className = 'status-badge active';
+            }
+
+            // Feeds remotos
+            if (message.includes('feed(s) remoto(s)')) {
+                const match = message.match(/(\d+) feed/);
+                if (match) {
+                    document.getElementById('feeds-count').textContent = match[1];
+                }
+            }
+
+            // Detecciones
+            if (message.includes('rostro(s)') || message.includes('detectado')) {
+                detectionsCount++;
+                document.getElementById('detections-count').textContent = detectionsCount;
+            }
+        }
+
+        function updateNotificationsList() {
+            const list = document.getElementById('notifications-list');
+            const notifications = JSON.parse(localStorage.getItem('findora_notifications') || '[]');
+            
+            document.getElementById('notifications-count').textContent = notifications.length;
+
+            if (notifications.length === 0) {
+                list.innerHTML = '<p style="opacity: 0.6;">Sin notificaciones recientes</p>';
+                return;
+            }
+
+            list.innerHTML = notifications.slice(0, 5).map(n => `
+                <div class="notification-item">
+                    <strong>${n.message}</strong>
+                    <div class="notification-time">
+                        ${new Date(n.time).toLocaleString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Funciones globales
+        window.toggleWebSocket = function() {
+            const current = localStorage.getItem('useWebSocket') === 'true';
+            localStorage.setItem('useWebSocket', !current);
+            addToConsole(`WebSocket ${!current ? 'activado' : 'desactivado'}. Recarga la página.`, 'info');
+        };
+
+        window.clearLogs = function() {
+            consoleOutput.innerHTML = '';
+            addToConsole('Logs limpiados', 'info');
+        };
+
+        window.testNotification = function() {
+            const notifications = JSON.parse(localStorage.getItem('findora_notifications') || '[]');
+            notifications.push({
+                message: 'Notificación de prueba',
+                type: 'info',
+                time: Date.now(),
+                read: false
+            });
+            localStorage.setItem('findora_notifications', JSON.stringify(notifications));
+            updateNotificationsList();
+            addToConsole('Notificación de prueba creada', 'success');
+        };
+
+        // Verificar estado inicial
+        const wsEnabled = localStorage.getItem('useWebSocket') === 'true';
+        const wsStatus = document.getElementById('ws-status');
+        
+        if (wsEnabled) {
+            wsStatus.textContent = 'WebSocket: Habilitado';
+            wsStatus.className = 'status-badge waiting';
+        } else {
+            wsStatus.textContent = 'WebSocket: Deshabilitado';
+            wsStatus.className = 'status-badge inactive';
+            addToConsole('⚠️ WebSocket deshabilitado. Actívalo con el botón "Toggle WebSocket"', 'warning');
+        }
+
+        // Actualizar notificaciones cada 2 segundos
+        setInterval(updateNotificationsList, 2000);
+        updateNotificationsList();
+
+        // Cargar background detection
+        console.log('🚀 Iniciando test de background detection...');
+        
+        import('./js/background-init.js')
+            .then(() => {
+                console.log('✅ background-init.js cargado');
+            })
+            .catch(error => {
+                console.error('❌ Error cargando background-init.js:', error);
+            });
+    </script>
+</body>
+</html>

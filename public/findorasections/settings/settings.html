@@ -5,10 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Settings</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+
         body {
             font-family: Arial, sans-serif;
             background: #0f0f0f;
             color: #fff;
+        }
+
+        main {
             padding: 20px;
         }
 
@@ -67,6 +76,7 @@
     </style>
 </head>
 <body>
+    <main>
     <div class="settings-container">
         <h1>Configuración</h1>
 
@@ -83,6 +93,7 @@
             <small style="opacity: 0.7">Este modo desactiva WebRTC, WS y detección remota.</small>
         </div>
     </div>
+    </main>
 
     <script>
         // Leer preferencia guardada
@@ -98,5 +109,6 @@
             alert("Configuración guardada. Reinicia la página principal para aplicar cambios.");
         });
     </script>
+    <script type="module" src="./../../js/headerLoader.js"></script>
 </body>
 </html>
