@@ -9,11 +9,12 @@
 
 body {
     font-family: system-ui, Segoe UI, Roboto, Arial;
+    
     display: flex;
     flex-direction: column;
     gap: 16px;
     align-items: center;
-    background: #f7f7f7;
+    background:  linear-gradient(90deg,rgb(135, 199, 231), rgb(196, 218, 237));
     color: #222;
 }
 

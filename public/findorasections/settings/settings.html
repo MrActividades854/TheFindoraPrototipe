@@ -3,55 +3,116 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Settings</title>
+    <title>Configuración - Findora</title>
     <style>
         * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
-
         body {
-            font-family: Arial, sans-serif;
-            background: #0f0f0f;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: #fff;
+            min-height: 100vh;
         }
 
         main {
             padding: 20px;
+            padding-top: 100px; /* Espacio para el header */
         }
 
         .settings-container {
-            max-width: 600px;
+            max-width: 700px;
             margin: auto;
             background: #1a1a1a;
-            padding: 20px;
-            border-radius: 14px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
 
         h1 {
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             text-align: center;
+            font-size: 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #333;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .option {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 20px 0;
+            margin: 15px 0;
             background: #222;
-            padding: 12px 16px;
-            border-radius: 10px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+
+        .option:hover {
+            background: #2a2a2a;
+        }
+
+        .option-content {
+            flex: 1;
+        }
+
+        .option-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .option-description {
+            font-size: 13px;
+            color: #888;
+            line-height: 1.4;
         }
 
         .toggle {
             position: relative;
-            width: 50px;
-            height: 26px;
-            background: #555;
+            width: 54px;
+            height: 28px;
+            background: #444;
             border-radius: 20px;
             cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle:hover {
+            background: #555;
         }
 
         .toggle input {
@@ -62,53 +123,468 @@
             position: absolute;
             top: 3px;
             left: 3px;
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             background: #fff;
             border-radius: 50%;
-            transition: 0.25s;
+            transition: 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
         .toggle input:checked + .slider {
-            transform: translateX(24px);
-            background: #0f0;
+            transform: translateX(26px);
+        }
+
+        .toggle.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .toggle.active .slider {
+            background: #fff;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-left: 10px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .radio-option:hover {
+            background: #333;
+        }
+
+        .radio-option.selected {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border: 1px solid #667eea;
+        }
+
+        .radio-option input[type="radio"] {
+            margin-right: 12px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .radio-option label {
+            cursor: pointer;
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #2a2a2a;
+            border-radius: 20px;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+
+        .status-dot.active {
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .subsection {
+            margin-left: 20px;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
     <main>
-    <div class="settings-container">
-        <h1>Configuración</h1>
+        <div class="settings-container">
+            <h1>⚙️ Configuración</h1>
+            <p class="subtitle">Personaliza el comportamiento del sistema Findora</p>
 
-        <div class="option">
-            <span>Modo WebSocket (Cámaras Remotas + Notificaciones en Vivo)</span>
-            <label class="toggle">
-                <input type="checkbox" id="wsToggle" />
-                <span class="slider"></span>
-            </label>
-        </div>
+            <!-- SECCIÓN 1: WebSocket -->
+            <div class="section">
+                <div class="section-title">
+                    🌐 Conectividad
+                </div>
 
-        <div class="option">
-            <span>Modo Local (Solo cámara del dispositivo actual)</span>
-            <small style="opacity: 0.7">Este modo desactiva WebRTC, WS y detección remota.</small>
+                <div class="option">
+                    <div class="option-content">
+                        <div class="option-title">Modo WebSocket</div>
+                        <div class="option-description">
+                            Habilita cámaras remotas, detección distribuida y notificaciones en tiempo real
+                        </div>
+                    </div>
+                    <label class="toggle" id="wsToggleContainer">
+                        <input type="checkbox" id="wsToggle" />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="status-indicator">
+                    <span class="status-dot" id="ws-status-dot"></span>
+                    <span id="ws-status-text">WebSocket: Deshabilitado</span>
+                </div>
+
+                <div class="info-box">
+                    <strong>ℹ️ Modo WebSocket:</strong> Conecta múltiples dispositivos, permite ver feeds de otras cámaras y recibir notificaciones de detecciones en tiempo real.
+                    <br><br>
+                    <strong>Modo Local:</strong> Solo usa la cámara de este dispositivo. Sin conexión a red.
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: Background Detection -->
+            <div class="section">
+                <div class="section-title">
+                    📹 Detección en Background
+                </div>
+
+                <div class="option">
+                    <div class="option-content">
+                        <div class="option-title">Activar Cámara Local en Todas las Páginas</div>
+                        <div class="option-description">
+                            Si está activado, tu cámara se encenderá y detectará rostros en cada página (perfiles, notificaciones, etc.)
+                        </div>
+                    </div>
+                    <label class="toggle" id="bgCameraToggleContainer">
+                        <input type="checkbox" id="bgCameraToggle" />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="warning-box" id="bg-warning" style="display: none;">
+                    <strong>⚠️ Advertencia:</strong> Activar esta opción hará que tu cámara se encienda en todas las páginas del sistema. Esto consumirá más batería y recursos.
+                </div>
+
+                <div class="subsection" id="bg-options" style="display: none;">
+                    <div class="option-title" style="margin-bottom: 10px; font-size: 15px;">
+                        👁️ Mostrar Vista Previa
+                    </div>
+                    
+                    <div class="option">
+                        <div class="option-content">
+                            <div class="option-description">
+                                Muestra un mini preview flotante de las cámaras activas
+                            </div>
+                        </div>
+                        <label class="toggle" id="bgPreviewToggleContainer">
+                            <input type="checkbox" id="bgPreviewToggle" />
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div id="preview-options" style="display: none;">
+                        <div class="option-title" style="margin: 20px 0 10px 0; font-size: 14px;">
+                            📍 Posición del Preview
+                        </div>
+                        <div class="radio-group">
+                            <div class="radio-option" data-position="bottom-right">
+                                <input type="radio" name="position" value="bottom-right" id="pos-br">
+                                <label for="pos-br">Abajo Derecha <span class="badge">Recomendado</span></label>
+                            </div>
+                            <div class="radio-option" data-position="bottom-left">
+                                <input type="radio" name="position" value="bottom-left" id="pos-bl">
+                                <label for="pos-bl">Abajo Izquierda</label>
+                            </div>
+                            <div class="radio-option" data-position="top-right">
+                                <input type="radio" name="position" value="top-right" id="pos-tr">
+                                <label for="pos-tr">Arriba Derecha</label>
+                            </div>
+                            <div class="radio-option" data-position="top-left">
+                                <input type="radio" name="position" value="top-left" id="pos-tl">
+                                <label for="pos-tl">Arriba Izquierda</label>
+                            </div>
+                        </div>
+
+                        <div class="option-title" style="margin: 20px 0 10px 0; font-size: 14px;">
+                            📏 Tamaño del Preview
+                        </div>
+                        <div class="radio-group">
+                            <div class="radio-option" data-size="small">
+                                <input type="radio" name="size" value="small" id="size-s">
+                                <label for="size-s">Pequeño (200px) <span class="badge">Recomendado</span></label>
+                            </div>
+                            <div class="radio-option" data-size="medium">
+                                <input type="radio" name="size" value="medium" id="size-m">
+                                <label for="size-m">Mediano (300px)</label>
+                            </div>
+                            <div class="radio-option" data-size="large">
+                                <input type="radio" name="size" value="large" id="size-l">
+                                <label for="size-l">Grande (400px)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>ℹ️ Recomendación:</strong> Deja esta opción <strong>desactivada</strong> para ahorrar recursos. El modo background solo monitoreará feeds remotos de otras cámaras del sistema sin activar tu cámara local.
+                </div>
+            </div>
+
+            <button onclick="saveSettings()">💾 Guardar Configuración</button>
         </div>
-    </div>
     </main>
 
-    <script>
-        // Leer preferencia guardada
-        const wsToggle = document.getElementById("wsToggle");
-        const saved = localStorage.getItem("useWebSocket");
-
-        if (saved === "true") wsToggle.checked = true;
-        if (saved === "false") wsToggle.checked = false;
-
-        wsToggle.addEventListener("change", () => {
-            const useWS = wsToggle.checked;
-            localStorage.setItem("useWebSocket", useWS);
-            alert("Configuración guardada. Reinicia la página principal para aplicar cambios.");
-        });
-    </script>
     <script type="module" src="./../../js/headerLoader.js"></script>
+
+    <script>
+        // ============================================================
+        // CARGAR CONFIGURACIÓN ACTUAL
+        // ============================================================
+        
+        const config = {
+            useWebSocket: localStorage.getItem("useWebSocket") === "true",
+            enableLocalCamera: localStorage.getItem('bg_enableLocalCamera') === 'true',
+            showMiniPreview: localStorage.getItem('bg_showMiniPreview') !== 'false',
+            previewPosition: localStorage.getItem('bg_previewPosition') || 'bottom-right',
+            previewSize: localStorage.getItem('bg_previewSize') || 'small'
+        };
+
+        // ============================================================
+        // APLICAR VALORES INICIALES
+        // ============================================================
+        
+        function loadSettings() {
+            // WebSocket
+            const wsToggle = document.getElementById('wsToggle');
+            const wsToggleContainer = document.getElementById('wsToggleContainer');
+            wsToggle.checked = config.useWebSocket;
+            if (config.useWebSocket) wsToggleContainer.classList.add('active');
+            updateWSStatus();
+
+            // Background Camera
+            const bgCameraToggle = document.getElementById('bgCameraToggle');
+            const bgCameraContainer = document.getElementById('bgCameraToggleContainer');
+            bgCameraToggle.checked = config.enableLocalCamera;
+            if (config.enableLocalCamera) bgCameraContainer.classList.add('active');
+            updateBGCameraUI();
+
+            // Preview
+            const bgPreviewToggle = document.getElementById('bgPreviewToggle');
+            const bgPreviewContainer = document.getElementById('bgPreviewToggleContainer');
+            bgPreviewToggle.checked = config.showMiniPreview;
+            if (config.showMiniPreview) bgPreviewContainer.classList.add('active');
+            updatePreviewUI();
+
+            // Radio buttons
+            document.querySelector(`input[name="position"][value="${config.previewPosition}"]`).checked = true;
+            document.querySelector(`.radio-option[data-position="${config.previewPosition}"]`).classList.add('selected');
+
+            document.querySelector(`input[name="size"][value="${config.previewSize}"]`).checked = true;
+            document.querySelector(`.radio-option[data-size="${config.previewSize}"]`).classList.add('selected');
+        }
+
+        // ============================================================
+        // EVENT LISTENERS
+        // ============================================================
+        
+        // WebSocket Toggle
+        document.getElementById('wsToggle').addEventListener('change', function() {
+            config.useWebSocket = this.checked;
+            
+            const container = document.getElementById('wsToggleContainer');
+            if (this.checked) {
+                container.classList.add('active');
+            } else {
+                container.classList.remove('active');
+            }
+            
+            updateWSStatus();
+        });
+
+        // Background Camera Toggle
+        document.getElementById('bgCameraToggle').addEventListener('change', function() {
+            config.enableLocalCamera = this.checked;
+            
+            const container = document.getElementById('bgCameraToggleContainer');
+            if (this.checked) {
+                container.classList.add('active');
+            } else {
+                container.classList.remove('active');
+            }
+            
+            updateBGCameraUI();
+        });
+
+        // Preview Toggle
+        document.getElementById('bgPreviewToggle').addEventListener('change', function() {
+            config.showMiniPreview = this.checked;
+            
+            const container = document.getElementById('bgPreviewToggleContainer');
+            if (this.checked) {
+                container.classList.add('active');
+            } else {
+                container.classList.remove('active');
+            }
+            
+            updatePreviewUI();
+        });
+
+        // Position Radio Buttons
+        document.querySelectorAll('input[name="position"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                config.previewPosition = e.target.value;
+                
+                // Update visual selection
+                document.querySelectorAll('.radio-option[data-position]').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                e.target.closest('.radio-option').classList.add('selected');
+            });
+        });
+
+        // Size Radio Buttons
+        document.querySelectorAll('input[name="size"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                config.previewSize = e.target.value;
+                
+                // Update visual selection
+                document.querySelectorAll('.radio-option[data-size]').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                e.target.closest('.radio-option').classList.add('selected');
+            });
+        });
+
+        // ============================================================
+        // UI UPDATES
+        // ============================================================
+        
+        function updateWSStatus() {
+            const dot = document.getElementById('ws-status-dot');
+            const text = document.getElementById('ws-status-text');
+            
+            if (config.useWebSocket) {
+                dot.classList.add('active');
+                text.textContent = 'WebSocket: Habilitado';
+            } else {
+                dot.classList.remove('active');
+                text.textContent = 'WebSocket: Deshabilitado';
+            }
+        }
+
+        function updateBGCameraUI() {
+            const bgOptions = document.getElementById('bg-options');
+            const bgWarning = document.getElementById('bg-warning');
+            
+            if (config.enableLocalCamera) {
+                bgOptions.style.display = 'block';
+                bgWarning.style.display = 'block';
+            } else {
+                bgOptions.style.display = 'none';
+                bgWarning.style.display = 'none';
+            }
+        }
+
+        function updatePreviewUI() {
+            const previewOptions = document.getElementById('preview-options');
+            
+            if (config.showMiniPreview) {
+                previewOptions.style.display = 'block';
+            } else {
+                previewOptions.style.display = 'none';
+            }
+        }
+
+        // ============================================================
+        // GUARDAR CONFIGURACIÓN
+        // ============================================================
+        
+        window.saveSettings = function() {
+            // Guardar en localStorage
+            localStorage.setItem('useWebSocket', config.useWebSocket);
+            localStorage.setItem('bg_enableLocalCamera', config.enableLocalCamera);
+            localStorage.setItem('bg_showMiniPreview', config.showMiniPreview);
+            localStorage.setItem('bg_previewPosition', config.previewPosition);
+            localStorage.setItem('bg_previewSize', config.previewSize);
+
+            // Mostrar confirmación
+            alert('✅ Configuración guardada correctamente.\n\nLos cambios se aplicarán al recargar las páginas.');
+            
+            // Opcional: Redirigir al inicio
+            setTimeout(() => {
+                window.location.href = '../../index.html';
+            }, 1000);
+        };
+
+        // ============================================================
+        // INICIALIZACIÓN
+        // ============================================================
+        
+        loadSettings();
+    </script>
 </body>
 </html>
