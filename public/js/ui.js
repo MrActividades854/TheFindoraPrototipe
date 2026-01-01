@@ -51,6 +51,7 @@ export default class UIManager {
     async init() {
         console.log("🚀 UIManager.init() - INICIANDO");
         console.log("  Modo Background:", this.backgroundMode);
+        console.log(CONFIG.ROOT_PATH + 'findorasections/camera/camara.html');
         
         try {
             this._updateStatus('🔧 Inicializando sistema...');
@@ -318,8 +319,7 @@ export default class UIManager {
             localStorage.setItem('feedList', JSON.stringify(allIds));
             
             const cameraPath = this._getRelativePath('findorasections/camera/camara.html');
-            console.log('🔗 Navegando a:', cameraPath);
-            window.location.href = cameraPath;
+            window.location.href = CONFIG.ROOT_PATH + 'findorasections/camera/camara.html';
         });
 
         this.videos.push(video);
