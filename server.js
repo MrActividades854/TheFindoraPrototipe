@@ -24,26 +24,8 @@ app.use(express.urlencoded({ extended: true }));
 // Public folder
 app.use(express.static(path.join(__dirname, "public")));
 
-// ✅ NUEVO: Redirigir raíz a index correcto
-app.get('/', (req, res) => {
-    // Opción A: Si index.html está en /public/findorasections/mainPage/
-    res.sendFile(path.join(__dirname, 'public', 'findorasections', 'mainPage', 'index.html'));
-    
-    // Opción B: Si quieres redirigir
-    // res.redirect('/findorasections/mainPage/index.html');
-});
-
-// ✅ NUEVO: Servir archivos HTML directamente
-app.get('*.html', (req, res) => {
-    const requestedPath = req.path;
-    const filePath = path.join(__dirname, 'public', requestedPath);
-    
-    // Verificar que el archivo existe
-    if (require('fs').existsSync(filePath)) {
-        res.sendFile(filePath);
-    } else {
-        res.status(404).send('Página no encontrada');
-    }
+app.get("/", (req, res) => {
+  res.redirect("/findorasections/mainPage/Page.html");
 });
 
 // ---------------------------------------------------------
