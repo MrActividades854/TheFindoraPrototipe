@@ -1,4 +1,4 @@
-// ui.js — Versión con background detection arreglado
+// ui.js — Versión completa con navegación arreglada
 
 import WebRTCManager from './webrtc.js';
 import FaceRecognitionManager from './face-recognition.js';
@@ -14,7 +14,7 @@ export default class UIManager {
         wsUrl = CONFIG.WS_URL, 
         modelPath = CONFIG.MODEL_PATH, 
         notificationsMode = 'live',
-        backgroundMode = false  // ✅ NUEVO: Modo background
+        backgroundMode = false
     } = {}) {
         console.log("🏗️ UIManager constructor");
         console.log("  WS URL:", wsUrl);
@@ -22,7 +22,6 @@ export default class UIManager {
         console.log("  Notifications Mode:", notificationsMode);
         console.log("  Background Mode:", backgroundMode);
 
-        // ✅ Modo background
         this.backgroundMode = backgroundMode;
 
         // Elementos del DOM (opcionales en background mode)
@@ -52,10 +51,11 @@ export default class UIManager {
     async init() {
         console.log("🚀 UIManager.init() - INICIANDO");
         console.log("  Modo Background:", this.backgroundMode);
+        console.log(CONFIG.ROOT_PATH + 'findorasections/camera/camara.html');
         
         try {
             this._updateStatus('🔧 Inicializando sistema...');
-            console.log("=" .repeat(60));
+            console.log("=".repeat(60));
 
             // 1. Notificaciones
             console.log("📢 Paso 1/7: Inicializando notificaciones");
@@ -151,9 +151,9 @@ export default class UIManager {
             }
 
             this._updateStatus('✅ Sistema listo');
-            console.log("=" .repeat(60));
+            console.log("=".repeat(60));
             console.log("🎉 INICIALIZACIÓN COMPLETA");
-            console.log("=" .repeat(60));
+            console.log("=".repeat(60));
 
         } catch (err) {
             console.error("❌ ERROR CRÍTICO EN INIT:");
@@ -223,7 +223,6 @@ export default class UIManager {
     }
 
     async _createLocalCameras() {
-        // ✅ VALIDACIÓN: Solo crear si hay container
         if (!this.container) {
             console.warn("⚠️ Container no encontrado, saltando creación de feeds locales");
             return;
@@ -238,7 +237,6 @@ export default class UIManager {
             console.log(`  Configurando ${id}: ${device.label}`);
             
             try {
-                // ✅ IMPORTANTE: Especificar constraints correctos para evitar que se apague
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { 
                         deviceId: { exact: device.deviceId },
@@ -249,7 +247,6 @@ export default class UIManager {
                     audio: false
                 });
 
-                // ✅ Verificar que el stream está activo
                 const videoTrack = stream.getVideoTracks()[0];
                 if (!videoTrack || videoTrack.readyState !== 'live') {
                     console.error(`  ❌ Track no está activo para ${id}`);
@@ -258,8 +255,7 @@ export default class UIManager {
 
                 console.log(`  ✅ Stream activo para ${id}:`, {
                     readyState: videoTrack.readyState,
-                    enabled: videoTrack.enabled,
-                    muted: videoTrack.muted
+                    enabled: videoTrack.enabled
                 });
 
                 this._createVideoCanvasPair(id, stream, { muted: true });
@@ -272,7 +268,6 @@ export default class UIManager {
     }
 
     _createVideoCanvasPair(id, stream, opts = {}) {
-        // ✅ VALIDACIÓN: Solo crear si hay container
         if (!this.container) {
             console.warn(`⚠️ Container no encontrado, no se puede crear feed ${id}`);
             return null;
@@ -297,7 +292,6 @@ export default class UIManager {
         video.muted = opts.muted ?? false;
         video.dataset.type = opts.type || "local";
 
-        // ✅ CRÍTICO: Asegurar que el video se reproduce
         video.onloadedmetadata = () => {
             console.log(`📹 Metadata cargada para ${id}, intentando play...`);
             video.play()
@@ -305,19 +299,10 @@ export default class UIManager {
                 .catch(err => console.error(`❌ Error play ${id}:`, err));
         };
 
-        // ✅ Monitorear si el stream se detiene inesperadamente
         stream.getVideoTracks().forEach(track => {
-            track.onended = () => {
-                console.warn(`⚠️ Track de video terminó inesperadamente para ${id}`);
-            };
-            
-            track.onmute = () => {
-                console.warn(`⚠️ Track de video muteado para ${id}`);
-            };
-
-            track.onunmute = () => {
-                console.log(`✅ Track de video desmuteado para ${id}`);
-            };
+            track.onended = () => console.warn(`⚠️ Track terminó para ${id}`);
+            track.onmute = () => console.warn(`⚠️ Track muteado para ${id}`);
+            track.onunmute = () => console.log(`✅ Track desmuteado para ${id}`);
         });
 
         const frame = document.createElement('div');
@@ -327,11 +312,14 @@ export default class UIManager {
         wrapper.appendChild(frame);
         this.container.appendChild(wrapper);
 
+        // ✅ FIX: Navegación corregida
         wrapper.addEventListener('click', () => {
             localStorage.setItem('selectedFeed', video.dataset.feedId);
             const allIds = this.videos.map(v => v.dataset.feedId);
             localStorage.setItem('feedList', JSON.stringify(allIds));
-            window.location.href = './findorasections/camera/camara.html';
+            
+            const cameraPath = this._getRelativePath('findorasections/camera/camara.html');
+            window.location.href = CONFIG.ROOT_PATH + 'findorasections/camera/camara.html';
         });
 
         this.videos.push(video);
@@ -357,7 +345,6 @@ export default class UIManager {
             type: "remote" 
         });
 
-        // ✅ Si no hay container, crear video oculto para detección
         if (!result && this.backgroundMode) {
             console.log(`  Creando video oculto para background detection`);
             const video = document.createElement('video');
@@ -410,11 +397,9 @@ export default class UIManager {
         console.log(`  Videos a procesar: ${this.videos.length}`);
         console.log(`  Background mode: ${this.backgroundMode}`);
 
-        // ✅ En background mode, esperar por feeds remotos
         if (this.backgroundMode && this.videos.length === 0) {
             console.log("⏳ Background mode: esperando feeds remotos...");
             
-            // Escuchar nuevos videos
             const checkInterval = setInterval(() => {
                 if (this.videos.length > 0) {
                     clearInterval(checkInterval);
@@ -423,7 +408,6 @@ export default class UIManager {
                 }
             }, 1000);
 
-            // Timeout de 30 segundos
             setTimeout(() => {
                 clearInterval(checkInterval);
                 if (this.videos.length === 0) {
@@ -448,7 +432,6 @@ export default class UIManager {
         await Promise.all(readiness);
         console.log("✅ Todos los videos listos");
 
-        // ✅ Solo ajustar canvas si NO es background mode
         if (!this.backgroundMode) {
             console.log("📐 Ajustando dimensiones de canvas...");
             this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
@@ -473,6 +456,40 @@ export default class UIManager {
 
     _normalizeName(name) {
         return name.trim().toLowerCase();
+    }
+
+    // ✅ NUEVO: Calcular ruta relativa correctamente
+    _getRelativePath(targetPath) {
+        const currentPath = window.location.pathname;
+        
+        console.log('📍 Ruta actual:', currentPath);
+        console.log('🎯 Destino:', targetPath);
+        
+        // Normalizar targetPath
+        targetPath = targetPath.replace(/^\.\//, '');
+        
+        // Si estamos en index.html o raíz
+        if (currentPath === '/' || currentPath.endsWith('index.html')) {
+            return `./${targetPath}`;
+        }
+        
+        // Calcular profundidad
+        const segments = currentPath.split('/').filter(s => s && !s.endsWith('.html'));
+        const publicIndex = segments.indexOf('public');
+        
+        let depth = 0;
+        if (publicIndex !== -1) {
+            depth = segments.length - publicIndex - 1;
+        } else {
+            depth = segments.length;
+        }
+        
+        console.log('📊 Profundidad:', depth, 'Segmentos:', segments);
+        
+        const result = depth === 0 ? `./${targetPath}` : '../'.repeat(depth) + targetPath;
+        console.log('✅ Ruta calculada:', result);
+        
+        return result;
     }
 
     _updateList(name, room, video) {
@@ -512,7 +529,6 @@ export default class UIManager {
             if (v.srcObject) {
                 v.srcObject.getTracks().forEach(t => t.stop());
             }
-            // Remover videos ocultos
             if (v.style.display === 'none') {
                 v.remove();
             }
