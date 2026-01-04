@@ -1,10 +1,12 @@
-// face-recognition.js — VERSIÓN OPTIMIZADA SIN DIAGNÓSTICO PESADO
+// face-recognition.js — CON FIX PARA PERFILES VACÍOS
 
 import { CONFIG } from "./config.js";
 import * as faceapi from 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.esm.js';
 
 export default class FaceRecognitionManager {
     constructor({ modelPath = CONFIG.MODEL_PATH, getActiveVideo = () => null, onNotification = () => {} } = {}) {
+        console.log("🔧 FaceRecognitionManager constructor");
+        console.log("📁 ModelPath:", modelPath);
 
         this.modelPath = modelPath;
         this.getActiveVideo = getActiveVideo;
@@ -40,87 +42,50 @@ export default class FaceRecognitionManager {
         this.confirmUnknownAfter = 5;
 
         this.personLastRoom = {};
-    }
-
-    async testModelAvailability() {
         
-        const manifestsToTest = [
-            'tiny_face_detector_model-weights_manifest.json',
-            'face_landmark_68_model-weights_manifest.json',
-            'face_recognition_model-weights_manifest.json',
-            'ssd_mobilenetv1_model-weights_manifest.json'
-        ];
-
-        let allOk = true;
-
-        for (const manifest of manifestsToTest) {
-            const fullPath = `${this.modelPath}/${manifest}`;
-            
-            try {
-                const response = await fetch(fullPath, { 
-                    method: 'HEAD' // Solo verificar headers, no descargar contenido
-                });
-                
-                if (response.ok) {
-                    console.log(`  ✅ ${manifest}`);
-                } else {
-                    console.log(`  ❌ ${manifest} - Status: ${response.status}`);
-                    allOk = false;
-                }
-            } catch (error) {
-                console.log(`  ❌ ${manifest} - Error: ${error.message}`);
-                allOk = false;
-            }
-        }
-        
-        return allOk;
+        console.log("✅ FaceRecognitionManager creado");
     }
 
     async loadModels() {
-        
-        // Verificación rápida primero
-        const modelsAvailable = await this.testModelAvailability();
-        
-        if (!modelsAvailable) {
-            throw new Error("Modelos no disponibles en la ruta especificada");
-        }
+        console.log("🔄 Iniciando carga de modelos...");
+        console.log("📍 Ruta de modelos:", this.modelPath);
         
         try {
+            console.log("⏳ Cargando TinyFaceDetector...");
             await faceapi.nets.tinyFaceDetector.loadFromUri(this.modelPath);
+            console.log("✅ TinyFaceDetector cargado");
             
+            console.log("⏳ Cargando FaceLandmark68Net...");
             await faceapi.nets.faceLandmark68Net.loadFromUri(this.modelPath);
-         
+            console.log("✅ FaceLandmark68Net cargado");
+            
+            console.log("⏳ Cargando FaceRecognitionNet...");
             await faceapi.nets.faceRecognitionNet.loadFromUri(this.modelPath);
+            console.log("✅ FaceRecognitionNet cargado");
             
+            console.log("⏳ Cargando SsdMobilenetv1...");
             await faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelPath);
+            console.log("✅ SsdMobilenetv1 cargado");
             
+            console.log("🎉 TODOS LOS MODELOS CARGADOS EXITOSAMENTE");
             return true;
             
         } catch (error) {
-            console.error("\n ERROR CRÍTICO cargando modelos:");
+            console.error("\n❌ ERROR CRÍTICO cargando modelos:");
             console.error("Tipo:", error.constructor.name);
             console.error("Mensaje:", error.message);
-            
-            if (error.message.includes('fetch')) {
-                console.error("\n Error de red detectado. Posibles causas:");
-                console.error("  - Los archivos .bin son muy grandes y tardaron mucho");
-                console.error("  - Problema de conectividad");
-                console.error("  - CORS bloqueando la carga");
-            }
-            
             throw error;
         }
     }
 
     async loadProfilesFromServer() {
+        console.log("🔄 Iniciando carga de perfiles...");
         const useWS = localStorage.getItem("useWebSocket") === "true";
-        console.log(" WebSocket activado:", useWS);
+        console.log("🌐 WebSocket activado:", useWS);
         
         if (!useWS) {
             console.warn("⚠️ WebSocket OFF → Inicializando sin perfiles");
-            this.labeledDescriptors = [];
-            this.faceMatcher = new faceapi.FaceMatcher([], this.threshold);
-            console.log("✅ FaceMatcher vacío inicializado");
+            this._initEmptyMatcher();
             return [];
         }
 
@@ -131,24 +96,25 @@ export default class FaceRecognitionManager {
 
             if (!res.ok) {
                 console.error("❌ Error HTTP:", res.status, res.statusText);
-                this.labeledDescriptors = [];
-                this.faceMatcher = new faceapi.FaceMatcher([], this.threshold);
-                this.onNotification("Error cargando perfiles", "error");
+                this._initEmptyMatcher();
+                this.onNotification("Error cargando perfiles del servidor", "error");
                 return [];
             }
 
             const profiles = await res.json();
             console.log("📊 Perfiles recibidos:", profiles.length);
 
-            if (!Array.isArray(profiles)) {
-                console.error("❌ Formato de perfiles inválido");
-                this.labeledDescriptors = [];
-                this.faceMatcher = new faceapi.FaceMatcher([], this.threshold);
+            if (!Array.isArray(profiles) || profiles.length === 0) {
+                console.warn("⚠️ No hay perfiles en el servidor");
+                this._initEmptyMatcher();
+                this.onNotification("No hay perfiles registrados aún", "info");
                 return [];
             }
 
             this.labeledDescriptors = [];
             this.profileMap = {};
+
+            let processedCount = 0;
 
             for (const p of profiles) {
                 if (!p.images || p.images.length === 0) {
@@ -168,6 +134,8 @@ export default class FaceRecognitionManager {
 
                         if (det) {
                             descriptors.push(det.descriptor);
+                        } else {
+                            console.warn(`  ⚠️ No se detectó rostro en: ${imgUrl}`);
                         }
                     } catch (err) {
                         console.warn(`  ❌ Error procesando imagen:`, err.message);
@@ -179,23 +147,56 @@ export default class FaceRecognitionManager {
                         new faceapi.LabeledFaceDescriptors(p.name, descriptors)
                     );
                     this.profileMap[p.name] = p.id;
+                    processedCount++;
                     console.log(`✅ Perfil ${p.name}: ${descriptors.length} descriptores`);
+                } else {
+                    console.warn(`⚠️ Perfil ${p.name}: Sin descriptores válidos`);
                 }
             }
 
+            // ✅ CRÍTICO: Verificar que tengamos al menos un perfil válido
+            if (this.labeledDescriptors.length === 0) {
+                console.warn("⚠️ No se pudo procesar ningún perfil con descriptores válidos");
+                this._initEmptyMatcher();
+                this.onNotification("No hay perfiles válidos para reconocimiento", "warning");
+                return [];
+            }
+
+            // ✅ Crear FaceMatcher solo si hay perfiles
             this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors, this.threshold);
-            console.log(`🎉 ${this.labeledDescriptors.length} perfiles listos`);
+            console.log(`🎉 ${processedCount} perfil(es) procesado(s) correctamente`);
             
             return profiles;
             
         } catch (error) {
             console.error("❌ Error en loadProfilesFromServer:", error.message);
+            console.error("Stack:", error.stack);
             
-            this.labeledDescriptors = [];
-            this.faceMatcher = new faceapi.FaceMatcher([], this.threshold);
+            this._initEmptyMatcher();
             this.onNotification("Error cargando perfiles del servidor", "error");
             return [];
         }
+    }
+
+    // ✅ NUEVO: Inicializar FaceMatcher vacío
+    _initEmptyMatcher() {
+        console.log("🔧 Inicializando FaceMatcher vacío (sin perfiles)");
+        
+        // Crear un descriptor dummy para poder inicializar el matcher
+        const dummyDescriptor = new Float32Array(128); // 128 dimensiones
+        for (let i = 0; i < 128; i++) {
+            dummyDescriptor[i] = Math.random(); // Valores aleatorios
+        }
+        
+        const dummyLabeled = new faceapi.LabeledFaceDescriptors(
+            '__DUMMY__', 
+            [dummyDescriptor]
+        );
+        
+        this.labeledDescriptors = [dummyLabeled];
+        this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors, 0.9); // Threshold alto para que nunca matchee
+        
+        console.log("✅ FaceMatcher vacío inicializado");
     }
 
     startMultiDetection({ videos, getRoomByVideo, onDetect }) {
@@ -217,7 +218,7 @@ export default class FaceRecognitionManager {
 
         if (!this.faceMatcher) {
             console.error("❌ FaceMatcher no inicializado");
-            return;
+            this._initEmptyMatcher(); // Inicializar vacío si no existe
         }
 
         this.detecting = true;
@@ -275,8 +276,13 @@ export default class FaceRecognitionManager {
 
                             const room = getRoomByVideo ? getRoomByVideo(vid) : "unknown";
 
+                            // ✅ Verificar que no sea el dummy profile
                             const match = this.faceMatcher.findBestMatch(det.descriptor);
-                            const label = match.distance < this.threshold ? match.label : "Desconocido";
+                            let label = "Desconocido";
+                            
+                            if (match.label !== '__DUMMY__' && match.distance < this.threshold) {
+                                label = match.label;
+                            }
 
                             const track = this._applyTracking(det);
 
