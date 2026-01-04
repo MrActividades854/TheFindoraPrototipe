@@ -1,65 +1,290 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="camara.css">
-    <title>Seleccionar</title>
+    <link rel="shortcut icon" href="../../src/favicon.ico" type="image/x-icon">
+    <title>Cámara - Findora</title>
 </head>
 <body>
     <div class="main">
-        <div class="anterior">
+        <!-- Botón anterior -->
+        <div class="anterior" id="prevBtn">
             <div class="flechaI"></div>
         </div>
-     <div class="camara">
-        <h3>Camara #1</h3>
-        <video id="bigFeed" autoplay playsinline></video>
-     </div>
-        <div class="siguiente">
+        
+        <!-- Contenedor de cámara -->
+        <div class="camara" id="cameraContainer">
+            <h3 id="cameraTitle">Cámara #1</h3>
+            <video id="bigFeed" autoplay playsinline muted></video>
+            
+            <!-- Indicador de estado -->
+            <div class="status-overlay" id="statusOverlay">
+                <div class="spinner"></div>
+                <p id="statusText">Conectando...</p>
+            </div>
+        </div>
+        
+        <!-- Botón siguiente -->
+        <div class="siguiente" id="nextBtn">
             <div class="flechaD"></div>
         </div>
-     </div>
-     <script type="module">
-import WebRTCManager from "/../../js/webrtc.js";
-import { CONFIG } from "/../../js/config.js";
+    </div>
 
-// 1. Obtener selección
-const selectedId = localStorage.getItem("selectedFeed");
-const feedList = JSON.parse(localStorage.getItem("feedList") || "[]");
+    <script type="module">
+        import WebRTCManager from "../../js/webrtc.js";
+        import { CONFIG } from "../../js/config.js";
 
-const videoEl = document.getElementById("bigFeed");
+        console.log('📹 Iniciando vista de cámara...');
 
-// 2. Mostrar nombre
-document.querySelector(".camara h3").textContent = selectedId || "Cámara";
+        // ============================================================
+        // ELEMENTOS DEL DOM
+        // ============================================================
+        const videoEl = document.getElementById("bigFeed");
+        const titleEl = document.getElementById("cameraTitle");
+        const statusOverlay = document.getElementById("statusOverlay");
+        const statusText = document.getElementById("statusText");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const cameraContainer = document.getElementById("cameraContainer");
 
-// 3. Iniciar WebRTC (solo recepción)
-const webrtc = new WebRTCManager({
-    wsUrl: CONFIG.WS_URL,
-    onRemoteFeed: (senderId, stream) => {
-        if (senderId === selectedId) {
-            videoEl.srcObject = stream;
+        // ============================================================
+        // OBTENER CONFIGURACIÓN
+        // ============================================================
+        const selectedId = localStorage.getItem("selectedFeed");
+        const feedList = JSON.parse(localStorage.getItem("feedList") || "[]");
+
+        console.log('📊 Feed seleccionado:', selectedId);
+        console.log('📊 Lista de feeds:', feedList);
+
+        // Validación inicial
+        if (!selectedId) {
+            showStatus('❌ No se seleccionó ninguna cámara', true);
+            setTimeout(() => window.history.back(), 2000);
         }
-    }
-});
-webrtc.init();
 
-// --- Flechas ---
-function goTo(offset) {
-    const index = feedList.indexOf(selectedId);
-    if (index === -1) return;
+        // Actualizar título
+        titleEl.textContent = selectedId || "Cámara";
 
-    let newIndex = index + offset;
-    if (newIndex < 0) newIndex = feedList.length - 1;
-    if (newIndex >= feedList.length) newIndex = 0;
+        // Variables de estado
+        let webrtc = null;
+        let feedReceived = false;
+        let connectionTimeout = null;
 
-    const newId = feedList[newIndex];
-    localStorage.setItem("selectedFeed", newId);
-    window.location.reload();
-}
+        // ============================================================
+        // FUNCIONES DE UI
+        // ============================================================
+        function showStatus(message, isError = false) {
+            statusText.textContent = message;
+            statusOverlay.classList.remove('hidden');
+            
+            if (isError) {
+                statusText.style.color = '#ff4444';
+                cameraContainer.classList.add('error');
+            } else {
+                statusText.style.color = '#fff';
+                cameraContainer.classList.remove('error');
+            }
+        }
 
-document.querySelector(".flechaI").addEventListener("click", () => goTo(-1));
-document.querySelector(".flechaD").addEventListener("click", () => goTo(1));
-</script>
-<script type="module" src="./../../js/headerLoader.js"></script>
-    </body>
-    </html>
+        function hideStatus() {
+            statusOverlay.classList.add('hidden');
+            cameraContainer.classList.remove('loading', 'error');
+        }
+
+        // ============================================================
+        // CONECTAR A FEED REMOTO
+        // ============================================================
+        async function connectToRemoteFeed() {
+            const useWS = localStorage.getItem("useWebSocket") === "true";
+            
+            if (!useWS) {
+                console.log('⚠️ WebSocket deshabilitado, usando cámara local...');
+                await connectToLocalFeed();
+                return;
+            }
+
+            console.log('🌐 Conectando a feed remoto:', selectedId);
+            showStatus('🔄 Conectando a feed remoto...');
+            cameraContainer.classList.add('loading');
+
+            try {
+                webrtc = new WebRTCManager({
+                    wsUrl: CONFIG.WS_URL,
+                    onRemoteFeed: (senderId, stream) => {
+                        console.log('📡 Feed remoto recibido:', senderId);
+                        
+                        if (senderId === selectedId) {
+                            console.log('✅ Feed coincide con selección');
+                            feedReceived = true;
+                            clearTimeout(connectionTimeout);
+                            
+                            videoEl.srcObject = stream;
+                            hideStatus();
+
+                            videoEl.play()
+                                .then(() => console.log('▶️ Video reproduciéndose'))
+                                .catch(err => console.error('❌ Error play:', err));
+                        }
+                    },
+                    onLog: (msg) => console.log('[WebRTC]', msg)
+                });
+
+                await webrtc.init();
+                console.log('✅ WebRTC inicializado');
+
+                // Timeout de 10 segundos
+                connectionTimeout = setTimeout(() => {
+                    if (!feedReceived) {
+                        console.warn('⚠️ Timeout esperando feed remoto');
+                        
+                        if (selectedId.includes('local')) {
+                            console.log('🔄 Intentando cámara local...');
+                            connectToLocalFeed();
+                        } else {
+                            showStatus('❌ No se recibió el feed', true);
+                        }
+                    }
+                }, 10000);
+
+            } catch (error) {
+                console.error('❌ Error conectando:', error);
+                
+                if (selectedId.includes('local')) {
+                    await connectToLocalFeed();
+                } else {
+                    showStatus('❌ Error: ' + error.message, true);
+                }
+            }
+        }
+
+        // ============================================================
+        // CONECTAR A CÁMARA LOCAL
+        // ============================================================
+        async function connectToLocalFeed() {
+            console.log('📹 Accediendo a cámara local...');
+            showStatus('📹 Iniciando cámara local...');
+            cameraContainer.classList.add('loading');
+
+            try {
+                const cameraIndex = selectedId ? parseInt(selectedId.split('-')[1]) - 1 : 0;
+                console.log('📊 Índice de cámara:', cameraIndex);
+
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+                
+                console.log(`📹 ${videoDevices.length} cámara(s) disponible(s)`);
+
+                if (videoDevices.length === 0) {
+                    throw new Error('No se encontraron cámaras');
+                }
+
+                const selectedDevice = videoDevices[cameraIndex] || videoDevices[0];
+                console.log('✅ Usando:', selectedDevice.label || 'Cámara ' + (cameraIndex + 1));
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        deviceId: selectedDevice.deviceId ? 
+                            { exact: selectedDevice.deviceId } : undefined,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                });
+
+                console.log('✅ Stream obtenido');
+
+                videoEl.srcObject = stream;
+                hideStatus();
+
+                await videoEl.play();
+                console.log('▶️ Video reproduciéndose');
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showStatus('❌ No se pudo acceder a la cámara', true);
+            }
+        }
+
+        // ============================================================
+        // NAVEGACIÓN
+        // ============================================================
+        function goTo(offset) {
+            if (feedList.length === 0) {
+                console.warn('⚠️ Lista vacía');
+                return;
+            }
+
+            const index = feedList.indexOf(selectedId);
+            
+            if (index === -1) {
+                console.warn('⚠️ Feed no encontrado en lista');
+                return;
+            }
+
+            let newIndex = index + offset;
+            
+            if (newIndex < 0) newIndex = feedList.length - 1;
+            if (newIndex >= feedList.length) newIndex = 0;
+
+            const newId = feedList[newIndex];
+            console.log('🔄 Cambiando a:', newId);
+            
+            localStorage.setItem("selectedFeed", newId);
+            window.location.reload();
+        }
+
+        prevBtn.addEventListener("click", () => goTo(-1));
+        nextBtn.addEventListener("click", () => goTo(1));
+
+        // Atajos de teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') goTo(-1);
+            if (e.key === 'ArrowRight') goTo(1);
+            if (e.key === 'Escape') window.history.back();
+        });
+
+        // ============================================================
+        // INICIALIZACIÓN
+        // ============================================================
+        async function init() {
+            try {
+                const isLocalFeed = selectedId && selectedId.includes('local');
+                
+                if (isLocalFeed) {
+                    console.log('📹 Feed local detectado');
+                    await connectToLocalFeed();
+                } else {
+                    console.log('📡 Feed remoto detectado');
+                    await connectToRemoteFeed();
+                }
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showStatus('❌ Error: ' + error.message, true);
+            }
+        }
+
+        // Iniciar
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => {
+            if (videoEl.srcObject) {
+                videoEl.srcObject.getTracks().forEach(t => t.stop());
+            }
+            if (webrtc) {
+                webrtc.close();
+            }
+        });
+    </script>
+
+    <!-- Header -->
+    <script type="module" src="./../../js/headerLoader.js"></script>
+</body>
+</html>
