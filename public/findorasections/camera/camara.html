@@ -17,12 +17,28 @@
         <!-- Contenedor de cámara -->
         <div class="camara" id="cameraContainer">
             <h3 id="cameraTitle">Cámara #1</h3>
-            <video id="bigFeed" autoplay playsinline muted></video>
+            
+            <!-- Contenedor de video + canvas -->
+            <div class="video-wrapper">
+                <video id="bigFeed" autoplay playsinline muted></video>
+                <canvas id="detectionCanvas"></canvas>
+            </div>
             
             <!-- Indicador de estado -->
             <div class="status-overlay" id="statusOverlay">
                 <div class="spinner"></div>
                 <p id="statusText">Conectando...</p>
+            </div>
+
+            <!-- Panel de detecciones -->
+            <div class="detection-panel" id="detectionPanel">
+                <div class="panel-header">
+                    <span>👤 Personas Detectadas</span>
+                    <button id="togglePanelBtn">−</button>
+                </div>
+                <div class="panel-content" id="panelContent">
+                    <p class="no-detections">Sin detecciones</p>
+                </div>
             </div>
         </div>
         
@@ -34,23 +50,29 @@
 
     <script type="module">
         import WebRTCManager from "../../js/webrtc.js";
+        import FaceRecognitionManager from "../../js/face-recognition.js";
+        import NotificationManager from "../../js/notifications.js";
         import { CONFIG } from "../../js/config.js";
 
-        console.log('📹 Iniciando vista de cámara...');
+        console.log('📹 Iniciando vista de cámara con detección...');
 
         // ============================================================
         // ELEMENTOS DEL DOM
         // ============================================================
         const videoEl = document.getElementById("bigFeed");
+        const canvasEl = document.getElementById("detectionCanvas");
         const titleEl = document.getElementById("cameraTitle");
         const statusOverlay = document.getElementById("statusOverlay");
         const statusText = document.getElementById("statusText");
         const prevBtn = document.getElementById("prevBtn");
         const nextBtn = document.getElementById("nextBtn");
         const cameraContainer = document.getElementById("cameraContainer");
+        const detectionPanel = document.getElementById("detectionPanel");
+        const panelContent = document.getElementById("panelContent");
+        const togglePanelBtn = document.getElementById("togglePanelBtn");
 
         // ============================================================
-        // OBTENER CONFIGURACIÓN
+        // CONFIGURACIÓN
         // ============================================================
         const selectedId = localStorage.getItem("selectedFeed");
         const feedList = JSON.parse(localStorage.getItem("feedList") || "[]");
@@ -58,19 +80,57 @@
         console.log('📊 Feed seleccionado:', selectedId);
         console.log('📊 Lista de feeds:', feedList);
 
-        // Validación inicial
         if (!selectedId) {
             showStatus('❌ No se seleccionó ninguna cámara', true);
             setTimeout(() => window.history.back(), 2000);
         }
 
-        // Actualizar título
         titleEl.textContent = selectedId || "Cámara";
 
         // Variables de estado
         let webrtc = null;
+        let faceRec = null;
+        let notifier = null;
         let feedReceived = false;
         let connectionTimeout = null;
+        let detectedPeople = new Map(); // name -> timestamp
+
+        // ============================================================
+        // INICIALIZAR MANAGERS
+        // ============================================================
+        async function initManagers() {
+            console.log('🤖 Inicializando sistemas de detección...');
+
+            // Notificaciones
+            notifier = new NotificationManager(
+                'https://thefindoraprototipe.onrender.com/api/notifications',
+                'history' // Modo silencioso, solo guardar
+            );
+
+            // Face Recognition
+            faceRec = new FaceRecognitionManager({
+                modelPath: CONFIG.MODEL_PATH,
+                onNotification: (msg, type) => {
+                    console.log(`📢 [${type}] ${msg}`);
+                    notifier.show(msg, type);
+                    updateDetectionPanel(msg, type);
+                }
+            });
+
+            try {
+                showStatus('⏳ Cargando modelos de IA...');
+                await faceRec.loadModels();
+                console.log('✅ Modelos cargados');
+
+                showStatus('⏳ Cargando perfiles...');
+                await faceRec.loadProfilesFromServer();
+                console.log('✅ Perfiles cargados');
+
+            } catch (error) {
+                console.error('❌ Error cargando modelos:', error);
+                showStatus('⚠️ Detección no disponible', false);
+            }
+        }
 
         // ============================================================
         // FUNCIONES DE UI
@@ -92,6 +152,64 @@
             statusOverlay.classList.add('hidden');
             cameraContainer.classList.remove('loading', 'error');
         }
+
+        function updateDetectionPanel(message, type) {
+            // Extraer nombre de la notificación
+            let name = null;
+            if (message.includes('ha entrado')) {
+                name = message.replace(' ha entrado', '');
+            } else if (message.includes('se movió a')) {
+                name = message.split(' se movió')[0];
+            } else if (message.includes('salió')) {
+                name = message.replace(' salió', '');
+            }
+
+            if (name && name !== 'Desconocido') {
+                detectedPeople.set(name, Date.now());
+            }
+
+            // Actualizar panel
+            renderDetectionPanel();
+        }
+
+        function renderDetectionPanel() {
+            if (detectedPeople.size === 0) {
+                panelContent.innerHTML = '<p class="no-detections">Sin detecciones</p>';
+                return;
+            }
+
+            // Limpiar personas que salieron hace más de 30 segundos
+            const now = Date.now();
+            for (const [name, timestamp] of detectedPeople.entries()) {
+                if (now - timestamp > 30000) {
+                    detectedPeople.delete(name);
+                }
+            }
+
+            // Renderizar lista
+            const html = Array.from(detectedPeople.entries())
+                .map(([name, timestamp]) => {
+                    const ago = Math.floor((now - timestamp) / 1000);
+                    return `
+                        <div class="detection-item">
+                            <div class="detection-avatar">👤</div>
+                            <div class="detection-info">
+                                <div class="detection-name">${name}</div>
+                                <div class="detection-time">Hace ${ago}s</div>
+                            </div>
+                        </div>
+                    `;
+                })
+                .join('');
+
+            panelContent.innerHTML = html;
+        }
+
+        // Toggle panel
+        togglePanelBtn.addEventListener('click', () => {
+            detectionPanel.classList.toggle('collapsed');
+            togglePanelBtn.textContent = detectionPanel.classList.contains('collapsed') ? '+' : '−';
+        });
 
         // ============================================================
         // CONECTAR A FEED REMOTO
@@ -116,7 +234,7 @@
                         console.log('📡 Feed remoto recibido:', senderId);
                         
                         if (senderId === selectedId) {
-                            console.log('✅ Feed coincide con selección');
+                            console.log('✅ Feed coincide');
                             feedReceived = true;
                             clearTimeout(connectionTimeout);
                             
@@ -124,7 +242,10 @@
                             hideStatus();
 
                             videoEl.play()
-                                .then(() => console.log('▶️ Video reproduciéndose'))
+                                .then(() => {
+                                    console.log('▶️ Video reproduciéndose');
+                                    startDetection();
+                                })
                                 .catch(err => console.error('❌ Error play:', err));
                         }
                     },
@@ -134,13 +255,11 @@
                 await webrtc.init();
                 console.log('✅ WebRTC inicializado');
 
-                // Timeout de 10 segundos
                 connectionTimeout = setTimeout(() => {
                     if (!feedReceived) {
-                        console.warn('⚠️ Timeout esperando feed remoto');
+                        console.warn('⚠️ Timeout');
                         
                         if (selectedId.includes('local')) {
-                            console.log('🔄 Intentando cámara local...');
                             connectToLocalFeed();
                         } else {
                             showStatus('❌ No se recibió el feed', true);
@@ -149,7 +268,7 @@
                 }, 10000);
 
             } catch (error) {
-                console.error('❌ Error conectando:', error);
+                console.error('❌ Error:', error);
                 
                 if (selectedId.includes('local')) {
                     await connectToLocalFeed();
@@ -169,7 +288,6 @@
 
             try {
                 const cameraIndex = selectedId ? parseInt(selectedId.split('-')[1]) - 1 : 0;
-                console.log('📊 Índice de cámara:', cameraIndex);
 
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoDevices = devices.filter(d => d.kind === 'videoinput');
@@ -181,7 +299,6 @@
                 }
 
                 const selectedDevice = videoDevices[cameraIndex] || videoDevices[0];
-                console.log('✅ Usando:', selectedDevice.label || 'Cámara ' + (cameraIndex + 1));
 
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
@@ -200,6 +317,9 @@
 
                 await videoEl.play();
                 console.log('▶️ Video reproduciéndose');
+                
+                // Iniciar detección
+                startDetection();
 
             } catch (error) {
                 console.error('❌ Error:', error);
@@ -208,20 +328,57 @@
         }
 
         // ============================================================
-        // NAVEGACIÓN
+        // INICIAR DETECCIÓN
         // ============================================================
-        function goTo(offset) {
-            if (feedList.length === 0) {
-                console.warn('⚠️ Lista vacía');
+        async function startDetection() {
+            if (!faceRec) {
+                console.warn('⚠️ Face Recognition no disponible');
                 return;
             }
 
+            // Esperar a que el video esté listo
+            await waitForVideo();
+
+            console.log('🎬 Iniciando detección facial...');
+
+            // Ajustar canvas al tamaño del video
+            canvasEl.width = videoEl.videoWidth;
+            canvasEl.height = videoEl.videoHeight;
+
+            console.log('📐 Canvas:', canvasEl.width, 'x', canvasEl.height);
+
+            // Iniciar detección
+            faceRec.startMultiDetection({
+                videos: [videoEl],
+                getRoomByVideo: () => selectedId,
+                onDetect: (name, room) => {
+                    if (name !== "Desconocido") {
+                        console.log('👤 Detectado:', name, 'en', room);
+                    }
+                }
+            });
+
+            console.log('✅ Detección iniciada');
+        }
+
+        function waitForVideo() {
+            return new Promise((resolve) => {
+                if (videoEl.videoWidth && videoEl.videoHeight) {
+                    resolve();
+                } else {
+                    videoEl.addEventListener('loadedmetadata', () => resolve(), { once: true });
+                }
+            });
+        }
+
+        // ============================================================
+        // NAVEGACIÓN
+        // ============================================================
+        function goTo(offset) {
+            if (feedList.length === 0) return;
+
             const index = feedList.indexOf(selectedId);
-            
-            if (index === -1) {
-                console.warn('⚠️ Feed no encontrado en lista');
-                return;
-            }
+            if (index === -1) return;
 
             let newIndex = index + offset;
             
@@ -238,7 +395,6 @@
         prevBtn.addEventListener("click", () => goTo(-1));
         nextBtn.addEventListener("click", () => goTo(1));
 
-        // Atajos de teclado
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft') goTo(-1);
             if (e.key === 'ArrowRight') goTo(1);
@@ -250,15 +406,22 @@
         // ============================================================
         async function init() {
             try {
+                // Inicializar managers de detección
+                await initManagers();
+
+                // Conectar a feed
                 const isLocalFeed = selectedId && selectedId.includes('local');
                 
                 if (isLocalFeed) {
-                    console.log('📹 Feed local detectado');
+                    console.log('📹 Feed local');
                     await connectToLocalFeed();
                 } else {
-                    console.log('📡 Feed remoto detectado');
+                    console.log('📡 Feed remoto');
                     await connectToRemoteFeed();
                 }
+
+                // Actualizar panel cada 5 segundos
+                setInterval(renderDetectionPanel, 5000);
 
             } catch (error) {
                 console.error('❌ Error:', error);
@@ -281,10 +444,13 @@
             if (webrtc) {
                 webrtc.close();
             }
+            if (faceRec) {
+                faceRec.stopDetection();
+            }
         });
     </script>
 
     <!-- Header -->
-    <script type="module" src="./../../js/headerLoader.js"></script>
+    <script type="module" src="../../js/header-loader.js"></script>
 </body>
 </html>

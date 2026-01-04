@@ -269,8 +269,8 @@ class HeaderManager {
 
     _loadImages() {
         const images = {
-            logo: `${this.assetsPath}/logo.png`,
-            bell: `${this.assetsPath}/bell.png`,
+            logo: `${this.assetsPath}/Logo.png`,
+            bell: `${this.assetsPath}/Bell.png`,
             profile: `${this.assetsPath}/profile.png`
         };
 
