@@ -271,12 +271,12 @@ class HeaderManager {
     _loadImages() {
         const images = {
             logo: `${this.assetsPath}/logo.png`,
-            bell:  CONFIG.ROOT_PATH + '/src/bell.png',
+            bell:  CONFIG.ROOT_PATH + 'src/bell.png',
             profile: `${this.assetsPath}/profile.png`
         };
 
         document.querySelectorAll('[data-img]').forEach(img => {
-            const key = img.dataset.img;
+            const key = img.dataset.img
             if (images[key]) {
                 img.src = images[key];
                 img.onerror = () => {
