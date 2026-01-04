@@ -1,6 +1,7 @@
 // header-loader-inline.js - Versión sin fetch, HTML inline
 
 import {resolvePath} from './config.js';
+import {CONFIG} from './config.js';
 
 class HeaderManager {
     constructor() {
@@ -269,8 +270,8 @@ class HeaderManager {
 
     _loadImages() {
         const images = {
-            logo: `${this.assetsPath}/Logo.png`,
-            bell: `${this.assetsPath}/Bell.png`,
+            logo: `${this.assetsPath}/logo.png`,
+            bell:  CONFIG.ROOT_PATH + '/src/bell.png',
             profile: `${this.assetsPath}/profile.png`
         };
 
