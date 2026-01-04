@@ -1,4 +1,4 @@
-// ui.js — Versión completa con navegación arreglada
+// ui.js — Versión con background detection arreglado
 
 import WebRTCManager from './webrtc.js';
 import FaceRecognitionManager from './face-recognition.js';
@@ -14,7 +14,7 @@ export default class UIManager {
         wsUrl = CONFIG.WS_URL, 
         modelPath = CONFIG.MODEL_PATH, 
         notificationsMode = 'live',
-        backgroundMode = false
+        backgroundMode = false  // ✅ NUEVO: Modo background
     } = {}) {
         console.log("🏗️ UIManager constructor");
         console.log("  WS URL:", wsUrl);
@@ -22,6 +22,7 @@ export default class UIManager {
         console.log("  Notifications Mode:", notificationsMode);
         console.log("  Background Mode:", backgroundMode);
 
+        // ✅ Modo background
         this.backgroundMode = backgroundMode;
 
         // Elementos del DOM (opcionales en background mode)
@@ -51,11 +52,10 @@ export default class UIManager {
     async init() {
         console.log("🚀 UIManager.init() - INICIANDO");
         console.log("  Modo Background:", this.backgroundMode);
-        console.log(CONFIG.ROOT_PATH + 'findorasections/camera/camara.html');
         
         try {
             this._updateStatus('🔧 Inicializando sistema...');
-            console.log("=".repeat(60));
+            console.log("=" .repeat(60));
 
             // 1. Notificaciones
             console.log("📢 Paso 1/7: Inicializando notificaciones");
@@ -87,8 +87,16 @@ export default class UIManager {
             // 4. Cargar perfiles
             console.log("👥 Paso 4/7: Cargando perfiles");
             this._updateStatus('⏳ Cargando perfiles...');
-            await this.faceRec.loadProfilesFromServer();
-            console.log("✅ Perfiles cargados");
+            
+            try {
+                await this.faceRec.loadProfilesFromServer();
+                console.log("✅ Perfiles cargados");
+            } catch (error) {
+                console.error("⚠️ Error cargando perfiles:", error.message);
+                console.warn("⚠️ Continuando sin perfiles (solo detectará 'Desconocido')");
+                this._updateStatus('⚠️ Sin perfiles - solo detección básica');
+                // NO lanzar error, continuar sin perfiles
+            }
 
             // 5. Thumbnails (solo si hay remoteList)
             if (this.remoteList) {
@@ -151,9 +159,9 @@ export default class UIManager {
             }
 
             this._updateStatus('✅ Sistema listo');
-            console.log("=".repeat(60));
+            console.log("=" .repeat(60));
             console.log("🎉 INICIALIZACIÓN COMPLETA");
-            console.log("=".repeat(60));
+            console.log("=" .repeat(60));
 
         } catch (err) {
             console.error("❌ ERROR CRÍTICO EN INIT:");
@@ -223,6 +231,7 @@ export default class UIManager {
     }
 
     async _createLocalCameras() {
+        // ✅ VALIDACIÓN: Solo crear si hay container
         if (!this.container) {
             console.warn("⚠️ Container no encontrado, saltando creación de feeds locales");
             return;
@@ -238,24 +247,8 @@ export default class UIManager {
             
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { 
-                        deviceId: { exact: device.deviceId },
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        frameRate: { ideal: 30 }
-                    },
+                    video: { deviceId: { exact: device.deviceId } },
                     audio: false
-                });
-
-                const videoTrack = stream.getVideoTracks()[0];
-                if (!videoTrack || videoTrack.readyState !== 'live') {
-                    console.error(`  ❌ Track no está activo para ${id}`);
-                    continue;
-                }
-
-                console.log(`  ✅ Stream activo para ${id}:`, {
-                    readyState: videoTrack.readyState,
-                    enabled: videoTrack.enabled
                 });
 
                 this._createVideoCanvasPair(id, stream, { muted: true });
@@ -268,6 +261,7 @@ export default class UIManager {
     }
 
     _createVideoCanvasPair(id, stream, opts = {}) {
+        // ✅ VALIDACIÓN: Solo crear si hay container
         if (!this.container) {
             console.warn(`⚠️ Container no encontrado, no se puede crear feed ${id}`);
             return null;
@@ -292,19 +286,6 @@ export default class UIManager {
         video.muted = opts.muted ?? false;
         video.dataset.type = opts.type || "local";
 
-        video.onloadedmetadata = () => {
-            console.log(`📹 Metadata cargada para ${id}, intentando play...`);
-            video.play()
-                .then(() => console.log(`▶️ Video ${id} reproduciéndose`))
-                .catch(err => console.error(`❌ Error play ${id}:`, err));
-        };
-
-        stream.getVideoTracks().forEach(track => {
-            track.onended = () => console.warn(`⚠️ Track terminó para ${id}`);
-            track.onmute = () => console.warn(`⚠️ Track muteado para ${id}`);
-            track.onunmute = () => console.log(`✅ Track desmuteado para ${id}`);
-        });
-
         const frame = document.createElement('div');
         frame.className = 'feed-frame';
         frame.appendChild(video);
@@ -312,14 +293,15 @@ export default class UIManager {
         wrapper.appendChild(frame);
         this.container.appendChild(wrapper);
 
-        // ✅ FIX: Navegación corregida
         wrapper.addEventListener('click', () => {
             localStorage.setItem('selectedFeed', video.dataset.feedId);
             const allIds = this.videos.map(v => v.dataset.feedId);
             localStorage.setItem('feedList', JSON.stringify(allIds));
             
-            const cameraPath = this._getRelativePath('findorasections/camera/camara.html');
-            window.location.href = CONFIG.ROOT_PATH + 'findorasections/camera/camara.html';
+            // ✅ Calcular ruta correcta según ubicación actual
+            const cameraPath = CONFIG.ROOT_PATH + 'findorasections/camera/camara.html';
+            console.log('🔗 Navegando a:', cameraPath);
+            window.location.href = cameraPath;
         });
 
         this.videos.push(video);
@@ -345,6 +327,7 @@ export default class UIManager {
             type: "remote" 
         });
 
+        // ✅ Si no hay container, crear video oculto para detección
         if (!result && this.backgroundMode) {
             console.log(`  Creando video oculto para background detection`);
             const video = document.createElement('video');
@@ -397,9 +380,11 @@ export default class UIManager {
         console.log(`  Videos a procesar: ${this.videos.length}`);
         console.log(`  Background mode: ${this.backgroundMode}`);
 
+        // ✅ En background mode, esperar por feeds remotos
         if (this.backgroundMode && this.videos.length === 0) {
             console.log("⏳ Background mode: esperando feeds remotos...");
             
+            // Escuchar nuevos videos
             const checkInterval = setInterval(() => {
                 if (this.videos.length > 0) {
                     clearInterval(checkInterval);
@@ -408,6 +393,7 @@ export default class UIManager {
                 }
             }, 1000);
 
+            // Timeout de 30 segundos
             setTimeout(() => {
                 clearInterval(checkInterval);
                 if (this.videos.length === 0) {
@@ -432,6 +418,7 @@ export default class UIManager {
         await Promise.all(readiness);
         console.log("✅ Todos los videos listos");
 
+        // ✅ Solo ajustar canvas si NO es background mode
         if (!this.backgroundMode) {
             console.log("📐 Ajustando dimensiones de canvas...");
             this.videos.forEach(v => this._resizeCanvasToVideoElement(v));
@@ -458,38 +445,47 @@ export default class UIManager {
         return name.trim().toLowerCase();
     }
 
-    // ✅ NUEVO: Calcular ruta relativa correctamente
-    _getRelativePath(targetPath) {
+    // ✅ NUEVO: Calcular ruta correcta a la página de cámara
+    _getCameraPagePath() {
         const currentPath = window.location.pathname;
         
-        console.log('📍 Ruta actual:', currentPath);
-        console.log('🎯 Destino:', targetPath);
-        
-        // Normalizar targetPath
-        targetPath = targetPath.replace(/^\.\//, '');
-        
-        // Si estamos en index.html o raíz
-        if (currentPath === '/' || currentPath.endsWith('index.html')) {
-            return `./${targetPath}`;
+        // Si estamos en index.html (raíz de /public/)
+        if (currentPath.endsWith('index.html') || currentPath.endsWith('/public/') || currentPath === '/') {
+            return './findorasections/camera/camara.html';
         }
         
-        // Calcular profundidad
-        const segments = currentPath.split('/').filter(s => s && !s.endsWith('.html'));
+        // Si estamos en una subcarpeta, calcular ruta relativa
+        const segments = currentPath.split('/').filter(s => s && s !== 'index.html');
+        
+        // Encontrar "public" en la ruta
         const publicIndex = segments.indexOf('public');
         
-        let depth = 0;
         if (publicIndex !== -1) {
-            depth = segments.length - publicIndex - 1;
-        } else {
-            depth = segments.length;
+            // Calcular profundidad desde /public/
+            const depth = segments.length - publicIndex - 1;
+            
+            if (depth === 0) {
+                // Estamos en /public/ → ./findorasections/camera/camara.html
+                return './findorasections/camera/camara.html';
+            } else if (depth === 1) {
+                // Estamos en /public/algo/ → ../findorasections/camera/camara.html
+                return '../findorasections/camera/camara.html';
+            } else if (depth === 2) {
+                // Estamos en /public/algo/algo/ → ../../findorasections/camera/camara.html
+                return '../../findorasections/camera/camara.html';
+            } else {
+                // Más profundo
+                return '../'.repeat(depth) + 'findorasections/camera/camara.html';
+            }
         }
         
-        console.log('📊 Profundidad:', depth, 'Segmentos:', segments);
+        // Fallback: usar CONFIG si está disponible
+        if (CONFIG && CONFIG.resolvePath) {
+            return CONFIG.resolvePath('findorasections/camera/camara.html');
+        }
         
-        const result = depth === 0 ? `./${targetPath}` : '../'.repeat(depth) + targetPath;
-        console.log('✅ Ruta calculada:', result);
-        
-        return result;
+        // Último fallback
+        return './findorasections/camera/camara.html';
     }
 
     _updateList(name, room, video) {
@@ -529,6 +525,7 @@ export default class UIManager {
             if (v.srcObject) {
                 v.srcObject.getTracks().forEach(t => t.stop());
             }
+            // Remover videos ocultos
             if (v.style.display === 'none') {
                 v.remove();
             }
