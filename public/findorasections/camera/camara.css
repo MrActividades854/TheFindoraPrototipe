@@ -1,79 +1,374 @@
 * {
     margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    background:  linear-gradient(90deg,rgb(135, 199, 231), rgb(196, 218, 237));
+    background: linear-gradient(90deg, rgb(135, 199, 231), rgb(196, 218, 237));
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 .main {
-    height: 100%;
+    height: 100vh;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 89vh;
+    gap: 20px;
+    padding: 20px;
 }
 
+/* Contenedor de cámara */
 .camara {
-    height: 80%;
-    width: 50%;
+    position: relative;
+    height: 80vh;
+    width: 60%;
+    max-width: 900px;
     border-radius: 25px;
     background-color: rgb(109, 109, 238);
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
 }
 
+/* Título de la cámara */
 .camara h3 {
     font-size: 25px;
     font-weight: bold;
-    font-family:Verdana, Geneva, Tahoma, sans-serif;
     text-align: center;
     color: white;
-    font-family: Arial, Helvetica, sans-serif;
-    padding-top: 20px;
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    margin: 0;
+    z-index: 10;
 }
 
-.camara img {
-    height: 90%;
+/* ✅ VIDEO (reemplaza el img) */
+.camara video {
+    flex: 1;
     width: 100%;
+    height: calc(100% - 60px); /* Restar altura del h3 */
+    object-fit: contain;
+    background: #000;
     border-radius: 0 0 25px 25px;
 }
 
-.anterior {
-    height: 30%;
-    width: 8%;
-    border-radius: 25px 0 0 25px;
+/* Fallback para img (por si se usa aún) */
+.camara img {
+    flex: 1;
+    width: 100%;
+    height: calc(100% - 60px);
+    object-fit: cover;
+    border-radius: 0 0 25px 25px;
+}
+
+/* Status Overlay */
+.status-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 30px 40px;
+    border-radius: 15px;
+    text-align: center;
+    z-index: 100;
+    min-width: 250px;
+}
+
+.status-overlay.hidden {
+    display: none;
+}
+
+.status-overlay p {
+    margin: 10px 0 0 0;
+    font-size: 16px;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Botones de navegación */
+.anterior,
+.siguiente {
+    height: 35%;
+    width: 80px;
+    border-radius: 25px;
     background-color: rgb(109, 109, 238);
-    margin-right: 20px;
+    display: flex;
     justify-content: center;
     align-items: center;
-    display: flex;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.anterior {
+    border-radius: 25px 0 0 25px;
 }
 
 .siguiente {
-    height: 30%;
-    width: 8%;
     border-radius: 0 25px 25px 0;
-    background-color: rgb(109, 109, 238);
-    margin-left: 20px;
-    justify-content: center;
-    align-items: center;
-    display: flex;
 }
 
-.siguiente:hover, .anterior:hover {
-    transform: scale(1.02);
+.anterior:hover,
+.siguiente:hover {
+    transform: scale(1.05);
     background-color: rgb(85, 85, 190);
-    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
+.anterior:active,
+.siguiente:active {
+    transform: scale(0.98);
+}
+
+/* Flechas */
 .flechaI {
-    border-right: 50px solid white;
-    border-top: 40px solid transparent;
-    border-bottom: 40px solid transparent;
+    width: 0;
+    height: 0;
+    border-right: 40px solid white;
+    border-top: 30px solid transparent;
+    border-bottom: 30px solid transparent;
 }
 
 .flechaD {
-    border-left: 50px solid white;
-    border-top: 40px solid transparent;
-    border-bottom: 40px solid transparent;
+    width: 0;
+    height: 0;
+    border-left: 40px solid white;
+    border-top: 30px solid transparent;
+    border-bottom: 30px solid transparent;
+}
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+
+@media (max-width: 1024px) {
+    .camara {
+        width: 70%;
+        height: 70vh;
+    }
+
+    .anterior,
+    .siguiente {
+        width: 60px;
+        height: 30%;
+    }
+
+    .flechaI {
+        border-right-width: 30px;
+        border-top-width: 25px;
+        border-bottom-width: 25px;
+    }
+
+    .flechaD {
+        border-left-width: 30px;
+        border-top-width: 25px;
+        border-bottom-width: 25px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .camara {
+        width: 90%;
+        height: 60vh;
+        order: 2;
+    }
+
+    .camara h3 {
+        font-size: 20px;
+        padding: 12px;
+    }
+
+    .anterior,
+    .siguiente {
+        width: 150px;
+        height: 60px;
+        border-radius: 15px;
+    }
+
+    .anterior {
+        order: 1;
+        border-radius: 15px 15px 0 0;
+    }
+
+    .siguiente {
+        order: 3;
+        border-radius: 0 0 15px 15px;
+    }
+
+    .flechaI {
+        transform: rotate(90deg);
+        border-right-width: 25px;
+        border-top-width: 20px;
+        border-bottom-width: 20px;
+    }
+
+    .flechaD {
+        transform: rotate(90deg);
+        border-left-width: 25px;
+        border-top-width: 20px;
+        border-bottom-width: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .camara {
+        width: 95%;
+        height: 50vh;
+    }
+
+    .camara h3 {
+        font-size: 18px;
+        padding: 10px;
+    }
+
+    .anterior,
+    .siguiente {
+        width: 120px;
+        height: 50px;
+    }
+
+    .status-overlay {
+        padding: 20px 25px;
+        min-width: 200px;
+    }
+
+    .status-overlay p {
+        font-size: 14px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border-width: 3px;
+    }
+}
+
+/* ============================================================
+   ESTADOS ESPECIALES
+============================================================ */
+
+/* Cuando el video está cargando */
+.camara.loading video {
+    opacity: 0.5;
+}
+
+/* Cuando hay error */
+.camara.error {
+    border: 3px solid #ff4444;
+}
+
+.camara.error h3 {
+    background: rgba(255, 68, 68, 0.3);
+}
+
+/* Animación de entrada */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.camara {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* ============================================================
+   CONTROLES ADICIONALES (opcional)
+============================================================ */
+
+.controls {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.camara:hover .controls {
+    opacity: 1;
+}
+
+.controls button {
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background 0.2s;
+}
+
+.controls button:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+/* ============================================================
+   INDICADOR DE GRABACIÓN (opcional)
+============================================================ */
+
+.recording-indicator {
+    position: absolute;
+    top: 80px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 0, 0, 0.8);
+    padding: 8px 15px;
+    border-radius: 20px;
+    z-index: 50;
+}
+
+.recording-indicator::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+.recording-indicator span {
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
 }
