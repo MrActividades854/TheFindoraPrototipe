@@ -67,24 +67,9 @@
   <main>
   <h1>Gestor de Perfiles</h1>
 
-  <button onclick="location.href='../../index.html'">⬅ Volver</button>
-
-  <section class="new-profile-form">
-    <h2>Crear nuevo perfil</h2>
-    <label>Nombre:
-      <input type="text" id="nameInput" />
-    </label>
-
-    <label>Edad:
-      <input type="number" id="ageInput" />
-    </label>
-
-    <label>Imágenes de referencia (1 a 5):
-      <input type="file" id="refFiles" accept="image/*" multiple />
-    </label>
-
-    <button id="saveProfileBtn">Guardar Perfil</button>
-  </section>
+  <button onclick="location.href='../../index.html'">Volver</button>
+  <button onclick="location.href='./createProfile/create_profile.html'">Crear nuevo perfil</button>
+  
 
   <section class="profile-list">
     <h2>Perfiles guardados</h2>
@@ -110,34 +95,6 @@
         container.appendChild(div);
       });
     }
-
-    document.getElementById('saveProfileBtn').onclick = async () => {
-      const name = document.getElementById('nameInput').value.trim();
-      const age = parseInt(document.getElementById('ageInput').value.trim());
-      const files = document.getElementById('refFiles').files;
-
-      if (!name || !age || files.length === 0) {
-        alert('Completa todos los campos y agrega entre 1 y 5 imágenes.');
-        return;
-      }
-
-      const form = new FormData();
-      form.append('name', name);
-      form.append('age', age);
-      for (let f of files) form.append('refs', f);
-
-      const res = await fetch(`https://thefindoraprototipe.onrender.com/api/new_profile`, {
-        method: 'POST',
-        body: form
-      });
-
-      if (res.ok) {
-        alert('Perfil guardado correctamente');
-        fetchProfiles();
-      } else {
-        alert('Error guardando perfil');
-      }
-    };
 
     fetchProfiles();
   </script>
