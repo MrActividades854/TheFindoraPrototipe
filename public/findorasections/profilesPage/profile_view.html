@@ -21,7 +21,7 @@
       margin: auto;
     }
     .card {
-      background: #161b22;
+      background: #22395a;
       padding: 20px;
       border-radius: 12px;
       margin-top: 20px;
@@ -59,13 +59,13 @@
 </head>
 <body>
   <div class="container">
-    <button onclick="location.href='profiles.html'">⬅ Volver</button>
+    <button onclick="location.href='profiles.html'">Volver</button>
 
     <div class="card" id="profileCard">
       <h1 id="name"></h1>
       <h2 id="age"></h2>
 
-      <button id="editBtn">✏ Editar</button>
+      <button id="editBtn">Editar</button>
 
       <div id="editSection" style="display:none; margin-top:20px;">
         <label>Nombre:
@@ -178,6 +178,22 @@
 
     loadProfile();
   </script>
+  <script type="module">
+import { initBackgroundDetection } from '../../js/background-init.js';
+
+function initBG() {
+    const allowWS = localStorage.getItem("useWebSocket") === "true";
+
+    if (!allowWS) {
+        console.log("[BG] WebSocket desactivado → solo modo local. No iniciar background.");
+        return;
+    }
+
+    initBackgroundDetection();
+}
+
+initBG();
+</script>
   <script type="module" src="./../../js/headerLoader.js"></script>
 </body>
 </html>

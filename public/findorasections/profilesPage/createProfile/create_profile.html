@@ -6,12 +6,57 @@
     <title>Document</title>
     <style>
         * {
-    margin: 0;
+      margin: 0;
+      padding: 0;
+      }
+
+      body {
+      background:  linear-gradient(90deg,rgb(135, 199, 231), rgb(196, 218, 237));
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      }
+
+      main {
+      padding: 20px;
+      }
+      h1 { margin-top: 0; }
+      .profile-list, .profile-view, .new-profile-form {
+      background: #161b22;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      }
+      .profile-item {
+      padding: 10px;
+      background: #22395a;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    label { display: block; margin-top: 10px; }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 6px;
+      border: none;
+    }
+    button {
+      background: #238636;
+      border: none;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      margin-top: 15px;
     }
     </style>
 </head>
 <body>
     <main>
+      <button onclick="location.href='./../profiles.html'">Volver</button>
         <section class="new-profile-form">
             <h2>Crear nuevo perfil</h2>
             <label>Nombre:
@@ -59,6 +104,22 @@
       }
     };
     </script>
+    <script type="module">
+import { initBackgroundDetection } from '../../js/background-init.js';
+
+function initBG() {
+    const allowWS = localStorage.getItem("useWebSocket") === "true";
+
+    if (!allowWS) {
+        console.log("[BG] WebSocket desactivado → solo modo local. No iniciar background.");
+        return;
+    }
+
+    initBackgroundDetection();
+}
+
+initBG();
+</script>
     <script type="module" src="./../../../js/headerLoader.js"></script>
 </body>
 </html>

@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Configuración - Findora</title>
+    <link rel="icon" href="./../../src/favicon.ico" type="image/x-icon">
     <style>
         * {
             margin: 0;
@@ -267,6 +268,19 @@
             margin-left: 20px;
             margin-top: 15px;
         }
+        
+        /* Nuevos estilos para mostrar/ocultar secciones */
+        .hidden-section {
+            display: none;
+        }
+        
+        .thumbnail-options {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(59, 130, 246, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -306,7 +320,67 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN 2: Background Detection -->
+            <!-- SECCIÓN 2: Visualización de Perfiles -->
+            <div class="section">
+                <div class="section-title">
+                    👤 Visualización de Perfiles
+                </div>
+
+                <div class="option">
+                    <div class="option-content">
+                        <div class="option-title">Mostrar Miniaturas en Perfiles</div>
+                        <div class="option-description">
+                            Muestra las imágenes de los perfiles en la vista de lista (profiles.html)
+                        </div>
+                    </div>
+                    <label class="toggle" id="thumbnailsToggleContainer">
+                        <input type="checkbox" id="thumbnailsToggle" />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="thumbnail-options" id="thumbnailsOptions">
+                    <div class="option-title" style="margin-bottom: 10px; font-size: 15px;">
+                        🔍 Calidad de Miniaturas
+                    </div>
+                    
+                    <div class="radio-group">
+                        <div class="radio-option" data-quality="low">
+                            <input type="radio" name="thumbnailQuality" value="low" id="quality-low">
+                            <label for="quality-low">Baja calidad (rápido) <span class="badge">Más rápido</span></label>
+                        </div>
+                        <div class="radio-option" data-quality="medium">
+                            <input type="radio" name="thumbnailQuality" value="medium" id="quality-medium">
+                            <label for="quality-medium">Calidad media <span class="badge">Recomendado</span></label>
+                        </div>
+                        <div class="radio-option" data-quality="high">
+                            <input type="radio" name="thumbnailQuality" value="high" id="quality-high">
+                            <label for="quality-high">Alta calidad (detallado)</label>
+                        </div>
+                    </div>
+
+                    <div class="option-title" style="margin: 20px 0 10px 0; font-size: 15px;">
+                        📋 Estilo de Visualización
+                    </div>
+                    
+                    <div class="radio-group">
+                        <div class="radio-option" data-style="grid">
+                            <input type="radio" name="thumbnailStyle" value="grid" id="style-grid">
+                            <label for="style-grid">Vista de cuadrícula <span class="badge">Recomendado</span></label>
+                        </div>
+                        <div class="radio-option" data-style="list">
+                            <input type="radio" name="thumbnailStyle" value="list" id="style-list">
+                            <label for="style-list">Vista de lista</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>ℹ️ Información:</strong> Cuando las miniaturas están deshabilitadas, la vista de perfiles mostrará solo nombres y edades, lo que puede mejorar el rendimiento en dispositivos lentos o con conexión limitada.
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: Background Detection -->
             <div class="section">
                 <div class="section-title">
                     📹 Detección en Background
@@ -407,6 +481,9 @@
         
         const config = {
             useWebSocket: localStorage.getItem("useWebSocket") === "true",
+            showThumbnails: localStorage.getItem('showThumbnails') !== 'false',
+            thumbnailQuality: localStorage.getItem('thumbnailQuality') || 'medium',
+            thumbnailStyle: localStorage.getItem('thumbnailStyle') || 'grid',
             enableLocalCamera: localStorage.getItem('bg_enableLocalCamera') === 'true',
             showMiniPreview: localStorage.getItem('bg_showMiniPreview') !== 'false',
             previewPosition: localStorage.getItem('bg_previewPosition') || 'bottom-right',
@@ -424,6 +501,21 @@
             wsToggle.checked = config.useWebSocket;
             if (config.useWebSocket) wsToggleContainer.classList.add('active');
             updateWSStatus();
+
+            // Thumbnails
+            const thumbnailsToggle = document.getElementById('thumbnailsToggle');
+            const thumbnailsContainer = document.getElementById('thumbnailsToggleContainer');
+            thumbnailsToggle.checked = config.showThumbnails;
+            if (config.showThumbnails) thumbnailsContainer.classList.add('active');
+            updateThumbnailsUI();
+
+            // Thumbnail Quality
+            document.querySelector(`input[name="thumbnailQuality"][value="${config.thumbnailQuality}"]`).checked = true;
+            document.querySelector(`.radio-option[data-quality="${config.thumbnailQuality}"]`).classList.add('selected');
+
+            // Thumbnail Style
+            document.querySelector(`input[name="thumbnailStyle"][value="${config.thumbnailStyle}"]`).checked = true;
+            document.querySelector(`.radio-option[data-style="${config.thumbnailStyle}"]`).classList.add('selected');
 
             // Background Camera
             const bgCameraToggle = document.getElementById('bgCameraToggle');
@@ -463,6 +555,46 @@
             }
             
             updateWSStatus();
+        });
+
+        // Thumbnails Toggle
+        document.getElementById('thumbnailsToggle').addEventListener('change', function() {
+            config.showThumbnails = this.checked;
+            
+            const container = document.getElementById('thumbnailsToggleContainer');
+            if (this.checked) {
+                container.classList.add('active');
+            } else {
+                container.classList.remove('active');
+            }
+            
+            updateThumbnailsUI();
+        });
+
+        // Thumbnail Quality Radio Buttons
+        document.querySelectorAll('input[name="thumbnailQuality"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                config.thumbnailQuality = e.target.value;
+                
+                // Update visual selection
+                document.querySelectorAll('.radio-option[data-quality]').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                e.target.closest('.radio-option').classList.add('selected');
+            });
+        });
+
+        // Thumbnail Style Radio Buttons
+        document.querySelectorAll('input[name="thumbnailStyle"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                config.thumbnailStyle = e.target.value;
+                
+                // Update visual selection
+                document.querySelectorAll('.radio-option[data-style]').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                e.target.closest('.radio-option').classList.add('selected');
+            });
         });
 
         // Background Camera Toggle
@@ -536,6 +668,16 @@
             }
         }
 
+        function updateThumbnailsUI() {
+            const thumbnailsOptions = document.getElementById('thumbnailsOptions');
+            
+            if (config.showThumbnails) {
+                thumbnailsOptions.style.display = 'block';
+            } else {
+                thumbnailsOptions.style.display = 'none';
+            }
+        }
+
         function updateBGCameraUI() {
             const bgOptions = document.getElementById('bg-options');
             const bgWarning = document.getElementById('bg-warning');
@@ -566,6 +708,9 @@
         window.saveSettings = function() {
             // Guardar en localStorage
             localStorage.setItem('useWebSocket', config.useWebSocket);
+            localStorage.setItem('showThumbnails', config.showThumbnails);
+            localStorage.setItem('thumbnailQuality', config.thumbnailQuality);
+            localStorage.setItem('thumbnailStyle', config.thumbnailStyle);
             localStorage.setItem('bg_enableLocalCamera', config.enableLocalCamera);
             localStorage.setItem('bg_showMiniPreview', config.showMiniPreview);
             localStorage.setItem('bg_previewPosition', config.previewPosition);

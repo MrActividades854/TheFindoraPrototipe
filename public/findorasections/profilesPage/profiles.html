@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Gestor de Perfiles</title>
+  <link rel="shortcut icon" href="./../../src/favicon.ico" type="image/x-icon">
   <style>
 
 * {
@@ -20,9 +21,16 @@
     main {
       padding: 20px;
     }
-    h1 { margin-top: 0; }
+    h1 {
+      margin-top: 0;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
     .profile-list, .profile-view, .new-profile-form {
-      background: #161b22;
+      background: #22395a;
       padding: 20px;
       border-radius: 10px;
       margin-top: 20px;
@@ -60,6 +68,50 @@
       border-radius: 6px;
       margin-right: 8px;
     }
+
+    /* GRID */
+.profiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+/* CARD */
+.profile-card {
+  background: #1f2937;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.profile-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+}
+
+/* IMAGE */
+.profile-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  background: #111;
+}
+
+/* INFO */
+.profile-card .info {
+  padding: 10px;
+}
+
+.profile-card .name {
+  font-weight: 600;
+}
+
+.profile-card .age {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
   </style>
 </head>
 <body>
@@ -67,37 +119,190 @@
   <main>
   <h1>Gestor de Perfiles</h1>
 
-  <button onclick="location.href='../../index.html'">Volver</button>
   <button onclick="location.href='./createProfile/create_profile.html'">Crear nuevo perfil</button>
   
 
   <section class="profile-list">
     <h2>Perfiles guardados</h2>
-    <div id="profilesContainer">Cargando...</div>
+    <div id="profilesContainer" class="profiles-grid">Cargando...</div>
   </section>
 
   </main>
 
-  <script type="module">
-    import { CONFIG } from "../../js/config.js";
-    async function fetchProfiles() {
-      const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles`);
-      const list = await res.json();
+<script type="module">
+  import { CONFIG } from "../../js/config.js";
+  
+  // Verificar si las miniaturas están habilitadas
+  const showThumbnails = localStorage.getItem('showThumbnails') !== 'false';
+  const thumbnailStyle = localStorage.getItem('thumbnailStyle') || 'grid';
+  const thumbnailQuality = localStorage.getItem('thumbnailQuality') || 'medium';
 
-      const container = document.getElementById('profilesContainer');
-      container.innerHTML = '';
+  async function fetchProfileWithImages(profileId) {
+    const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profile/${profileId}`);
+    return await res.json();
+  }
 
-      list.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'profile-item';
-        div.textContent = `${p.name} — ${p.age} años`;
-        div.onclick = () => location.href = `profile_view.html?id=${p.id}`;
-        container.appendChild(div);
-      });
+  async function fetchProfiles() {
+    const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles`);
+    const list = await res.json();
+    console.log("Perfiles obtenidos:", list);
+
+    const container = document.getElementById('profilesContainer');
+    container.innerHTML = '';
+
+    // Aplicar estilo de visualización
+    if (thumbnailStyle === 'list') {
+      container.classList.remove('profiles-grid');
+      container.classList.add('profile-list-view');
+      container.style.display = 'block';
+    } else {
+      container.classList.add('profiles-grid');
+      container.classList.remove('profile-list-view');
+      container.style.display = 'grid';
     }
 
-    fetchProfiles();
-  </script>
+    // Si las miniaturas están deshabilitadas, cargar solo datos básicos
+    if (!showThumbnails) {
+      renderProfilesWithoutThumbnails(list, container);
+      return;
+    }
+
+    // Si las miniaturas están habilitadas, cargar imágenes
+    const profilePromises = list.map(async (p) => {
+      try {
+        const fullProfile = await fetchProfileWithImages(p.id);
+        return {
+          ...p,
+          references: fullProfile.references || []
+        };
+      } catch (error) {
+        console.error(`Error cargando perfil ${p.id}:`, error);
+        return {
+          ...p,
+          references: []
+        };
+      }
+    });
+
+    const profilesWithImages = await Promise.all(profilePromises);
+    console.log("Perfiles con imágenes:", profilesWithImages);
+
+    // Renderizar perfiles con miniaturas
+    renderProfilesWithThumbnails(profilesWithImages, container);
+  }
+
+  function renderProfilesWithoutThumbnails(profiles, container) {
+    profiles.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'profile-card no-thumbnail';
+      card.style.padding = '15px';
+      card.style.display = 'flex';
+      card.style.alignItems = 'center';
+      card.style.justifyContent = 'space-between';
+
+      const info = document.createElement('div'); 
+      info.className = 'info';
+      info.style.flex = '1';
+
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = p.name;
+      name.style.fontSize = '16px';
+      name.style.marginBottom = '5px';
+
+      const age = document.createElement('div');
+      age.className = 'age';
+      age.textContent = `${p.age} años`;
+      age.style.fontSize = '14px';
+      age.style.opacity = '0.7';
+
+      info.appendChild(name);
+      info.appendChild(age);
+
+      const arrow = document.createElement('div');
+      arrow.innerHTML = '➔';
+      arrow.style.fontSize = '20px';
+      arrow.style.opacity = '0.5';
+      arrow.style.marginLeft = '15px';
+
+      card.appendChild(info);
+      card.appendChild(arrow);
+
+      card.onclick = () => {
+        location.href = `profile_view.html?id=${p.id}`;
+      };
+
+      container.appendChild(card);
+    });
+  }
+
+  function renderProfilesWithThumbnails(profiles, container) {
+    profiles.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'profile-card';
+
+      const imgSrc = p.references && p.references.length > 0 
+        ? p.references[0].file_path 
+        : './../../src/profile.png'; 
+
+      console.log("Perfil", p.id, "tiene", p.references?.length || 0, "referencias");
+      console.log("Usando imagen:", imgSrc);
+
+      const img = document.createElement('img');
+      img.src = imgSrc;
+      img.alt = p.name;
+      img.loading = 'lazy';
+      
+      // Aplicar calidad de imagen
+      if (thumbnailQuality === 'low') {
+        img.style.filter = 'blur(0.5px)';
+        img.style.opacity = '0.9';
+      } else if (thumbnailQuality === 'high') {
+        img.style.filter = 'none';
+      }
+      
+      // Manejar errores de carga de imagen
+      img.onerror = function() {
+        console.log("Error cargando imagen, usando por defecto");
+        this.src = './../../src/profile.png';
+      };
+
+      const info = document.createElement('div'); 
+      info.className = 'info';
+
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = p.name;
+
+      const age = document.createElement('div');
+      age.className = 'age';
+      age.textContent = `${p.age} años`;
+
+      // Mostrar cantidad de imágenes (opcional)
+      const imageCount = document.createElement('div');
+      imageCount.className = 'age';
+      const refCount = p.references ? p.references.length : 0;
+      imageCount.textContent = `${refCount} imagen${refCount !== 1 ? 'es' : ''}`;
+      imageCount.style.opacity = '0.6';
+      imageCount.style.fontSize = '12px';
+
+      info.appendChild(name);
+      info.appendChild(age);
+      info.appendChild(imageCount);
+
+      card.appendChild(img);
+      card.appendChild(info);
+
+      card.onclick = () => {
+        location.href = `profile_view.html?id=${p.id}`;
+      };
+
+      container.appendChild(card);
+    });
+  }
+
+  fetchProfiles();
+</script>
 
 <script type="module">
 import { initBackgroundDetection } from '../../js/background-init.js';
