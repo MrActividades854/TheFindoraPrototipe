@@ -4,281 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Configuración - Findora</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #fff;
-            min-height: 100vh;
-        }
-
-        main {
-            padding: 20px;
-            padding-top: 100px; /* Espacio para el header */
-        }
-
-        .settings-container {
-            max-width: 700px;
-            margin: auto;
-            background: #1a1a1a;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-
-        h1 {
-            margin-bottom: 10px;
-            text-align: center;
-            font-size: 28px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #888;
-            font-size: 14px;
-            margin-bottom: 30px;
-        }
-
-        .section {
-            margin-bottom: 30px;
-            padding-bottom: 30px;
-            border-bottom: 1px solid #333;
-        }
-
-        .section:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-        }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #667eea;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .option {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 15px 0;
-            background: #222;
-            padding: 16px 20px;
-            border-radius: 12px;
-            transition: background 0.2s;
-        }
-
-        .option:hover {
-            background: #2a2a2a;
-        }
-
-        .option-content {
-            flex: 1;
-        }
-
-        .option-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .option-description {
-            font-size: 13px;
-            color: #888;
-            line-height: 1.4;
-        }
-
-        .toggle {
-            position: relative;
-            width: 54px;
-            height: 28px;
-            background: #444;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .toggle:hover {
-            background: #555;
-        }
-
-        .toggle input {
-            display: none;
-        }
-
-        .slider {
-            position: absolute;
-            top: 3px;
-            left: 3px;
-            width: 22px;
-            height: 22px;
-            background: #fff;
-            border-radius: 50%;
-            transition: 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .toggle input:checked + .slider {
-            transform: translateX(26px);
-        }
-
-        .toggle.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .toggle.active .slider {
-            background: #fff;
-        }
-
-        .radio-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-left: 10px;
-        }
-
-        .radio-option {
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            background: #2a2a2a;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .radio-option:hover {
-            background: #333;
-        }
-
-        .radio-option.selected {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-            border: 1px solid #667eea;
-        }
-
-        .radio-option input[type="radio"] {
-            margin-right: 12px;
-            cursor: pointer;
-            accent-color: #667eea;
-        }
-
-        .radio-option label {
-            cursor: pointer;
-            flex: 1;
-            font-size: 14px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-
-        .info-box {
-            background: rgba(59, 130, 246, 0.1);
-            border-left: 4px solid #3b82f6;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-
-        .warning-box {
-            background: rgba(245, 158, 11, 0.1);
-            border-left: 4px solid #f59e0b;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-
-        .status-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            background: #2a2a2a;
-            border-radius: 20px;
-            font-size: 13px;
-            margin-top: 10px;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ef4444;
-        }
-
-        .status-dot.active {
-            background: #10b981;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-top: 20px;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .subsection {
-            margin-left: 20px;
-            margin-top: 15px;
-        }
-    </style>
+    <link rel="icon" href="./../../src/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="./settings.css">
 </head>
 <body>
     <main>
         <div class="settings-container">
-            <h1>⚙️ Configuración</h1>
+            <h1>Configuración</h1>
             <p class="subtitle">Personaliza el comportamiento del sistema Findora</p>
 
             <!-- SECCIÓN 1: WebSocket -->
             <div class="section">
                 <div class="section-title">
-                    🌐 Conectividad
+                    Conectividad
                 </div>
 
                 <div class="option">
@@ -300,16 +38,76 @@
                 </div>
 
                 <div class="info-box">
-                    <strong>ℹ️ Modo WebSocket:</strong> Conecta múltiples dispositivos, permite ver feeds de otras cámaras y recibir notificaciones de detecciones en tiempo real.
+                    <strong>Modo WebSocket:</strong> Conecta múltiples dispositivos, permite ver feeds de otras cámaras y recibir notificaciones de detecciones en tiempo real.
                     <br><br>
                     <strong>Modo Local:</strong> Solo usa la cámara de este dispositivo. Sin conexión a red.
                 </div>
             </div>
 
-            <!-- SECCIÓN 2: Background Detection -->
+            <!-- SECCIÓN 2: Visualización de Perfiles -->
             <div class="section">
                 <div class="section-title">
-                    📹 Detección en Background
+                    Visualización de Perfiles
+                </div>
+
+                <div class="option">
+                    <div class="option-content">
+                        <div class="option-title">Mostrar Miniaturas en Perfiles</div>
+                        <div class="option-description">
+                            Muestra las imágenes de los perfiles en la vista de lista (profiles.html)
+                        </div>
+                    </div>
+                    <label class="toggle" id="thumbnailsToggleContainer">
+                        <input type="checkbox" id="thumbnailsToggle" />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="thumbnail-options" id="thumbnailsOptions">
+                    <div class="option-title" style="margin-bottom: 10px; font-size: 15px;">
+                        Calidad de Miniaturas
+                    </div>
+                    
+                    <div class="radio-group">
+                        <div class="radio-option" data-quality="low">
+                            <input type="radio" name="thumbnailQuality" value="low" id="quality-low">
+                            <label for="quality-low">Baja calidad (rápido) <span class="badge">Más rápido</span></label>
+                        </div>
+                        <div class="radio-option" data-quality="medium">
+                            <input type="radio" name="thumbnailQuality" value="medium" id="quality-medium">
+                            <label for="quality-medium">Calidad media <span class="badge">Recomendado</span></label>
+                        </div>
+                        <div class="radio-option" data-quality="high">
+                            <input type="radio" name="thumbnailQuality" value="high" id="quality-high">
+                            <label for="quality-high">Alta calidad (detallado)</label>
+                        </div>
+                    </div>
+
+                    <div class="option-title" style="margin: 20px 0 10px 0; font-size: 15px;">
+                        Estilo de Visualización
+                    </div>
+                    
+                    <div class="radio-group">
+                        <div class="radio-option" data-style="grid">
+                            <input type="radio" name="thumbnailStyle" value="grid" id="style-grid">
+                            <label for="style-grid">Vista de cuadrícula <span class="badge">Recomendado</span></label>
+                        </div>
+                        <div class="radio-option" data-style="list">
+                            <input type="radio" name="thumbnailStyle" value="list" id="style-list">
+                            <label for="style-list">Vista de lista</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>Información:</strong> Cuando las miniaturas están deshabilitadas, la vista de perfiles mostrará solo nombres y edades, lo que puede mejorar el rendimiento en dispositivos lentos o con conexión limitada.
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: Background Detection -->
+            <div class="section">
+                <div class="section-title">
+                    Detección en Background
                 </div>
 
                 <div class="option">
@@ -326,12 +124,12 @@
                 </div>
 
                 <div class="warning-box" id="bg-warning" style="display: none;">
-                    <strong>⚠️ Advertencia:</strong> Activar esta opción hará que tu cámara se encienda en todas las páginas del sistema. Esto consumirá más batería y recursos.
+                    <strong>Advertencia:</strong> Activar esta opción hará que tu cámara se encienda en todas las páginas del sistema. Esto consumirá más batería y recursos.
                 </div>
 
                 <div class="subsection" id="bg-options" style="display: none;">
                     <div class="option-title" style="margin-bottom: 10px; font-size: 15px;">
-                        👁️ Mostrar Vista Previa
+                        Mostrar Vista Previa
                     </div>
                     
                     <div class="option">
@@ -348,7 +146,7 @@
 
                     <div id="preview-options" style="display: none;">
                         <div class="option-title" style="margin: 20px 0 10px 0; font-size: 14px;">
-                            📍 Posición del Preview
+                            Posición del Preview
                         </div>
                         <div class="radio-group">
                             <div class="radio-option" data-position="bottom-right">
@@ -370,7 +168,7 @@
                         </div>
 
                         <div class="option-title" style="margin: 20px 0 10px 0; font-size: 14px;">
-                            📏 Tamaño del Preview
+                            Tamaño del Preview
                         </div>
                         <div class="radio-group">
                             <div class="radio-option" data-size="small">
@@ -390,11 +188,11 @@
                 </div>
 
                 <div class="info-box">
-                    <strong>ℹ️ Recomendación:</strong> Deja esta opción <strong>desactivada</strong> para ahorrar recursos. El modo background solo monitoreará feeds remotos de otras cámaras del sistema sin activar tu cámara local.
+                    <strong>Recomendación:</strong> Deja esta opción <strong>desactivada</strong> para ahorrar recursos. El modo background solo monitoreará feeds remotos de otras cámaras del sistema sin activar tu cámara local.
                 </div>
             </div>
 
-            <button onclick="saveSettings()">💾 Guardar Configuración</button>
+            <button onclick="saveSettings()">Guardar Configuración</button>
         </div>
     </main>
 
@@ -407,6 +205,9 @@
         
         const config = {
             useWebSocket: localStorage.getItem("useWebSocket") === "true",
+            showThumbnails: localStorage.getItem('showThumbnails') !== 'false',
+            thumbnailQuality: localStorage.getItem('thumbnailQuality') || 'medium',
+            thumbnailStyle: localStorage.getItem('thumbnailStyle') || 'grid',
             enableLocalCamera: localStorage.getItem('bg_enableLocalCamera') === 'true',
             showMiniPreview: localStorage.getItem('bg_showMiniPreview') !== 'false',
             previewPosition: localStorage.getItem('bg_previewPosition') || 'bottom-right',
@@ -424,6 +225,21 @@
             wsToggle.checked = config.useWebSocket;
             if (config.useWebSocket) wsToggleContainer.classList.add('active');
             updateWSStatus();
+
+            // Thumbnails
+            const thumbnailsToggle = document.getElementById('thumbnailsToggle');
+            const thumbnailsContainer = document.getElementById('thumbnailsToggleContainer');
+            thumbnailsToggle.checked = config.showThumbnails;
+            if (config.showThumbnails) thumbnailsContainer.classList.add('active');
+            updateThumbnailsUI();
+
+            // Thumbnail Quality
+            document.querySelector(`input[name="thumbnailQuality"][value="${config.thumbnailQuality}"]`).checked = true;
+            document.querySelector(`.radio-option[data-quality="${config.thumbnailQuality}"]`).classList.add('selected');
+
+            // Thumbnail Style
+            document.querySelector(`input[name="thumbnailStyle"][value="${config.thumbnailStyle}"]`).checked = true;
+            document.querySelector(`.radio-option[data-style="${config.thumbnailStyle}"]`).classList.add('selected');
 
             // Background Camera
             const bgCameraToggle = document.getElementById('bgCameraToggle');
@@ -463,6 +279,46 @@
             }
             
             updateWSStatus();
+        });
+
+        // Thumbnails Toggle
+        document.getElementById('thumbnailsToggle').addEventListener('change', function() {
+            config.showThumbnails = this.checked;
+            
+            const container = document.getElementById('thumbnailsToggleContainer');
+            if (this.checked) {
+                container.classList.add('active');
+            } else {
+                container.classList.remove('active');
+            }
+            
+            updateThumbnailsUI();
+        });
+
+        // Thumbnail Quality Radio Buttons
+        document.querySelectorAll('input[name="thumbnailQuality"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                config.thumbnailQuality = e.target.value;
+                
+                // Update visual selection
+                document.querySelectorAll('.radio-option[data-quality]').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                e.target.closest('.radio-option').classList.add('selected');
+            });
+        });
+
+        // Thumbnail Style Radio Buttons
+        document.querySelectorAll('input[name="thumbnailStyle"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                config.thumbnailStyle = e.target.value;
+                
+                // Update visual selection
+                document.querySelectorAll('.radio-option[data-style]').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                e.target.closest('.radio-option').classList.add('selected');
+            });
         });
 
         // Background Camera Toggle
@@ -536,6 +392,16 @@
             }
         }
 
+        function updateThumbnailsUI() {
+            const thumbnailsOptions = document.getElementById('thumbnailsOptions');
+            
+            if (config.showThumbnails) {
+                thumbnailsOptions.style.display = 'block';
+            } else {
+                thumbnailsOptions.style.display = 'none';
+            }
+        }
+
         function updateBGCameraUI() {
             const bgOptions = document.getElementById('bg-options');
             const bgWarning = document.getElementById('bg-warning');
@@ -566,6 +432,9 @@
         window.saveSettings = function() {
             // Guardar en localStorage
             localStorage.setItem('useWebSocket', config.useWebSocket);
+            localStorage.setItem('showThumbnails', config.showThumbnails);
+            localStorage.setItem('thumbnailQuality', config.thumbnailQuality);
+            localStorage.setItem('thumbnailStyle', config.thumbnailStyle);
             localStorage.setItem('bg_enableLocalCamera', config.enableLocalCamera);
             localStorage.setItem('bg_showMiniPreview', config.showMiniPreview);
             localStorage.setItem('bg_previewPosition', config.previewPosition);
@@ -574,10 +443,6 @@
             // Mostrar confirmación
             alert('✅ Configuración guardada correctamente.\n\nLos cambios se aplicarán al recargar las páginas.');
             
-            // Opcional: Redirigir al inicio
-            setTimeout(() => {
-                window.location.href = '../../index.html';
-            }, 1000);
         };
 
         // ============================================================
