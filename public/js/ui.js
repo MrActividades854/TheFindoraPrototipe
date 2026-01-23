@@ -188,6 +188,13 @@ export default class UIManager {
 
     async _loadProfileThumbs() {
         try {
+            const cached = localStorage.getItem(CONFIG.PROFILES_KEY);
+            if (cached) {
+                const profiles = JSON.parse(cached);
+                console.log(`Cargando miniaturas desde ${profiles.length} perfil(es) en caché local`);
+                this._processThumbs(profiles);
+                return;
+            }
             const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles_full`);
             if (!res.ok) {
                 console.warn("⚠️ No se pudieron cargar thumbnails");
@@ -208,6 +215,15 @@ export default class UIManager {
             console.warn('⚠️ Error cargando miniaturas:', e.message);
         }
     }
+
+    _processThumbs(profiles) {
+    for (const p of profiles) {
+        if (p.images?.length) {
+            this.profileThumbs[this._normalizeName(p.name)] = p.images[0];
+        }
+    }
+}
+
 
     async _loadCameras() {
         console.log("📹 Solicitando acceso a cámaras...");

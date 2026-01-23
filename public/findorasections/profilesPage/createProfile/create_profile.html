@@ -76,6 +76,7 @@
           </section>
     </main>
     <script type="module">
+        import { CONFIG } from './../../../js/config.js';
         document.getElementById('saveProfileBtn').onclick = async () => {
         const name = document.getElementById('nameInput').value.trim();
         const age = parseInt(document.getElementById('ageInput').value.trim());
@@ -98,7 +99,9 @@
 
       if (res.ok) {
         alert('Perfil guardado correctamente');
+        localStorage.removeItem(CONFIG.PROFILES_KEY);
         fetchProfiles();
+        location.href = './../profiles.html';
       } else {
         alert('Error guardando perfil');
       }
