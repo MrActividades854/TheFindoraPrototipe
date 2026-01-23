@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📋 Registro de Notificaciones</title>
+<title>Registro de Notificaciones</title>
 <style>
   * {
     margin: 0;
@@ -270,9 +270,9 @@ function toggleDropdown() {
     // Cambiar ícono de flecha
     const toggleBtn = document.querySelector('.dropdown-toggle');
     if (dropdownOpen) {
-        toggleBtn.innerHTML = '🔍 Filtrar por fecha ▲';
+        toggleBtn.innerHTML = 'Filtrar por fecha ▲';
     } else {
-        toggleBtn.innerHTML = '🔍 Filtrar por fecha ▼';
+        toggleBtn.innerHTML = 'Filtrar por fecha ▼';
     }
 }
 
@@ -284,7 +284,7 @@ document.addEventListener('click', function(event) {
     if (!dropdown.contains(event.target) && !toggleBtn.contains(event.target)) {
         dropdown.classList.remove('show');
         dropdownOpen = false;
-        toggleBtn.innerHTML = '🔍 Filtrar por fecha ▼';
+        toggleBtn.innerHTML = 'Filtrar por fecha ▼';
     }
 });
 
@@ -318,7 +318,7 @@ function applyFilter(filterType) {
     
     // Actualizar botón principal
     const toggleBtn = document.querySelector('.dropdown-toggle');
-    toggleBtn.innerHTML = `🔍 ${getFilterName(filterType)} ▼`;
+    toggleBtn.innerHTML = `${getFilterName(filterType)} ▼`;
     
     // Actualizar elementos activos en el menú
     document.querySelectorAll('.dropdown-item').forEach(item => {
@@ -378,7 +378,7 @@ function updateFilterButtonText(filterType) {
         'custom': 'Personalizado'
     };
     
-    toggleBtn.innerHTML = `🔍 ${filterNames[filterType]} ▼`;
+    toggleBtn.innerHTML = `${filterNames[filterType]} ▼`;
 }
 
 // Obtener nombre del filtro
