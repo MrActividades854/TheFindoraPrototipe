@@ -51,30 +51,41 @@ exports.create = async (req, res) => {
 };
 
 exports.list = async (req, res) => {
-    const result = await pool.query(
+    try {
+        const result = await pool.query(
         "SELECT id, name, age FROM perfiles ORDER BY id DESC"
     );
     res.json(result.rows);
+    } catch (err) {
+        console.error("❌ Error listando perfiles:", err.message);
+        res.status(500).json({ error: err.message });
+    }
 };
 
 exports.listFull = async (req, res) => {
-    const profiles = await pool.query("SELECT * FROM perfiles ORDER BY id DESC");
+    try {
+        const profiles = await pool.query("SELECT * FROM perfiles ORDER BY id DESC");
 
-    const final = [];
+        const final = [];
 
-    for (const p of profiles.rows) {
-        const refs = await pool.query(
-            "SELECT file_path FROM referencias WHERE profile_id = $1",
-            [p.id]
-        );
+        for (const p of profiles.rows) {
+            const refs = await pool.query(
+                "SELECT file_path FROM referencias WHERE profile_id = $1",
+                [p.id]
+            );
 
-        final.push({
-            ...p,
-            images: refs.rows.map(r => r.file_path)
-        });
-    }
+            final.push({
+                ...p,
+                images: refs.rows.map(r => r.file_path)
+            });
+        }
 
-    res.json(final);
+        res.json(final);
+
+    } catch (err) {
+        console.error("❌ Error listando perfiles completos:", err.message);
+        res.status(500).json({ error: err.message });
+};
 };
 
 exports.getOne = async (req, res) => {

@@ -170,6 +170,7 @@
 
       if (res.ok) {
         alert('Perfil eliminado');
+        localStorage.removeItem(CONFIG.PROFILES_KEY);
         location.href = 'profiles.html';
       } else {
         alert('Error eliminando el perfil');

@@ -90,6 +90,15 @@ export default class FaceRecognitionManager {
         }
 
         try {
+            const cached = localStorage.getItem(CONFIG.PROFILES_KEY);
+
+            if (cached) {
+                const profiles = JSON.parse(cached);
+                console.log(`Cargando ${profiles.length} perfil(es) desde caché local`)
+                await this._loadProfilesFromData(profiles);
+                return profiles;
+            };
+
             console.log("📡 Solicitando perfiles del servidor...");
             const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles_full`);
             console.log("📥 Respuesta recibida - Status:", res.status);
@@ -102,7 +111,11 @@ export default class FaceRecognitionManager {
             }
 
             const profiles = await res.json();
-            console.log("📊 Perfiles recibidos:", profiles.length);
+            console.log("Perfiles recibidos:", profiles.length);
+
+            localStorage.setItem(CONFIG.PROFILES_KEY, JSON.stringify(profiles));
+
+            // CRÍTICO: Verificar si hay perfiles
 
             if (!Array.isArray(profiles) || profiles.length === 0) {
                 console.warn("⚠️ No hay perfiles en el servidor");
@@ -177,6 +190,47 @@ export default class FaceRecognitionManager {
             return [];
         }
     }
+
+    async _loadProfilesFromData(profiles) {
+    this.labeledDescriptors = [];
+    this.profileMap = {};
+
+    for (const p of profiles) {
+        if (!p.images || !p.images.length) continue;
+
+        const descriptors = [];
+
+        for (const imgUrl of p.images) {
+            try {
+                const img = await faceapi.fetchImage(imgUrl);
+                const det = await faceapi
+                    .detectSingleFace(img)
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+
+                if (det) descriptors.push(det.descriptor);
+            } catch {}
+        }
+
+        if (descriptors.length) {
+            this.labeledDescriptors.push(
+                new faceapi.LabeledFaceDescriptors(p.name, descriptors)
+            );
+            this.profileMap[p.name] = p.id;
+        }
+    }
+
+    if (this.labeledDescriptors.length === 0) {
+        this._initEmptyMatcher();
+        return;
+    }
+
+    this.faceMatcher = new faceapi.FaceMatcher(
+        this.labeledDescriptors,
+        this.threshold
+    );
+}
+
 
     // ✅ NUEVO: Inicializar FaceMatcher vacío
     _initEmptyMatcher() {

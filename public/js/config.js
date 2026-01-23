@@ -11,6 +11,8 @@ const hostname = window.location.hostname;
 const params = new URLSearchParams(window.location.search);
 const forced = (params.get("env") || "").toLowerCase();
 
+const PROFILES_KEY = "findora_profiles";
+
 // MODO FORZADO (útil para debug)
 if (forced === "local") {
     WS_BASE = "ws://localhost:8080/ws";
@@ -207,6 +209,7 @@ export const CONFIG = {
     MODEL_PATH: MODEL_PATH,
     IS_RENDER : IS_RENDER,
     ROOT_PATH: IS_RENDER ? 'https://thefindoraprototipe.onrender.com/' : 'http://127.0.0.1:5501/',
+    PROFILES_KEY: PROFILES_KEY,
     
     // Utilidades de rutas
     resolvePath,
