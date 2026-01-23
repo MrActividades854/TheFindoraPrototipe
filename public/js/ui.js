@@ -72,7 +72,7 @@ export default class UIManager {
             this.faceRec = new FaceRecognitionManager({
                 modelPath: this.modelPath,
                 onNotification: (msg, type) => {
-                    console.log(`📢 Notificación: [${type}] ${msg}`);
+                    console.log(`Notificación: [${type}] ${msg}`);
                     this.notifier.show(msg, type);
                 }
             });

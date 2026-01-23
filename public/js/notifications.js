@@ -26,15 +26,20 @@ export default class NotificationManager {
 
 
     async show(message, type = 'success', duration = 2500) {
+        // Tiempo
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const fullMessage = `[${timeStr}] ${message}`;
+
         // Guardar en servidor (intento, no bloquee UI si falla)
         try {
             await fetch(this.apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    message,
+                    message : message,
                     type,
-                    timestamp: new Date()
+                    timestamp: now
                 })
             });
         } catch (e) {
@@ -43,7 +48,7 @@ export default class NotificationManager {
 
         // También guardar localmente
         const list = JSON.parse(localStorage.getItem('findora_notifications') || '[]');
-        list.push({ message, type, time: Date.now() });
+        list.push({ message, type, time: now });
         localStorage.setItem('findora_notifications', JSON.stringify(list));
 
         // Si estamos en modo historial, NO mostrar pop-ups
