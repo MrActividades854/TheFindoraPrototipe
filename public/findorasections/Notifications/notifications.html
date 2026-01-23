@@ -109,35 +109,245 @@
     background: #2ea043;
   }
 
+    /* Estilos para el menú desplegable */
+  
+  .dropdown-container {
+    position: relative;
+    display: inline-block;
+    margin-left: 20px;
+  }
+  
+  .dropdown-toggle {
+    background-color: #3a3a8c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s, transform 0.1s;
+  }
+  
+  .dropdown-toggle:hover {
+    background-color: #4a4a9c;
+    transform: translateY(-1px);
+  }
+  
+  .dropdown-toggle:active {
+    transform: translateY(0);
+  }
+  
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 20px;
+    background-color: white;
+    min-width: 200px;
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    display: none;
+    margin-top: 5px;
+    overflow: hidden;
+    border: 1px solid #e1e4e8;
+  }
+  
+  .dropdown-menu.show {
+    display: block;
+    animation: fadeIn 0.2s ease;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .dropdown-item {
+    width: 130px;
+    padding: 12px 16px;
+    right: 1000px;
+    text-align: left;
+    background: none;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.15s;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f6f8fa;
+    color: #24292e;
+  }
+  
+  .dropdown-item.active {
+    background-color: #0969da;
+    color: white;
+  }
+  
+  .dropdown-item.active .filter-icon {
+    filter: brightness(0) invert(1);
+  }
+  
+  .dropdown-divider {
+    height: 1px;
+    background-color: #e1e4e8;
+    margin: 5px 0;
+  }
+  
+  .selected-filter {
+    background-color: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
 </style>
 </head>
 <body>
 
-    <div class="principal">
-
+<div class="principal">
   <button onclick="localStorage.removeItem('findora_notifications'); location.reload();">
-Borrar historial
-</button>
-      <h1>Historial</h1>
+    Borrar historial
+  </button>
+  <div class="dropdown-container">
+    <button class="dropdown-toggle" onclick="toggleDropdown()">
+      Filtrar por fecha:
+    </button>
+
+    <div class="dropdown-menu" id="filterDropdown">
+      <button onclick="filterNotifications('all')" class="dropdown-item">
+        Todas las notificaciones
+      </button>
+      <button onclick="filterNotifications('today')" class="dropdown-item">
+        Hoy
+      </button>
+      <button onclick="filterNotifications('yesterday')" class="dropdown-item">
+        Ayer
+      </button>
+      <button onclick="filterNotifications('week')" class="dropdown-item">
+        Esta semana
+      </button>
+      <button onclick="filterNotifications('month')" class="dropdown-item">
+        Este mes
+      </button>
+      <div class="dropdown-divider"></div>
+      <button onclick="filterNotifications('custom')" class="dropdown-item">
+        Personalizado...
+      </button>
     </div>
+  </div>
+  <h1>Historial</h1>
+</div>
   <div id="logContainer">
     <ul id="logList"></ul>
   </div>
 <script>
+// Variables globales
+let allNotifications = [];
+let currentFilter = 'all';
+let dropdownOpen = false;
+
+// Función para abrir/cerrar el menú
+function toggleDropdown() {
+    const dropdown = document.getElementById('filterDropdown');
+    dropdown.classList.toggle('show');
+    dropdownOpen = !dropdownOpen;
+    
+    // Cambiar ícono de flecha
+    const toggleBtn = document.querySelector('.dropdown-toggle');
+    if (dropdownOpen) {
+        toggleBtn.innerHTML = '🔍 Filtrar por fecha ▲';
+    } else {
+        toggleBtn.innerHTML = '🔍 Filtrar por fecha ▼';
+    }
+}
+
+// Cerrar menú al hacer clic fuera
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('filterDropdown');
+    const toggleBtn = document.querySelector('.dropdown-toggle');
+    
+    if (!dropdown.contains(event.target) && !toggleBtn.contains(event.target)) {
+        dropdown.classList.remove('show');
+        dropdownOpen = false;
+        toggleBtn.innerHTML = '🔍 Filtrar por fecha ▼';
+    }
+});
+
 function clearHistory() {
-  localStorage.removeItem('findora_notifications');
-  location.reload();
+    if (confirm('¿Estás seguro de borrar todo el historial de notificaciones?')) {
+        localStorage.removeItem('findora_notifications');
+        allNotifications = [];
+        loadNotifications();
+    }
 }
 
 function loadNotifications() {
     const list = JSON.parse(localStorage.getItem("findora_notifications") || "[]");
-    const container = document.getElementById("logList");   // ← corregido
+    allNotifications = list;
+    applyFilter(currentFilter);
+}
 
+function applyFilter(filterType) {
+    const container = document.getElementById("logList");
     if (!container) return;
-
+    
+    currentFilter = filterType;
+    
+    // Actualizar título del botón
+    updateFilterButtonText(filterType);
+    
+    // Cerrar el menú después de seleccionar
+    const dropdown = document.getElementById('filterDropdown');
+    dropdown.classList.remove('show');
+    dropdownOpen = false;
+    
+    // Actualizar botón principal
+    const toggleBtn = document.querySelector('.dropdown-toggle');
+    toggleBtn.innerHTML = `🔍 ${getFilterName(filterType)} ▼`;
+    
+    // Actualizar elementos activos en el menú
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    const activeItem = document.querySelector(`.dropdown-item[onclick="filterNotifications('${filterType}')"]`);
+    if (activeItem) activeItem.classList.add('active');
+    
+    // Filtrar notificaciones
+    let filteredList = allNotifications;
+    
+    if (filterType !== 'all') {
+        filteredList = filterByDate(allNotifications, filterType);
+    }
+    
+    // Mostrar resultados
     container.innerHTML = "";
-
-    list.reverse().forEach(n => {
+    
+    if (filteredList.length === 0) {
+        const emptyMsg = document.createElement("div");
+        emptyMsg.className = "empty-message";
+        emptyMsg.innerHTML = getEmptyMessage(filterType);
+        container.appendChild(emptyMsg);
+        return;
+    }
+    
+    // Mostrar en orden inverso (más reciente primero)
+    filteredList.reverse().forEach(n => {
         const li = document.createElement("li");
         li.className = n.type === "warning" ? "warning" : "success";
         li.innerHTML = `
@@ -148,26 +358,146 @@ function loadNotifications() {
     });
 }
 
+function filterNotifications(filterType) {
+    if (filterType === 'custom') {
+        showCustomDatePicker();
+        return;
+    }
+    applyFilter(filterType);
+}
+
+// Función para actualizar el texto del botón
+function updateFilterButtonText(filterType) {
+    const toggleBtn = document.querySelector('.dropdown-toggle');
+    const filterNames = {
+        'all': 'Todas',
+        'today': 'Hoy',
+        'yesterday': 'Ayer', 
+        'week': 'Esta semana',
+        'month': 'Este mes',
+        'custom': 'Personalizado'
+    };
+    
+    toggleBtn.innerHTML = `🔍 ${filterNames[filterType]} ▼`;
+}
+
+// Obtener nombre del filtro
+function getFilterName(filterType) {
+    const filterNames = {
+        'all': 'Todas',
+        'today': 'Hoy',
+        'yesterday': 'Ayer',
+        'week': 'Esta semana',
+        'month': 'Este mes'
+    };
+    return filterNames[filterType] || 'Filtrar';
+}
+
+// Función para filtrar por fecha
+function filterByDate(notifications, filterType) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    return notifications.filter(n => {
+        const notificationDate = new Date(n.time);
+        const notificationDay = new Date(notificationDate.getFullYear(), notificationDate.getMonth(), notificationDate.getDate());
+        
+        switch(filterType) {
+            case 'today':
+                return notificationDay.getTime() === today.getTime();
+            case 'yesterday':
+                return notificationDay.getTime() === yesterday.getTime();
+            case 'week':
+                return notificationDate >= startOfWeek;
+            case 'month':
+                return notificationDate >= startOfMonth;
+            default:
+                return true;
+        }
+    });
+}
+
+// Mensaje cuando no hay notificaciones
+function getEmptyMessage(filterType) {
+    const messages = {
+        'all': '📭 No hay notificaciones en el historial',
+        'today': '☀️ No hay notificaciones hoy',
+        'yesterday': '📅 No hay notificaciones ayer',
+        'week': '📆 No hay notificaciones esta semana',
+        'month': '🗓️ No hay notificaciones este mes'
+    };
+    return messages[filterType] || '📭 No hay notificaciones';
+}
+
+// Función para selector de fechas personalizado (opcional)
+function showCustomDatePicker() {
+    // Puedes implementar un calendario aquí
+    const startDate = prompt("Fecha de inicio (YYYY-MM-DD):", "2024-01-01");
+    const endDate = prompt("Fecha de fin (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
+    
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        
+        const filtered = allNotifications.filter(n => {
+            const date = new Date(n.time);
+            return date >= start && date <= end;
+        });
+        
+        applyCustomFilter(filtered, `${startDate} al ${endDate}`);
+    }
+}
+
+function applyCustomFilter(filteredList, dateRange) {
+    const container = document.getElementById("logList");
+    if (!container) return;
+    
+    // Actualizar botón
+    const toggleBtn = document.querySelector('.dropdown-toggle');
+    toggleBtn.innerHTML = `🔍 ${dateRange} ▼`;
+    
+    // Mostrar resultados
+    container.innerHTML = "";
+    
+    if (filteredList.length === 0) {
+        const emptyMsg = document.createElement("div");
+        emptyMsg.className = "empty-message";
+        emptyMsg.textContent = `📭 No hay notificaciones entre ${dateRange}`;
+        container.appendChild(emptyMsg);
+        return;
+    }
+    
+    // Mostrar en orden inverso
+    filteredList.reverse().forEach(n => {
+        const li = document.createElement("li");
+        li.className = n.type === "warning" ? "warning" : "success";
+        li.innerHTML = `
+            <div class="message">${n.message}</div>
+            <div class="time">${new Date(n.time).toLocaleString()}</div>
+        `;
+        container.appendChild(li);
+    });
+}
+
+// Cargar al inicio
 window.onload = function() {
     loadNotifications();
-    // Escuchar cambios en localStorage para actualizar en tiempo real
-    const storageHandler = (e) => {
-    if (e.key === 'findora_notifications') {
-        loadNotifications();
-    }
+    
+    // Escuchar cambios en localStorage
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'findora_notifications') {
+            loadNotifications();
+        }
+    });
 };
-
-window.addEventListener('storage', storageHandler);
-window.addEventListener('beforeunload', () => {
-    window.removeEventListener('storage', storageHandler);
-});
-};
-
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'findora_notifications') {
-      loadNotifications();
-    }
-  });
 </script>
 
 <script type="module">
