@@ -439,6 +439,18 @@ export default class FaceRecognitionManager {
     updateTrackedPersonDetection(track, label) {
         const now = Date.now();
 
+        // BLOQUEAR CAMBIO DE IDENTIDAD EN MISMA POSICIÓN
+        if (
+            track.lastLabel !== "Desconocido" &&
+            label !== "Desconocido" &&
+            track.lastLabel !== label &&
+            track.stabilityFrames < this.STABLE_FRAMES
+        ) {
+            // Mantener identidad anterior
+            label = track.lastLabel;
+        }
+        // ACTUALIZAR ESTABILIDAD
+
         if (label !== "Desconocido") {
             track.unknownFrames = 0;
             track.unknownShown = false;
@@ -453,8 +465,17 @@ export default class FaceRecognitionManager {
             return;
         }
 
-        track.unknownFrames++;
+        if (label === track.lastLabel) {
+            track.stabilityFrames++;
+        } else {
+            track.stabilityFrames = 1;
+        }
+
         track.lastSeen = now;
+
+        if (track.stabilityFrames >= this.STABLE_FRAMES) {
+            track.lastLabel = label;
+        }
 
         if (track.unknownFrames >= this.confirmUnknownAfter && !track.unknownShown) {
             track.unknownShown = true;
