@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Registro de Notificaciones</title>
+<link rel="shortcut icon" href="./../../src/favicon.ico" type="image/x-icon">
 <style>
   * {
     margin: 0;
@@ -220,7 +221,7 @@
 <body>
 
 <div class="principal">
-  <button onclick="localStorage.removeItem('findora_notifications'); location.reload();">
+  <button onclick="clearHistory()" class="clear-btn">
     Borrar historial
   </button>
   <div class="dropdown-container">
@@ -288,13 +289,29 @@ document.addEventListener('click', function(event) {
     }
 });
 
-function clearHistory() {
-    if (confirm('¿Estás seguro de borrar todo el historial de notificaciones?')) {
-        localStorage.removeItem('findora_notifications');
-        allNotifications = [];
-        loadNotifications();
-    }
+async function clearHistory() {
+  if (!confirm('¿Estás seguro de borrar todo el historial de notificaciones?')) {
+    return;
+  }
+
+  try {
+    await fetch(
+      'https://thefindoraprototipe.onrender.com/api/notifications',
+      { method: 'DELETE' }
+    );
+
+    // limpiar frontend
+    localStorage.removeItem('findora_notifications');
+    allNotifications = [];
+    loadNotifications();
+
+    console.log('🧹 Historial borrado en frontend y backend');
+  } catch (err) {
+    console.error('Error borrando notificaciones:', err);
+    alert('No se pudo borrar el historial en el servidor');
+  }
 }
+
 
 function loadNotifications() {
     const list = JSON.parse(localStorage.getItem("findora_notifications") || "[]");

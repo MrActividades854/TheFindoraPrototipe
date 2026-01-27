@@ -21,9 +21,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     window.uiManager = ui;
     window.ui = ui; // Alias
 
-    console.log('🎬 [MAIN] Inicializando UI...');
     await ui.init();
-    console.log('✅ [MAIN] Aplicación lista');
 
   } catch (err) {
     console.error("❌ [MAIN] Error crítico:", err);
