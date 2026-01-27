@@ -49,6 +49,8 @@ const ws = new WebSocket(CONFIG.WS_URL);
 const senderId = Math.random().toString(36).slice(2, 9);
 let pc = null;
 let localStream = null;
+let reconnecting = false;
+let startedOnce = false;
 
 ws.onopen = () => console.log("WebSocket conectado");
 
@@ -57,73 +59,116 @@ function log(msg) {
     document.getElementById("log").textContent = msg;
 }
 
-document.getElementById("startBtn").onclick = async () => {
-    try {
+async function startSender() {
+    if (!localStream) {
         localStream = await navigator.mediaDevices.getUserMedia({
-    video: { width: 640, height: 480, frameRate: { ideal: 30 } },
-    audio: false
-});
+            video: { width: 640, height: 480, frameRate: { ideal: 30 } },
+            audio: false
+        });
 
-const video = document.getElementById("localVideo");
-video.srcObject = localStream;
-
-video.onloadedmetadata = () => {
-    video.play().catch(err => console.error("Error reproduciendo cámara local:", err));
-};
-
-
-        pc = new RTCPeerConnection({
-    iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
-        {
-      urls: "turn:relay.metered.ca:80",
-      username: "openai",
-      credential: "openai"
+        const video = document.getElementById("localVideo");
+        video.srcObject = localStream;
+        video.play().catch(() => {});
     }
-    ]
-});
 
-
-        pc.onicecandidate = (e) => {
-    if (e.candidate) {
-        ws.send(JSON.stringify({
-            type: "ice",
-            from: senderId,
-            to: "receiver",
-            ice: {
-                candidate: e.candidate.candidate,
-                sdpMid: e.candidate.sdpMid,
-                sdpMLineIndex: e.candidate.sdpMLineIndex
+    pc = new RTCPeerConnection({
+        iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            {
+                urls: "turn:relay.metered.ca:80",
+                username: "openai",
+                credential: "openai"
             }
-        }));
-    }
-};
+        ]
+    });
 
+    attachWatchers();
 
-        for (const track of localStream.getTracks()) {
-            pc.addTrack(track, localStream);
+    pc.onicecandidate = (e) => {
+        if (e.candidate) {
+            ws.send(JSON.stringify({
+                type: "ice",
+                from: senderId,
+                to: "receiver",
+                ice: {
+                    candidate: e.candidate.candidate,
+                    sdpMid: e.candidate.sdpMid,
+                    sdpMLineIndex: e.candidate.sdpMLineIndex
+                }
+            }));
         }
+    };
 
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
 
-        ws.send(JSON.stringify({
-            type: "offer",
-            from: senderId,
-            offer: { type: offer.type, sdp: offer.sdp }
-        }));
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
 
-        log("Offer enviada. Esperando answer...");
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
+    ws.send(JSON.stringify({
+        type: "offer",
+        from: senderId,
+        offer: { type: offer.type, sdp: offer.sdp }
+    }));
 
-    } catch (err) {
-        alert("Error accediendo a la cámara: " + err.message);
+    log("📡 Offer enviada (o reenviada)");
+}
+
+function attachWatchers() {
+    pc.onconnectionstatechange = () => {
+        const s = pc.connectionState;
+        if (s === "failed" || s === "disconnected") {
+            safeReconnect();
+        }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+        if (pc.iceConnectionState === "failed") {
+            safeReconnect();
+        }
+    };
+}
+function safeReconnect() {
+    if (reconnecting || !startedOnce) return;
+    reconnecting = true;
+    log("Reconectando...");
+    setTimeout(async () => {
+        cleanup();
+        try {
+            await startSender();
+            log("Reconectado");
+        } catch (err) {
+            log("Error reconectando: " + err.message);
+        } finally {
+            reconnecting = false;
+        }
+    }, 500);
+}
+
+function cleanup() {
+    if (pc) {
+        pc.onicecandidate = null;
+        pc.ontrack = null;
+        pc.close();
+        pc = null;
     }
+}
+
+
+document.getElementById("startBtn").onclick = async () => {
+    startedOnce = true;
+    await startSender();
+    log("Compartición iniciada");
+    document.getElementById("startBtn").disabled = true;
+    document.getElementById("stopBtn").disabled = false;
 };
 
 document.getElementById("stopBtn").onclick = () => {
+    startedOnce = false;
+    reconnecting = false;
+
     if (localStream) localStream.getTracks().forEach(t => t.stop());
+    cleanup();
+
     if (pc) pc.close();
     pc = null;
     localStream = null;
@@ -131,6 +176,16 @@ document.getElementById("stopBtn").onclick = () => {
     startBtn.disabled = false;
     stopBtn.disabled = true;
 };
+
+ws.onclose = () => {
+    log("⚠️ WebSocket cerrado");
+    safeReconnect();
+};
+
+ws.onerror = () => {
+    safeReconnect();
+};
+
 
 ws.onmessage = async (event) => {
     let text;
