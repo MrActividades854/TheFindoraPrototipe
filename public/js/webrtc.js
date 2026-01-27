@@ -165,8 +165,8 @@ export default class WebRTCManager {
 
     // si ya tenemos PC para este sender, devolvemos log y no creamos duplicado
     if (this.receiverPCs[senderId]) {
-      this.onLog(`Offer recibida pero ya existe PC para ${senderId}`);
-      // Intentamos actualizar remoteDesc si queremos soportar renegociación
+      this.onLog(`♻️ Nueva offer recibida, reiniciando PC para ${senderId}`);
+      this.closeRemote(senderId);
     }
 
     // crear PC si no existe
@@ -246,6 +246,14 @@ export default class WebRTCManager {
     videoEl.id = `remote-${senderId}`;
     videoEl.srcObject = stream;
     videoEl.dataset.type = "remote";
+
+    // manejar fin de tracks
+    stream.getTracks().forEach(track => {
+  track.onended = () => {
+    this.onLog(`⚠️ Track terminado de ${senderId}`);
+  };
+});
+
 
     // estilo básico para que el UI pueda colocarlo bien (UI podrá sobreescribir)
     videoEl.style.position = 'absolute';
