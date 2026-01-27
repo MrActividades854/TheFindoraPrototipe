@@ -165,7 +165,10 @@
         // CONECTAR A FEED REMOTO
         // ============================================================
         async function connectToRemoteFeed() {
-            const useWS = localStorage.getItem("useWebSocket") === "true";
+            console.log('connectToRemoteFeed llamado, selectedId:', selectedId);
+
+            const forceRemote = !selectedId.includes('local');
+            const useWS = forceRemote || localStorage.getItem("useWebSocket") === "true";
             
             if (!useWS) {
                 console.log('⚠️ WebSocket deshabilitado, usando cámara local...');
@@ -176,6 +179,11 @@
             console.log('🌐 Conectando a feed remoto:', selectedId);
             showStatus('🔄 Conectando a feed remoto...');
             cameraContainer.classList.add('loading');
+
+            if (webrtc) {
+                webrtc.close();
+                webrtc = null;
+            }
 
             try {
                 webrtc = new WebRTCManager({
@@ -346,7 +354,7 @@
             if (newIndex >= feedList.length) newIndex = 0;
 
             const newId = feedList[newIndex];
-            console.log('🔄 Cambiando a:', newId);
+            console.log('Cambiando a:', newId);
             
             localStorage.setItem("selectedFeed", newId);
             window.location.reload();
