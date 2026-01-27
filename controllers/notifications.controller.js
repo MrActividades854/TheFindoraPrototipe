@@ -48,3 +48,13 @@ exports.cleanup = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+exports.clearall = async (req, res) => {
+    try {
+        await pool.query("DELETE FROM notificaciones");
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ Error clearing all notifications:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+};
