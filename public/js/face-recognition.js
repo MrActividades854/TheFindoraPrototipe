@@ -465,6 +465,8 @@ export default class FaceRecognitionManager {
             if (!this.peopleState[label].present) {
                 this.peopleState[label].present = true;
                 this.onNotification(`${label} ha entrado`, "success");
+
+                localStorage.stringify()
             }
 
             this.peopleState[label].lastSeen = now;
