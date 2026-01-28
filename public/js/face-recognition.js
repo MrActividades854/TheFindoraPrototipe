@@ -15,6 +15,7 @@ export default class FaceRecognitionManager {
         this.labeledDescriptors = [];
         this.faceMatcher = null;
         this.profileMap = {};
+        this.peopleState = {};
 
         this.detecting = false;
         this.showDebugPoint = false;
@@ -457,10 +458,17 @@ export default class FaceRecognitionManager {
             track.lastLabel = label;
             track.lastSeen = now;
 
-            if (!this.knownPeople.has(label)) {
-                this.knownPeople.add(label);
+            if (!this.peopleState[label]) {
+                this.peopleState[label] = { present: false, lastSeen: 0 };
+            }       
+
+            if (!this.peopleState[label].present) {
+                this.peopleState[label].present = true;
                 this.onNotification(`${label} ha entrado`, "success");
             }
+
+            this.peopleState[label].lastSeen = now;
+
 
             return;
         }
@@ -523,7 +531,14 @@ export default class FaceRecognitionManager {
 
             if (now - t.lastSeen > this.ALERT_TIMEOUT) {
                 t.hasLeft = true;
-                this.onNotification(`${t.lastLabel} salió`, "warning");
+                const name = t.lastLabel;
+
+            if (this.peopleState[name]) {
+                this.peopleState[name].present = false;
+            }
+
+            this.onNotification(`${name} salió`, "warning");
+
             }
         }
 
