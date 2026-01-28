@@ -11,6 +11,7 @@ export default class FaceRecognitionManager {
         this.modelPath = modelPath;
         this.getActiveVideo = getActiveVideo;
         this.onNotification = onNotification;
+        this._restorePresenceFromStorage();
 
         this.labeledDescriptors = [];
         this.faceMatcher = null;
@@ -231,6 +232,24 @@ export default class FaceRecognitionManager {
         this.threshold
     );
 }
+
+_restorePresenceFromStorage() {
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key.startsWith("presence_")) continue;
+
+        const name = key.replace("presence_", "");
+        const data = JSON.parse(localStorage.getItem(key));
+
+        if (data.present) {
+            this.peopleState[name] = {
+                present: true,
+                lastSeen: data.timestamp
+            };
+        }
+    }
+}
+
 
 
     // ✅ NUEVO: Inicializar FaceMatcher vacío
@@ -466,7 +485,14 @@ export default class FaceRecognitionManager {
                 this.peopleState[label].present = true;
                 this.onNotification(`${label} ha entrado`, "success");
 
-                localStorage.stringify()
+                localStorage.setItem(
+                    `presence_${label}`,
+                    JSON.stringify({ 
+                        present: true,
+                        room,
+                        timestamp: now 
+                    })
+                );
             }
 
             this.peopleState[label].lastSeen = now;
@@ -537,6 +563,7 @@ export default class FaceRecognitionManager {
 
             if (this.peopleState[name]) {
                 this.peopleState[name].present = false;
+                localStorage.removeItem(`presence_${name}`);
             }
 
             this.onNotification(`${name} salió`, "warning");
