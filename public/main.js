@@ -6,7 +6,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     console.log('🚀 [MAIN] Iniciando aplicación principal...');
 
-    // ✅ Prevenir que background-init interfiera
+    // Prevenir que background-init interfiera
     window.__backgroundInit = true; // Marcar como ya inicializado
     
     // ✅ Crear UIManager en modo normal (con cámaras)
