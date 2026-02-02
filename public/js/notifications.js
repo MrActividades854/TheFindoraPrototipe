@@ -26,68 +26,73 @@ export default class NotificationManager {
 
 
     async show(message, type = 'success', duration = 2500) {
-        // Tiempo
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const fullMessage = `[${timeStr}] ${message}`;
+        this._renderPopup(message, type, duration);
+        this._saveNotification(message, type);
+    }
 
-        // Guardar en servidor (intento, no bloquee UI si falla)
-        try {
-            await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message : message,
-                    type,
-                    timestamp: now
-                })
-            });
-        } catch (e) {
-            console.warn('Error guardando notificación en servidor:', e);
-        }
+    _renderPopup(message, type, duration) {
+    if (this.mode === "history") return;
 
-        // También guardar localmente
-        const list = JSON.parse(localStorage.getItem('findora_notifications') || '[]');
-        list.push({ message, type, time: now });
-        localStorage.setItem('findora_notifications', JSON.stringify(list));
+    if (!this.container) {
+        console.error("❌ Notification container no existe");
+        return;
+    }
 
-        // Si estamos en modo historial, NO mostrar pop-ups
-if (this.mode === "history") {
-    return;
+    const notif = document.createElement('div');
+    notif.className = `notification ${type}`;
+    notif.textContent = message;
+
+    const bgMap = {
+        success: '#2ecc71',
+        info: '#3498db',
+        warning: '#f39c12',
+        error: '#e74c3c'
+    };
+
+    Object.assign(notif.style, {
+        background: bgMap[type] || '#333',
+        color: '#fff',
+        padding: '8px 12px',
+        borderRadius: '8px',
+        boxShadow: '0 6px 18px rgba(0,0,0,0.2)',
+        fontFamily: 'Arial, Helvetica, sans-serif',
+        fontSize: '14px',
+        pointerEvents: 'auto',
+        opacity: '0',
+        transition: 'opacity 180ms ease'
+    });
+
+    this.container.appendChild(notif);
+    requestAnimationFrame(() => notif.style.opacity = '1');
+
+    setTimeout(() => {
+        notif.style.opacity = '0';
+        setTimeout(() => notif.remove(), 200);
+    }, duration);
 }
 
-// Mostrar pop-up (modo live)
-const notif = document.createElement('div');
-notif.className = `notification ${type}`;
-notif.textContent = message;
+async _saveNotification(message, type) {
+    const now = new Date();
 
-const bgMap = {
-    success: '#2ecc71',
-    info: '#3498db',
-    warning: '#f39c12',
-    error: '#e74c3c'
-};
+    // LocalStorage (rápido)
+    const list = JSON.parse(localStorage.getItem('findora_notifications') || '[]');
+    list.push({ message, type, time: now });
+    localStorage.setItem('findora_notifications', JSON.stringify(list));
 
-Object.assign(notif.style, {
-    background: bgMap[type] || '#333',
-    color: '#fff',
-    padding: '8px 12px',
-    borderRadius: '8px',
-    boxShadow: '0 6px 18px rgba(0,0,0,0.2)',
-    fontFamily: 'Arial, Helvetica, sans-serif',
-    fontSize: '14px',
-    pointerEvents: 'auto',
-    opacity: '0',
-    transition: 'opacity 180ms ease'
-});
-
-this.container.appendChild(notif);
-
-requestAnimationFrame(() => { notif.style.opacity = '1'; });
-
-setTimeout(() => {
-    notif.style.opacity = '0';
-    setTimeout(() => notif.remove(), 200);
-}, duration);
+    // Servidor (no bloquea UI)
+    try {
+        await fetch(this.apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message,
+                type,
+                timestamp: now
+            })
+        });
+    } catch (e) {
+        console.warn('Error guardando notificación en servidor:', e);
     }
+}
+
 }

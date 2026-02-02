@@ -66,6 +66,23 @@ export async function initBackgroundDetection() {
                 backgroundMode: !BACKGROUND_CONFIG.enableLocalCamera
             });
 
+        //Vigilar feeds remotos
+        window.__uiManagerBG.onRemoteFeed = (senderId, stream) => {
+            console.log(`[BG] Feed recibido / actualizado: ${senderId}`);
+
+            stream.getTracks().forEach(track => {
+                track.onended = () => {
+                console.warn(`[BG] Stream terminado: ${senderId}`);
+                };
+            });
+
+            // Se reengancha la detección
+            const video = document.getElementById(`remote-${senderId}`);
+            if (video) {
+                video.dataset.bgAttached = "true"; // idempotente
+            }
+        };
+
             await window.__uiManagerBG.init();
             
             const mode = BACKGROUND_CONFIG.enableLocalCamera ? "con cámara local" : "solo feeds remotos";
@@ -75,9 +92,10 @@ export async function initBackgroundDetection() {
         }
 
     } catch (e) {
-        console.error("[BG] ❌ Error:", e);
+        console.error("[BG] Error:", e);
     }
 }
+
 
 // ============================================================
 // UI DEL BACKGROUND

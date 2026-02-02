@@ -11,10 +11,12 @@ export default class FaceRecognitionManager {
         this.modelPath = modelPath;
         this.getActiveVideo = getActiveVideo;
         this.onNotification = onNotification;
+        this._restorePresenceFromStorage();
 
         this.labeledDescriptors = [];
         this.faceMatcher = null;
         this.profileMap = {};
+        this.peopleState = {};
 
         this.detecting = false;
         this.showDebugPoint = false;
@@ -231,6 +233,24 @@ export default class FaceRecognitionManager {
     );
 }
 
+_restorePresenceFromStorage() {
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key.startsWith("presence_")) continue;
+
+        const name = key.replace("presence_", "");
+        const data = JSON.parse(localStorage.getItem(key));
+
+        if (data.present) {
+            this.peopleState[name] = {
+                present: true,
+                lastSeen: data.timestamp
+            };
+        }
+    }
+}
+
+
 
     // ✅ NUEVO: Inicializar FaceMatcher vacío
     _initEmptyMatcher() {
@@ -439,22 +459,59 @@ export default class FaceRecognitionManager {
     updateTrackedPersonDetection(track, label) {
         const now = Date.now();
 
+        // BLOQUEAR CAMBIO DE IDENTIDAD EN MISMA POSICIÓN
+        if (
+            track.lastLabel !== "Desconocido" &&
+            label !== "Desconocido" &&
+            track.lastLabel !== label &&
+            track.stabilityFrames < this.STABLE_FRAMES
+        ) {
+            // Mantener identidad anterior
+            label = track.lastLabel;
+        }
+        // ACTUALIZAR ESTABILIDAD
+
         if (label !== "Desconocido") {
             track.unknownFrames = 0;
             track.unknownShown = false;
             track.lastLabel = label;
             track.lastSeen = now;
 
-            if (!this.knownPeople.has(label)) {
-                this.knownPeople.add(label);
+            if (!this.peopleState[label]) {
+                this.peopleState[label] = { present: false, lastSeen: 0 };
+            }       
+
+            if (!this.peopleState[label].present) {
+                this.peopleState[label].present = true;
                 this.onNotification(`${label} ha entrado`, "success");
+
+                localStorage.setItem(
+                    `presence_${label}`,
+                    JSON.stringify({ 
+                        present: true,
+                        room,
+                        timestamp: now 
+                    })
+                );
             }
+
+            this.peopleState[label].lastSeen = now;
+
 
             return;
         }
 
-        track.unknownFrames++;
+        if (label === track.lastLabel) {
+            track.stabilityFrames++;
+        } else {
+            track.stabilityFrames = 1;
+        }
+
         track.lastSeen = now;
+
+        if (track.stabilityFrames >= this.STABLE_FRAMES) {
+            track.lastLabel = label;
+        }
 
         if (track.unknownFrames >= this.confirmUnknownAfter && !track.unknownShown) {
             track.unknownShown = true;
@@ -502,7 +559,15 @@ export default class FaceRecognitionManager {
 
             if (now - t.lastSeen > this.ALERT_TIMEOUT) {
                 t.hasLeft = true;
-                this.onNotification(`${t.lastLabel} salió`, "warning");
+                const name = t.lastLabel;
+
+            if (this.peopleState[name]) {
+                this.peopleState[name].present = false;
+                localStorage.removeItem(`presence_${name}`);
+            }
+
+            this.onNotification(`${name} salió`, "warning");
+
             }
         }
 
