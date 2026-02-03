@@ -1,5 +1,6 @@
 const pool = require("../config/database");
 const createTables = require("./createTables");
+const alterTables = require("./alterTables");
 
 let connected = false;
 let initializing = false;
@@ -25,6 +26,7 @@ async function initDB(retries = 3) {
             client.release();
 
             await createTables(pool);
+            await alterTables(pool);
 
             connected = true;
             initializing = false;
