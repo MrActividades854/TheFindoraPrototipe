@@ -64,6 +64,10 @@
     <div class="card" id="profileCard">
       <h1 id="name"></h1>
       <h2 id="age"></h2>
+      <p id="gender"></p>
+      <p id="status"></p>
+      <p id="birthday"></p>
+
 
       <button id="editBtn">Editar</button>
 
@@ -74,6 +78,18 @@
 
         <label>Edad:
           <input type="number" id="editAge">
+        </label>
+
+        <label>Género:
+          <input type="text" id="editGender" placeholder="masculino, femenino, otro">
+        </label>
+
+        <label>Estado:
+          <input type="text" id="editStatus" placeholder="activo, ausente, etc">
+        </label>
+        
+        <label>Fecha de nacimiento:
+          <input type="date" id="editBirthday">
         </label>
 
         <button id="saveChangesBtn">Guardar Cambios</button>
@@ -93,6 +109,7 @@
     import { CONFIG } from "../../js/config.js";
     const urlParams = new URLSearchParams(window.location.search);
     const profileId = urlParams.get('id');
+    let ProfileData = null;
 
     async function loadProfile() {
       const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profile/${profileId}`);
@@ -100,6 +117,9 @@
 
       document.getElementById('name').textContent = data.name;
       document.getElementById('age').textContent = data.age + ' años';
+      document.getElementById('gender').textContent = data.gender ? `${data.status}`: '';
+      document.getElementById('status').textContent = data.status;
+      document.getElementById('birthday').textContent = data.birthday ? `Cumpleaños:  + ${data.birthday}` : '';
 
       const refsContainer = document.getElementById('refs');
       refsContainer.innerHTML = '';
@@ -109,24 +129,34 @@
         img.src = r.file_path;
         refsContainer.appendChild(img);
       });
+
+      ProfileData = data;
     }
 
     // MODO EDICIÓN
     document.getElementById("editBtn").onclick = () => {
       document.getElementById("editSection").style.display = "block";
       document.getElementById("editName").value = document.getElementById("name").textContent;
-      document.getElementById("editAge").value = parseInt(document.getElementById("age").textContent);
+      document.getElementById("editAge").value = document.getElementById("age").textContent;
+      document.getElementById("editGender").value = document.getElementById("gender").textContent || "";
+      document.getElementById("editStatus").value = document.getElementById("status").textContent || "";
+      document.getElementById("editBirthday").value = document.getElementById("birthday").textContent.replace('Cumpleaños: ', '') || "";
     };
 
     // GUARDAR CAMBIOS
     document.getElementById("saveChangesBtn").onclick = async () => {
-      const name = document.getElementById("editName").value.trim();
-      const age = parseInt(document.getElementById("editAge").value.trim());
+      const payload = {
+        name : ParseInt(document.getElementById("editName").value.trim(), 10),
+        age: document.getElementById("editAge").value.trim(),
+        gender: document.getElementById("editGender").value.trim(),
+        status: document.getElementById("editStatus").value.trim(),
+        birthday: document.getElementById("editBirthday").value.trim() || null
+      };
 
       const res = await fetch(`https://thefindoraprototipe.onrender.com/api/edit_profile/${profileId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, age })
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {

@@ -6,9 +6,9 @@ module.exports = async (pool) => {
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             age INTEGER NOT NULL,
+            gender VARCHAR(10),
             status VARCHAR(20),
-            birthday DATE,
-            last_seen TIMESTAMP
+            birthday DATE
         )
     `);
 

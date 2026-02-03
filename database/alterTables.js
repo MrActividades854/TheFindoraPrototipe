@@ -3,9 +3,9 @@ module.exports = async (pool) => {
     // Modificar tabla perfiles
     await pool.query(`
         ALTER TABLE perfiles
+        ADD COLUMN IF NOT EXISTS gender VARCHAR(10),
         ADD COLUMN IF NOT EXISTS status VARCHAR(20),
         ADD COLUMN IF NOT EXISTS birthday DATE,
-        ADD COLUMN IF NOT EXISTS last_seen TIMESTAMP
     `);
 
     // Modificar tabla referencias
