@@ -40,6 +40,15 @@
       border-radius: 10px;
       border: 2px solid #30363d;
     }
+    #editSection input,
+#editSection select {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
     button {
       background: #238636;
       border: none;
@@ -81,12 +90,22 @@
         </label>
 
         <label>Género:
-          <input type="text" id="editGender" placeholder="masculino, femenino, otro">
-        </label>
+  <select id="editGender">
+    <option value="">Selecciona un Género</option>
+    <option value="masculino">Masculino</option>
+    <option value="femenino">Femenino</option>
+    <option value="otro">Otro</option>
+  </select>
+</label>
 
-        <label>Estado:
-          <input type="text" id="editStatus" placeholder="activo, ausente, etc">
-        </label>
+<label>Estatus:
+  <select id="editStatus">
+    <option value="">Selecciona un Status</option>
+    <option value="estudiante">Estudiante</option>
+    <option value="profesor">Profesor</option>
+    <option value="personal">Personal</option>
+  </select>
+</label>
         
         <label>Fecha de nacimiento:
           <input type="date" id="editBirthday">
@@ -117,9 +136,9 @@
 
       document.getElementById('name').textContent = data.name;
       document.getElementById('age').textContent = data.age + ' años';
-      document.getElementById('gender').textContent = data.gender ? `${data.status}`: '';
-      document.getElementById('status').textContent = data.status;
-      document.getElementById('birthday').textContent = data.birthday ? `Cumpleaños:  + ${data.birthday}` : '';
+      document.getElementById('gender').textContent = data.gender ? `${data.gender}`: '';
+      document.getElementById('status').textContent = data.status ? `Estatus: ${data.status}` : '';
+      document.getElementById('birthday').textContent = data.birthday ? `Cumpleaños: ${data.birthday.split('T')[0]}` : '';
 
       const refsContainer = document.getElementById('refs');
       refsContainer.innerHTML = '';
@@ -134,24 +153,27 @@
     }
 
     // MODO EDICIÓN
-    document.getElementById("editBtn").onclick = () => {
-      document.getElementById("editSection").style.display = "block";
-      document.getElementById("editName").value = document.getElementById("name").textContent;
-      document.getElementById("editAge").value = document.getElementById("age").textContent;
-      document.getElementById("editGender").value = document.getElementById("gender").textContent || "";
-      document.getElementById("editStatus").value = document.getElementById("status").textContent || "";
-      document.getElementById("editBirthday").value = document.getElementById("birthday").textContent.replace('Cumpleaños: ', '') || "";
-    };
+document.getElementById("editBtn").onclick = () => {
+  document.getElementById("editSection").style.display = "block";
+
+  document.getElementById("editName").value = ProfileData.name;
+  document.getElementById("editAge").value = ProfileData.age;
+  document.getElementById("editGender").value = ProfileData.gender || "";
+  document.getElementById("editStatus").value = ProfileData.status || "";
+  document.getElementById("editBirthday").value =
+    ProfileData.birthday ? ProfileData.birthday.split("T")[0] : "";
+};
+
 
     // GUARDAR CAMBIOS
     document.getElementById("saveChangesBtn").onclick = async () => {
-      const payload = {
-        name : ParseInt(document.getElementById("editName").value.trim(), 10),
-        age: document.getElementById("editAge").value.trim(),
-        gender: document.getElementById("editGender").value.trim(),
-        status: document.getElementById("editStatus").value.trim(),
-        birthday: document.getElementById("editBirthday").value.trim() || null
-      };
+const payload = {
+  name: document.getElementById("editName").value.trim(),
+  age: parseInt(document.getElementById("editAge").value, 10),
+  gender: document.getElementById("editGender").value,
+  status: document.getElementById("editStatus").value,
+  birthday: document.getElementById("editBirthday").value || null
+};
 
       const res = await fetch(`https://thefindoraprototipe.onrender.com/api/edit_profile/${profileId}`, {
         method: "PUT",
