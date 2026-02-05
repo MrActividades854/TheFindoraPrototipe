@@ -5,7 +5,7 @@ module.exports = async (pool) => {
         ALTER TABLE perfiles
         ADD COLUMN IF NOT EXISTS gender VARCHAR(10),
         ADD COLUMN IF NOT EXISTS status VARCHAR(20),
-        ADD COLUMN IF NOT EXISTS birthday DATE,
+        ADD COLUMN IF NOT EXISTS birthday DATE
     `);
 
     // Modificar tabla referencias
