@@ -128,7 +128,10 @@
     import { CONFIG } from "../../js/config.js";
     const urlParams = new URLSearchParams(window.location.search);
     const profileId = urlParams.get('id');
+
     let ProfileData = null;
+
+    let IsEditing = false;
 
     async function loadProfile() {
       const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profile/${profileId}`);
@@ -154,6 +157,17 @@
 
     // MODO EDICIÓN
 document.getElementById("editBtn").onclick = () => {
+
+  if (IsEditing) {
+    document.getElementById("editBtn").textContent = "Editar";
+    document.getElementById("editSection").style.display = "none";
+    IsEditing = false;
+    return;
+  } else {
+    document.getElementById("editBtn").textContent = "Cancelar";
+    IsEditing = true;
+  }
+
   document.getElementById("editSection").style.display = "block";
 
   document.getElementById("editName").value = ProfileData.name;
