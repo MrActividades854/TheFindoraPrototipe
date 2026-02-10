@@ -39,7 +39,7 @@
   }
 
   #logContainer {
-    background: rgb(49, 49, 161);
+    background: rgb(61, 33, 174);
     border-radius: 12px;
     height: 70vh;
     width: 80%;
@@ -47,7 +47,7 @@
     scroll-behavior: smooth;
     margin: 20px auto;
     padding: 20px;
-    border: 10px solid rgb(49, 49, 161);
+    border: 10px solid rgb(61, 33, 174);
   }
 
   ul {
@@ -57,7 +57,7 @@
   }
 
   li {
-    background: rgb(80, 80, 180);
+    background: rgb(67, 137, 206);
     border-left: 5px solid #4caf50;
     padding: 10px 14px;
     border-radius: 8px;
@@ -187,7 +187,7 @@
   }
   
   .dropdown-item.active {
-    background-color: #2563eb;
+    background-color: #184097;
     color: white;
   }
   
