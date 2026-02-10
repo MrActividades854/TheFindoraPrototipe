@@ -112,14 +112,19 @@ exports.getOne = async (req, res) => {
 };
 
 exports.update = async (req, res) => {
-    const { name, age } = req.body;
+    const { name, age, gender, status, birthday } = req.body;
 
-    await pool.query(
-        "UPDATE perfiles SET name = $1, age = $2 WHERE id = $3",
-        [name, age, req.params.id]
-    );
+    try {
+        await pool.query(
+            "UPDATE perfiles SET name = $1, age = $2, gender = $3, status = $4, birthday = $5 WHERE id = $6",
+            [name, age, gender, status, birthday, req.params.id]
+        );
 
-    res.json({ success: true });
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ Error actualizando perfil:", err.message);
+        res.status(500).json({ error: err.message });
+    }
 };
 
 exports.remove = async (req, res) => {

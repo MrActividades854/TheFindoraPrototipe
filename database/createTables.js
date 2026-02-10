@@ -1,12 +1,18 @@
 module.exports = async (pool) => {
+
+    // Tabla para almacenar perfiles de usuario
     await pool.query(`
         CREATE TABLE IF NOT EXISTS perfiles (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
-            age INTEGER NOT NULL
+            age INTEGER NOT NULL,
+            gender VARCHAR(10),
+            status VARCHAR(20),
+            birthday DATE
         )
     `);
 
+    // Tabla para almacenar imágenes de perfil
     await pool.query(`
         CREATE TABLE IF NOT EXISTS referencias (
             id SERIAL PRIMARY KEY,
@@ -15,6 +21,7 @@ module.exports = async (pool) => {
         )
     `);
 
+    // Tabla para notificaciones
     await pool.query(`
         CREATE TABLE IF NOT EXISTS notificaciones (
             id SERIAL PRIMARY KEY,
@@ -24,6 +31,7 @@ module.exports = async (pool) => {
         )
     `);
 
+    // Tabla para ubicaciones
     await pool.query(`
         CREATE TABLE IF NOT EXISTS ubicaciones (
             profile_id INTEGER UNIQUE REFERENCES perfiles(id),

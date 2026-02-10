@@ -66,6 +66,29 @@
             <label>Edad:
               <input type="number" id="ageInput" />
             </label>
+
+            <label>
+              Género:
+              <select id="genderInput">
+                <option value="">Selecciona un Género</option>
+                <option value="masculino">Masculino</option>
+                <option value="femenino">Femenino</option>
+                <option value="otro">Otro</option>
+              </select>
+            </label>
+
+            <label>Estatus:
+              <select id="statusInput">
+                <option value="">Selecciona un Status</option>
+                <option value="estudiante">Estudiante</option>
+                <option value="profesor">Profesor</option>
+                <option value="personal">Personal</option>
+              </select>
+            </label>
+
+            <label>Cumpleaños:
+              <input type="date" id="birthdayInput" />
+            </label>
         
             <label>Imágenes de referencia (1 a 5):
               <input type="file" id="refFiles" accept="image/*" multiple />
@@ -76,13 +99,16 @@
           </section>
     </main>
     <script type="module">
-        import { CONFIG } from './../../../js/config.js';
-        document.getElementById('saveProfileBtn').onclick = async () => {
+      import { CONFIG } from './../../../js/config.js';
+      document.getElementById('saveProfileBtn').onclick = async () => {
         const name = document.getElementById('nameInput').value.trim();
         const age = parseInt(document.getElementById('ageInput').value.trim());
+        const gender = document.getElementById('genderInput').value;
+        const status = document.getElementById('statusInput').value;
+        const birthday = document.getElementById('birthdayInput').value;
         const files = document.getElementById('refFiles').files;
 
-        if (!name || !age || files.length === 0) {
+        if (!name || !age || !gender || !status || !birthday || files.length === 0) {
             alert('Completa todos los campos y agrega entre 1 y 5 imágenes.');
             return;
         }
@@ -90,6 +116,9 @@
       const form = new FormData();
       form.append('name', name);
       form.append('age', age);
+      form.append('gender', gender);
+      form.append('status', status);
+      form.append('birthday', birthday);
       for (let f of files) form.append('refs', f);
 
       const res = await fetch(`https://thefindoraprototipe.onrender.com/api/new_profile`, {

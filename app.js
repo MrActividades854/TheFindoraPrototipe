@@ -4,7 +4,15 @@ const path = require("path");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://127.0.0.1:5501",
+    "http://localhost:5501",
+    "https://thefindoraprototipe.onrender.com"
+  ],
+  methods: ["GET","POST","PUT","DELETE"],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));

@@ -40,6 +40,15 @@
       border-radius: 10px;
       border: 2px solid #30363d;
     }
+    #editSection input,
+#editSection select {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
     button {
       background: #238636;
       border: none;
@@ -64,6 +73,10 @@
     <div class="card" id="profileCard">
       <h1 id="name"></h1>
       <h2 id="age"></h2>
+      <p id="gender"></p>
+      <p id="status"></p>
+      <p id="birthday"></p>
+
 
       <button id="editBtn">Editar</button>
 
@@ -74,6 +87,28 @@
 
         <label>Edad:
           <input type="number" id="editAge">
+        </label>
+
+        <label>Género:
+  <select id="editGender">
+    <option value="">Selecciona un Género</option>
+    <option value="masculino">Masculino</option>
+    <option value="femenino">Femenino</option>
+    <option value="otro">Otro</option>
+  </select>
+</label>
+
+<label>Estatus:
+  <select id="editStatus">
+    <option value="">Selecciona un Status</option>
+    <option value="estudiante">Estudiante</option>
+    <option value="profesor">Profesor</option>
+    <option value="personal">Personal</option>
+  </select>
+</label>
+        
+        <label>Fecha de nacimiento:
+          <input type="date" id="editBirthday">
         </label>
 
         <button id="saveChangesBtn">Guardar Cambios</button>
@@ -93,6 +128,7 @@
     import { CONFIG } from "../../js/config.js";
     const urlParams = new URLSearchParams(window.location.search);
     const profileId = urlParams.get('id');
+    let ProfileData = null;
 
     async function loadProfile() {
       const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profile/${profileId}`);
@@ -100,6 +136,9 @@
 
       document.getElementById('name').textContent = data.name;
       document.getElementById('age').textContent = data.age + ' años';
+      document.getElementById('gender').textContent = data.gender ? `${data.gender}`: '';
+      document.getElementById('status').textContent = data.status ? `Estatus: ${data.status}` : '';
+      document.getElementById('birthday').textContent = data.birthday ? `Cumpleaños: ${data.birthday.split('T')[0]}` : '';
 
       const refsContainer = document.getElementById('refs');
       refsContainer.innerHTML = '';
@@ -109,24 +148,37 @@
         img.src = r.file_path;
         refsContainer.appendChild(img);
       });
+
+      ProfileData = data;
     }
 
     // MODO EDICIÓN
-    document.getElementById("editBtn").onclick = () => {
-      document.getElementById("editSection").style.display = "block";
-      document.getElementById("editName").value = document.getElementById("name").textContent;
-      document.getElementById("editAge").value = parseInt(document.getElementById("age").textContent);
-    };
+document.getElementById("editBtn").onclick = () => {
+  document.getElementById("editSection").style.display = "block";
+
+  document.getElementById("editName").value = ProfileData.name;
+  document.getElementById("editAge").value = ProfileData.age;
+  document.getElementById("editGender").value = ProfileData.gender || "";
+  document.getElementById("editStatus").value = ProfileData.status || "";
+  document.getElementById("editBirthday").value =
+    ProfileData.birthday ? ProfileData.birthday.split("T")[0] : "";
+};
+
 
     // GUARDAR CAMBIOS
     document.getElementById("saveChangesBtn").onclick = async () => {
-      const name = document.getElementById("editName").value.trim();
-      const age = parseInt(document.getElementById("editAge").value.trim());
+const payload = {
+  name: document.getElementById("editName").value.trim(),
+  age: parseInt(document.getElementById("editAge").value, 10),
+  gender: document.getElementById("editGender").value,
+  status: document.getElementById("editStatus").value,
+  birthday: document.getElementById("editBirthday").value || null
+};
 
       const res = await fetch(`https://thefindoraprototipe.onrender.com/api/edit_profile/${profileId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, age })
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {
