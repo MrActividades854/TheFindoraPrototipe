@@ -84,12 +84,6 @@ export default class FaceRecognitionManager {
         console.log("🔄 Iniciando carga de perfiles...");
         const useWS = localStorage.getItem("useWebSocket") === "true";
         console.log("🌐 WebSocket activado:", useWS);
-        
-        if (!useWS) {
-            console.warn("⚠️ WebSocket OFF → Inicializando sin perfiles");
-            this._initEmptyMatcher();
-            return [];
-        }
 
         try {
             const cached = localStorage.getItem(CONFIG.PROFILES_KEY);

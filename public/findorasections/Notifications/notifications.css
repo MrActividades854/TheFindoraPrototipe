@@ -1,13 +1,6 @@
 
-  * {
-    margin: 0;
-  }
-
   body {
-    background:  linear-gradient(90deg,rgb(135, 199, 231), rgb(196, 218, 237));
     color: #e6edf3;
-    font-family: "Segoe UI", Arial, sans-serif;
-    margin: 0;
     overflow: hidden;
   }
 
@@ -17,14 +10,6 @@
     display: flex;
     align-items: left;
     justify-content: left;
-  }
-
-  button {
-    background-color: #2563eb;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
   }
 
   .principal {
@@ -91,21 +76,6 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  .clear-btn {
-    background: #238636;
-    color: #fff;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background 0.2s ease;
-  }
-
-  .clear-btn:hover {
-    background: #2ea043;
-  }
-
     /* Estilos para el menú desplegable */
   
   .dropdown-container {
@@ -115,10 +85,7 @@
   }
   
   .dropdown-toggle {
-    background-color: #3a3a8c;
-    color: white;
-    border: none;
-    padding: 10px 20px;
+    padding: 15px 20px;
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
@@ -128,15 +95,7 @@
     gap: 8px;
     transition: background-color 0.2s, transform 0.1s;
   }
-  
-  .dropdown-toggle:hover {
-    background-color: #4a4a9c;
-    transform: translateY(-1px);
-  }
-  
-  .dropdown-toggle:active {
-    transform: translateY(0);
-  }
+
   
   .dropdown-menu {
     position: absolute;
@@ -170,7 +129,7 @@
     text-align: center;       
     background: none;
     border: none;
-    color: #24292e;
+    color: white;
     cursor: pointer;
     font-size: 14px;
     font-family: "Segoe UI", Arial, sans-serif;
@@ -187,7 +146,7 @@
   }
   
   .dropdown-item.active {
-    background-color: #184097;
+    background-color: #0c2353;
     color: white;
   }
   
