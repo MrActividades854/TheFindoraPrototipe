@@ -74,7 +74,7 @@
       <h1 id="name"></h1>
       <h2 id="age"></h2>
       <p id="gender"></p>
-      <p id="status"></p>
+      <p id="schoolstatus"></p>
       <p id="birthday"></p>
 
 
@@ -137,7 +137,7 @@
       document.getElementById('name').textContent = data.name;
       document.getElementById('age').textContent = data.age + ' años';
       document.getElementById('gender').textContent = data.gender ? `${data.gender}`: '';
-      document.getElementById('status').textContent = data.status ? `Estatus: ${data.status}` : '';
+      document.getElementById('schoolstatus').textContent = data.status ? `Estatus: ${data.status}` : '';
       document.getElementById('birthday').textContent = data.birthday ? `Cumpleaños: ${data.birthday.split('T')[0]}` : '';
 
       const refsContainer = document.getElementById('refs');
