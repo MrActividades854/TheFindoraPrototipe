@@ -26,5 +26,6 @@ app.use("/health", require("./routes/health.routes"));
 app.use("/api", require("./routes/profiles.routes"));
 app.use("/api", require("./routes/notifications.routes"));
 app.use("/api", require("./routes/locations.routes"));
+app.use("/api", require("./routes/users.routes"));
 
 module.exports = app;

@@ -39,4 +39,20 @@ module.exports = async (pool) => {
             last_seen TIMESTAMP
         )
     `);
+
+    // Tabla de usuarios (login y permisos)
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            age INTEGER NOT NULL,
+            gender VARCHAR(10),
+            birthday DATE,
+            role VARCHAR(20) DEFAULT 'staff', -- admin o staff
+            registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            profile_id INTEGER UNIQUE REFERENCES perfiles(id) ON DELETE SET NULL
+    )
+`);
 };
