@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+<style>
+body {
+  font-family: Arial;
+  background: linear-gradient(90deg,rgb(135,199,231),rgb(196,218,237));
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.card {
+  background:#22395a;
+  padding:30px;
+  border-radius:12px;
+  width:300px;
+  color:white;
+}
+input {
+  width:100%;
+  padding:8px;
+  margin-top:10px;
+  border:none;
+  border-radius:6px;
+}
+button {
+  width:100%;
+  margin-top:15px;
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  background:#238636;
+  color:white;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>Iniciar Sesión</h2>
+
+<input type="email" id="email" placeholder="Email">
+<input type="password" id="password" placeholder="Contraseña">
+
+<button id="loginBtn">Entrar</button>
+</div>
+
+<script>
+document.getElementById("loginBtn").onclick = async () => {
+
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch("https://thefindoraprototipe.onrender.com/api/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await res.json();
+
+  if (res.ok) {
+    localStorage.setItem("token", data.token);
+
+    // Decodificar token para saber rol
+    const payload = JSON.parse(atob(data.token.split('.')[1]));
+
+    if (payload.role === "admin") {
+      window.location.href = "admin_dashboard.html";
+    } else {
+      window.location.href = "profiles.html";
+    }
+
+  } else {
+    alert(data.error || "Error al iniciar sesión");
+  }
+};
+</script>
+
+</body>
+</html>

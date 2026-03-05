@@ -24,6 +24,12 @@
 
 <script type="module">
   import { CONFIG } from "../../js/config.js";
+
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    window.location.href = "login.html";
+  }
   
   // Verificar si las miniaturas están habilitadas
   const showThumbnails = localStorage.getItem('showThumbnails') !== 'false';
@@ -31,7 +37,14 @@
   const thumbnailQuality = localStorage.getItem('thumbnailQuality') || 'medium';
 
   async function fetchProfileWithImages(profileId) {
-    const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profile/${profileId}`);
+    const res = await fetch(
+  `https://thefindoraprototipe.onrender.com/api/profile/${profileId}`,
+  {
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  }
+);
     return await res.json();
   }
 
