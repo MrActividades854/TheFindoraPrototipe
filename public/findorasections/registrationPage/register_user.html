@@ -85,6 +85,8 @@ document.getElementById("registerBtn").onclick = async () => {
     body: JSON.stringify(payload)
   });
 
+  console.log("333")
+
   const data = await res.json();
 
   if (res.ok) {

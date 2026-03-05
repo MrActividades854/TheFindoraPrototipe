@@ -129,12 +129,24 @@
     const urlParams = new URLSearchParams(window.location.search);
     const profileId = urlParams.get('id');
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "login.html";
+    }
+
     let ProfileData = null;
 
     let IsEditing = false;
 
     async function loadProfile() {
-      const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profile/${profileId}`);
+      const res = await fetch(
+  `https://thefindoraprototipe.onrender.com/api/profile/${profileId}`,
+  {
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  }
+);
       const data = await res.json();
 
       document.getElementById('name').textContent = data.name;
@@ -191,7 +203,10 @@ const payload = {
 
       const res = await fetch(`https://thefindoraprototipe.onrender.com/api/edit_profile/${profileId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+         },
         body: JSON.stringify(payload)
       });
 
@@ -216,7 +231,10 @@ const payload = {
 
       const res = await fetch(`https://thefindoraprototipe.onrender.com/api/add_images/${profileId}`, {
         method: "POST",
-        body: form
+        body: form,
+        headers: {
+          "Authorization": "Bearer " + token
+        }
       });
 
       if (res.ok) {
