@@ -113,3 +113,14 @@ exports.login = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+exports.listUsers = async (req,res)=>{
+
+const result = await pool.query(`
+SELECT id,name,email,role,registration_date
+FROM usuarios
+ORDER BY registration_date DESC
+`);
+
+res.json(result.rows);
+};

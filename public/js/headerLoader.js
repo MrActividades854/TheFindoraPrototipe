@@ -183,6 +183,7 @@ class HeaderManager {
             <a class="hoverable" data-page="mainPage">Inicio</a>
             <a class="hoverable" data-page="camera">Cámara</a>
             <a class="hoverable" data-page="profiles">Perfiles</a>
+            <a class="hoverable" data-page="usuarios">Usuarios</a>
         </div>
 
         <div class="nav-right">        
@@ -336,6 +337,7 @@ class HeaderManager {
             profiles: getNavPath('profilesPage/profiles.html'),
             notifications: getNavPath('Notifications/notifications.html'),
             settings: getNavPath('settings/settings.html'),
+            usuarios: getNavPath('UsersView/UsersPage.html'),
             logout: this._handleLogout.bind(this)
         };
 
