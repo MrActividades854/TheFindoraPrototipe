@@ -4,115 +4,8 @@
   <meta charset="UTF-8" />
   <title>Gestor de Perfiles</title>
   <link rel="shortcut icon" href="./../../src/favicon.ico" type="image/x-icon">
-  <style>
-
-* {
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background:  linear-gradient(90deg,rgb(135, 199, 231), rgb(196, 218, 237));
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-    }
-
-    main {
-      padding: 20px;
-    }
-    h1 {
-      margin-top: 0;
-    }
-
-    h2 {
-      margin-bottom: 10px;
-    }
-
-    .profile-list, .profile-view, .new-profile-form {
-      background: #22395a;
-      padding: 20px;
-      border-radius: 10px;
-      margin-top: 20px;
-    }
-    .profile-item {
-      padding: 10px;
-      background: #1f2937;
-      border-radius: 6px;
-      margin-bottom: 10px;
-      cursor: pointer;
-    }
-    label { display: block; margin-top: 10px; }
-    input, select {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      border-radius: 6px;
-      border: none;
-    }
-    button {
-      background: #238636;
-      border: none;
-      color: #fff;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 15px;
-      margin-top: 15px;
-    }
-    button:hover { background: #2ea043; }
-    img.ref-preview {
-      width: 90px;
-      height: 90px;
-      object-fit: cover;
-      border-radius: 6px;
-      margin-right: 8px;
-    }
-
-    /* GRID */
-.profiles-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-}
-
-/* CARD */
-.profile-card {
-  background: #1f2937;
-  border-radius: 10px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.profile-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-}
-
-/* IMAGE */
-.profile-card img {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-  background: #111;
-}
-
-/* INFO */
-.profile-card .info {
-  padding: 10px;
-}
-
-.profile-card .name {
-  font-weight: 600;
-}
-
-.profile-card .age {
-  font-size: 14px;
-  opacity: 0.8;
-}
-
-  </style>
+  <link rel="stylesheet" href="./profiles.css">
+  <link rel="stylesheet" href="./../../global.css">
 </head>
 <body>
   
@@ -135,7 +28,7 @@
   const token = localStorage.getItem("token");
 
   if (!token) {
-    window.location.href = "login.html";
+    window.location.href = "./../../extrafindorasections/loginPage/login.html";
   }
   
   // Verificar si las miniaturas están habilitadas

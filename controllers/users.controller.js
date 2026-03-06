@@ -14,6 +14,30 @@ exports.register = async (req, res) => {
     } = req.body;
 
     try {
+
+        // verificar si ya existe un admin
+        const adminCheck = await pool.query(
+            "SELECT id FROM usuarios WHERE role = 'admin'"
+        );
+
+        const adminExists = adminCheck.rows.length > 0;
+
+        // si ya existe admin, exigir autenticación
+        if (adminExists) {
+
+            const token = req.headers.authorization?.split(" ")[1];
+
+            if (!token) {
+                return res.status(401).json({ error: "No autorizado" });
+            }
+
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+            if (decoded.role !== "admin") {
+                return res.status(403).json({ error: "Solo admin puede registrar usuarios" });
+        }
+        }
+
         if (!name || !email || !password || !age || !gender || !birthday) {
             return res.status(400).json({ error: "Faltan datos" });
         }
@@ -88,4 +112,15 @@ exports.login = async (req, res) => {
         console.error("❌ Error login:", err.message);
         res.status(500).json({ error: err.message });
     }
+};
+
+exports.listUsers = async (req,res)=>{
+
+const result = await pool.query(`
+SELECT id,name,email,role,registration_date
+FROM usuarios
+ORDER BY registration_date DESC
+`);
+
+res.json(result.rows);
 };

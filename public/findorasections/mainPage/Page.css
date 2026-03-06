@@ -1,14 +1,7 @@
-* {
-    margin: 0;
-}
-
-body {
-    background:  linear-gradient(90deg,rgb(135, 199, 231), rgb(196, 218, 237));
-}
 
 h1 {
     color: white;
-    font-family:'Segoe UI    ', Tahoma, Geneva, Verdana, sans-serif;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-weight: bold;
     text-align: center;
     margin: 10px 0 20px 0;
@@ -25,14 +18,7 @@ h1 {
     width: 300px;
     height: 400px;
     background-color: rgb(49, 49, 161);
-    border-radius: 10px;
-    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
     transition: all 0.1s ease-in-out;
-}
-
-.boxes:hover {
-    transform: scale(1.01);
-    box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.4);
 }
 
 .bImg {

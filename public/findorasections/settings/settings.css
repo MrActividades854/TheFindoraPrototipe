@@ -97,14 +97,14 @@
             position: relative;
             width: 54px;
             height: 28px;
-            background: #444;
+            background: #6588ca;
             border-radius: 20px;
             cursor: pointer;
             transition: background 0.3s;
         }
 
         .toggle:hover {
-            background: #555;
+            background: #384372;
         }
 
         .toggle input {
@@ -128,7 +128,7 @@
         }
 
         .toggle.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #152a85 0%, #34085f 100%);
         }
 
         .toggle.active .slider {
@@ -146,19 +146,19 @@
             display: flex;
             align-items: center;
             padding: 12px 16px;
-            background: #2a2a2a;
+            background: #193dda;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
         }
 
         .radio-option:hover {
-            background: #333;
+            background: #262475;
         }
 
         .radio-option.selected {
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-            border: 1px solid #667eea;
+            border: 1px solid #0e3b75;
         }
 
         .radio-option input[type="radio"] {
@@ -177,7 +177,7 @@
             display: inline-block;
             padding: 3px 8px;
             background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
+            color: #1ac2ec;
             border-radius: 6px;
             font-size: 11px;
             font-weight: 600;

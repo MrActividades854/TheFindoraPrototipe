@@ -1,21 +1,9 @@
-/* ============================================================
-   ESTILOS GENERALES
-============================================================ */
-
-* {
-    margin: 0;
-    padding: 0;
-}
 
 body {
-    font-family: system-ui, Segoe UI, Roboto, Arial;
-    
     display: flex;
     flex-direction: column;
     gap: 16px;
     align-items: center;
-    background:  linear-gradient(90deg,rgb(135, 199, 231), rgb(196, 218, 237));
-    color: #222;
 }
 
 main {
@@ -179,24 +167,6 @@ canvas, video {
 
 #notificationContainer .notification {
     pointer-events: auto;
-}
-
-/* ============================================================
-   BOTÓN DE PERFILES
-============================================================ */
-.profile-btn {
-    padding: 8px 14px;
-    background: #0e63ff;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    cursor: pointer;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.18);
-}
-
-.profile-btn:hover {
-    background: #004de0;
 }
 
 .person-item {

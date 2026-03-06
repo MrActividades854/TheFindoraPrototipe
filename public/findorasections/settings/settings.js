@@ -19,12 +19,6 @@
         // ============================================================
         
         function loadSettings() {
-            // WebSocket
-            const wsToggle = document.getElementById('wsToggle');
-            const wsToggleContainer = document.getElementById('wsToggleContainer');
-            wsToggle.checked = config.useWebSocket;
-            if (config.useWebSocket) wsToggleContainer.classList.add('active');
-            updateWSStatus();
 
             // Thumbnails
             const thumbnailsToggle = document.getElementById('thumbnailsToggle');
@@ -67,19 +61,6 @@
         // EVENT LISTENERS
         // ============================================================
         
-        // WebSocket Toggle
-        document.getElementById('wsToggle').addEventListener('change', function() {
-            config.useWebSocket = this.checked;
-            
-            const container = document.getElementById('wsToggleContainer');
-            if (this.checked) {
-                container.classList.add('active');
-            } else {
-                container.classList.remove('active');
-            }
-            
-            updateWSStatus();
-        });
 
         // Thumbnails Toggle
         document.getElementById('thumbnailsToggle').addEventListener('change', function() {
