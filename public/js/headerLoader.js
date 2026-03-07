@@ -1,4 +1,4 @@
-// header-loader-inline.js - Versión sin fetch, HTML inline
+// header-loader-inline.js
 
 import {resolvePath} from './config.js';
 import {CONFIG} from './config.js';
@@ -472,7 +472,7 @@ class HeaderManager {
                 }
             });
 
-            window.location.href = './index.html';
+            window.location.href = CONFIG.ROOT_PATH + 'extrafindorasections/mainSection/mainSection.html';
         }
     }
 
