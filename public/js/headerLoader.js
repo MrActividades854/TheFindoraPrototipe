@@ -155,20 +155,32 @@ nav a{
 
 /* BADGE */
 
+.notification-link{
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+}
+
 .notification-badge{
     position:absolute;
-    top:2px;
-    right:2px;
+    top:-4px;
+    right:-4px;
 
     background:#ff3b30;
-
     color:white;
 
-    border-radius:10px;
+    border-radius:50%;
+    min-width:18px;
+    height:18px;
 
-    padding:2px 6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
 
-    font-size:11px;
+    font-size:10px;
+    font-weight:bold;
+}
 }
     </style>
 
