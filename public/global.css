@@ -4,22 +4,51 @@
 
 :root {
 
---bg: #0f172a;
---surface: #1e293b;
---card: #273449;
+/* COLOR BASE */
 
 --primary: rgb(80,80,180);
---primary-hover: rgb(95,95,200);
+--primary-light: rgb(120,120,230);
+--primary-dark: rgb(60,60,150);
 
---text: #e2e8f0;
---text-muted: #94a3b8;
+/* FONDO GENERAL */
 
---border: #334155;
+--background: rgb(15,18,32);
 
---radius: 12px;
---shadow: 0 8px 30px rgba(0,0,0,0.35);
+/* SUPERFICIES */
 
---font-main: "Inter","Segoe UI",system-ui,sans-serif;
+--surface: rgb(25,28,45);
+--card: rgb(30,34,55);
+
+/* TEXTO */
+
+--text: rgb(230,235,255);
+--text-light: rgb(160,170,210);
+
+/* BORDES */
+
+--border: rgba(255,255,255,.08);
+
+/* ESTADOS */
+
+--success: rgb(46,204,113);
+--danger: rgb(231,76,60);
+--warning: rgb(241,196,15);
+
+/* SOMBRAS */
+
+--shadow-sm: 0 4px 12px rgba(0,0,0,.4);
+--shadow-md: 0 10px 28px rgba(0,0,0,.45);
+--shadow-lg: 0 20px 50px rgba(0,0,0,.6);
+
+/* RADIOS */
+
+--radius-sm: 6px;
+--radius-md: 12px;
+--radius-lg: 18px;
+
+/* TRANSICIONES */
+
+--transition: 0.2s ease;
 
 }
 
@@ -33,15 +62,16 @@ padding:0;
 box-sizing:border-box;
 }
 
-/* ======================================================
-BODY
-====================================================== */
-
 body{
-background: var(--bg);
-color: var(--text);
-font-family: var(--font-main);
-line-height:1.5;
+background:linear-gradient(
+180deg,
+rgb(18,20,38),
+rgb(12,14,26)
+);
+
+font-family:system-ui, -apple-system, Arial;
+color:var(--text);
+min-height:100vh;
 }
 
 /* ======================================================
@@ -58,29 +88,33 @@ BUTTONS
 
 button,
 .btn{
-
-background: var(--primary);
+background:var(--primary);
 color:white;
-
 border:none;
-border-radius:10px;
-
 padding:10px 16px;
-
+border-radius:var(--radius-sm);
 cursor:pointer;
-
-font-weight:500;
-
-transition: all .15s ease;
-
+font-weight:600;
+transition:var(--transition);
+box-shadow:0 4px 12px rgba(80,80,180,.4);
 }
 
 button:hover,
 .btn:hover{
 
-background: var(--primary-hover);
-transform: translateY(-1px);
+transform:translateY(-2px);
 
+background:var(--primary-light);
+
+}
+
+.btn.secondary, button.secondary{
+background:var(--card);
+color:var(--text);
+}
+
+.btn.danger, button.danger{
+background:var(--danger);
 }
 
 /* ======================================================
@@ -89,17 +123,17 @@ CARDS
 
 .card,
 .boxes{
+background:var(--card);
 
-background: var(--card);
-
-border-radius: var(--radius);
-
-box-shadow: var(--shadow);
+border-radius:var(--radius-md);
 
 border:1px solid var(--border);
 
-transition: all .2s ease;
+box-shadow:var(--shadow-sm);
 
+padding:16px;
+
+backdrop-filter: blur(6px);
 }
 
 .card:hover,
@@ -115,25 +149,17 @@ INPUTS
 
 input,
 select{
-
-background: var(--surface);
-
-border:1px solid var(--border);
-
-color: var(--text);
-
+width:100%;
 padding:10px;
-
-border-radius:8px;
-
+border-radius:var(--radius-sm);
+border:1px solid var(--border);
+background:var(--surface);
 }
 
 input:focus,
 select:focus{
-
 outline:none;
-border-color: var(--primary);
-
+border-color:var(--primary);
 }
 
 /* ======================================================
@@ -200,4 +226,13 @@ padding:14px;
 font-size:16px;
 font-weight:bold;
 
+}
+
+.badge{
+background:var(--primary);
+color:white;
+font-size:12px;
+padding:2px 6px;
+border-radius:10px;
+font-weight:600;
 }
