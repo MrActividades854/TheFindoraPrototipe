@@ -124,3 +124,50 @@ ORDER BY registration_date DESC
 
 res.json(result.rows);
 };
+
+exports.getUser = async (req,res)=>{
+
+const {id}=req.params;
+
+const result = await pool.query(
+"SELECT id,name,email,age,gender,birthday,role,registration_date FROM usuarios WHERE id=$1",
+[id]
+);
+
+if(result.rows.length===0){
+return res.status(404).json({error:"Usuario no encontrado"});
+}
+
+res.json(result.rows[0]);
+
+};
+
+exports.updateUser = async (req,res)=>{
+
+const {id}=req.params;
+
+const {name,email,age,gender,birthday,role}=req.body;
+
+await pool.query(`
+UPDATE usuarios
+SET name=$1,email=$2,age=$3,gender=$4,birthday=$5,role=$6
+WHERE id=$7
+`,
+[name,email,age,gender,birthday,role,id]);
+
+res.json({message:"Usuario actualizado"});
+
+};
+
+exports.deleteUser = async (req,res)=>{
+
+const {id}=req.params;
+
+await pool.query(
+"DELETE FROM usuarios WHERE id=$1",
+[id]
+);
+
+res.json({message:"Usuario eliminado"});
+
+};

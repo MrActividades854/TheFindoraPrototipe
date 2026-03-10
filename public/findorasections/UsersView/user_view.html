@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Usuario</title>
+
+<link rel="stylesheet" href="../../global.css">
+
+<style>
+main{
+max-width:700px;
+margin:auto;
+padding:20px;
+}
+
+.card{
+background:#22395a;
+padding:25px;
+border-radius:12px;
+color:white;
+}
+
+.row{
+margin-bottom:12px;
+}
+
+label{
+font-size:13px;
+opacity:0.7;
+}
+
+input,select{
+width:100%;
+padding:8px;
+margin-top:3px;
+border-radius:6px;
+border:none;
+}
+
+.buttons{
+display:flex;
+gap:10px;
+margin-top:20px;
+}
+
+button{
+padding:10px 15px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+.save{
+background:#238636;
+color:white;
+}
+
+.delete{
+background:#b62323;
+color:white;
+}
+
+.back{
+background:#555;
+color:white;
+}
+</style>
+
+</head>
+
+<body>
+
+<main>
+
+<h1>Usuario</h1>
+
+<div class="card">
+
+<div class="row">
+<label>Nombre</label>
+<input id="name">
+</div>
+
+<div class="row">
+<label>Email</label>
+<input id="email">
+</div>
+
+<div class="row">
+<label>Edad</label>
+<input id="age" type="number">
+</div>
+
+<div class="row">
+<label>Genero</label>
+<input id="gender">
+</div>
+
+<div class="row">
+<label>Cumpleaños</label>
+<input id="birthday" type="date">
+</div>
+
+<div class="row">
+<label>Rol</label>
+<select id="role">
+<option value="staff">staff</option>
+<option value="admin">admin</option>
+</select>
+</div>
+
+<div class="row">
+<label>Fecha de registro</label>
+<input id="registration_date" disabled>
+</div>
+
+<div class="buttons">
+
+<button class="save" id="saveBtn">Guardar</button>
+
+<button class="delete" id="deleteBtn">Eliminar</button>
+
+<button class="back" onclick="history.back()">Volver</button>
+
+</div>
+
+</div>
+
+</main>
+
+<script>
+
+const token = localStorage.getItem("token");
+
+if(!token){
+window.location.href="../../extrafindorasections/loginPage/login.html";
+}
+
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+
+async function loadUser(){
+
+const res = await fetch(
+`https://thefindoraprototipe.onrender.com/api/user/${id}`,
+{
+headers:{
+"Authorization":"Bearer "+token
+}
+}
+);
+
+const user = await res.json();
+
+document.getElementById("name").value = user.name;
+document.getElementById("email").value = user.email;
+document.getElementById("age").value = user.age;
+document.getElementById("gender").value = user.gender;
+document.getElementById("birthday").value = user.birthday?.split("T")[0];
+document.getElementById("role").value = user.role;
+document.getElementById("registration_date").value =
+new Date(user.registration_date).toLocaleDateString();
+
+}
+
+loadUser();
+
+document.getElementById("saveBtn").onclick = async ()=>{
+
+const body = {
+name:document.getElementById("name").value,
+email:document.getElementById("email").value,
+age:document.getElementById("age").value,
+gender:document.getElementById("gender").value,
+birthday:document.getElementById("birthday").value,
+role:document.getElementById("role").value
+};
+
+const res = await fetch(
+`https://thefindoraprototipe.onrender.com/api/edit_user/${id}`,
+{
+method:"PUT",
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer "+token
+},
+body:JSON.stringify(body)
+}
+);
+
+if(res.ok){
+alert("Usuario actualizado");
+}else{
+alert("Error actualizando usuario");
+}
+
+};
+
+document.getElementById("deleteBtn").onclick = async ()=>{
+
+if(!confirm("Eliminar usuario?")) return;
+
+const res = await fetch(
+`https://thefindoraprototipe.onrender.com/api/delete_user/${id}`,
+{
+method:"DELETE",
+headers:{
+"Authorization":"Bearer "+token
+}
+}
+);
+
+if(res.ok){
+alert("Usuario eliminado");
+window.location.href="UsersPage.html";
+}else{
+alert("Error eliminando usuario");
+}
+
+};
+
+</script>
+
+</body>
+</html>

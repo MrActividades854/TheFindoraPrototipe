@@ -2,12 +2,14 @@
 body {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
     align-items: center;
 }
 
 main {
-    padding: 20px;
+    padding: 30px;
+    width: 100%;
+    max-width: 1200px;
 }
 
 h1, h2, h3 {

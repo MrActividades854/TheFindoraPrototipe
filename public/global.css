@@ -1,119 +1,203 @@
 /* ======================================================
-   VARIABLES GLOBALES
+   VARIABLES
 ====================================================== */
+
 :root {
-    --bg-gradient: linear-gradient(90deg,rgb(135,199,231),rgb(196,218,237));
-    --primary-blue: rgb(49,49,161);
-    --primary-blue-light: rgb(80,80,180);
-    --accent-blue: #2563eb;
 
-    --radius: 10px;
-    --shadow: 5px 5px 15px rgba(0,0,0,0.3);
+--bg: #0f172a;
+--surface: #1e293b;
+--card: #273449;
 
-    --font-main: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+--primary: rgb(80,80,180);
+--primary-hover: rgb(95,95,200);
+
+--text: #e2e8f0;
+--text-muted: #94a3b8;
+
+--border: #334155;
+
+--radius: 12px;
+--shadow: 0 8px 30px rgba(0,0,0,0.35);
+
+--font-main: "Inter","Segoe UI",system-ui,sans-serif;
+
 }
 
 /* ======================================================
-   RESET
+RESET
 ====================================================== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
 }
 
 /* ======================================================
-   BODY BASE
+BODY
 ====================================================== */
-body {
-    background: var(--bg-gradient);
-    font-family: var(--font-main);
+
+body{
+background: var(--bg);
+color: var(--text);
+font-family: var(--font-main);
+line-height:1.5;
 }
 
 /* ======================================================
-   TITULOS
+HEADINGS
 ====================================================== */
-h1, h2, h3 {
-    font-family: var(--font-main);
-    font-weight: 600;
+
+h1,h2,h3{
+font-weight:600;
 }
 
 /* ======================================================
-   BOTONES GLOBALES
+BUTTONS
 ====================================================== */
+
 button,
-.btn {
-    background-color: var(--accent-blue);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 14px;
-    cursor: pointer;
-    transition: 0.2s;
+.btn{
+
+background: var(--primary);
+color:white;
+
+border:none;
+border-radius:10px;
+
+padding:10px 16px;
+
+cursor:pointer;
+
+font-weight:500;
+
+transition: all .15s ease;
+
 }
 
 button:hover,
-.btn:hover {
-    background-color: #004de0;
+.btn:hover{
+
+background: var(--primary-hover);
+transform: translateY(-1px);
+
 }
 
 /* ======================================================
-   CARDS / BOXES
+CARDS
 ====================================================== */
+
 .card,
-.boxes {
-    background-color: var(--primary-blue);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    transition: 0.15s;
+.boxes{
+
+background: var(--card);
+
+border-radius: var(--radius);
+
+box-shadow: var(--shadow);
+
+border:1px solid var(--border);
+
+transition: all .2s ease;
+
 }
 
 .card:hover,
-.boxes:hover {
-    transform: scale(1.01);
-    box-shadow: 8px 8px 20px rgba(0,0,0,0.4);
+.boxes:hover{
+
+transform: translateY(-4px);
+
 }
 
-.settings-container {
-    max-width: 700px;
-    margin: auto;
-    background: var(--primary-blue);
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: var(--shadow);
+/* ======================================================
+INPUTS
+====================================================== */
+
+input,
+select{
+
+background: var(--surface);
+
+border:1px solid var(--border);
+
+color: var(--text);
+
+padding:10px;
+
+border-radius:8px;
+
 }
 
-.option {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 15px 0;
-    background: var(--primary-blue-light);
-    padding: 16px 20px;
-    border-radius: 12px;
-    transition: background 0.2s;
+input:focus,
+select:focus{
+
+outline:none;
+border-color: var(--primary);
+
 }
 
-.option:hover {
-    background: rgb(95,95,200);
+/* ======================================================
+SETTINGS
+====================================================== */
+
+.settings-container{
+
+max-width:700px;
+margin:auto;
+
+background: var(--card);
+
+padding:30px;
+
+border-radius:16px;
+
+box-shadow: var(--shadow);
+
+border:1px solid var(--border);
+
 }
 
-.section-title {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 15px;
-    color: white;
+.option{
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+margin:15px 0;
+
+background: var(--surface);
+
+padding:16px 20px;
+
+border-radius:12px;
+
+transition:.2s;
+
 }
 
-button.primary-save {
-    width: 100%;
-    padding: 14px;
-    background: var(--accent-blue);
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: bold;
+.option:hover{
+
+background:#334155;
+
 }
 
-button.primary-save:hover {
-    background: #004de0;
+.section-title{
+
+font-size:18px;
+font-weight:bold;
+
+margin-bottom:15px;
+
+color: var(--text);
+
+}
+
+button.primary-save{
+
+width:100%;
+padding:14px;
+
+font-size:16px;
+font-weight:bold;
+
 }
