@@ -1,0 +1,71 @@
+main{
+padding:40px;
+max-width:900px;
+margin:auto;
+}
+
+/* FORM */
+
+.new-profile-form{
+
+background:var(--card);
+
+padding:25px;
+
+border-radius:14px;
+
+border:1px solid var(--border);
+
+max-width:600px;
+
+margin:auto;
+
+}
+
+/* LIST */
+
+.profile-list{
+margin-top:30px;
+}
+
+.profile-item{
+
+background:var(--surface);
+
+padding:12px;
+
+border-radius:10px;
+
+margin-bottom:10px;
+
+cursor:pointer;
+
+border:1px solid var(--border);
+
+transition:.15s;
+
+}
+
+.profile-item:hover{
+
+background:var(--card);
+
+}
+
+/* FORM ELEMENTS */
+
+label{
+display:block;
+margin-top:14px;
+}
+
+input,
+select{
+margin-top:6px;
+}
+
+/* BUTTON */
+
+button{
+margin-top:18px;
+}

@@ -26,154 +26,150 @@ class HeaderManager {
         return `
 <header>
     <style>
-        header {
-            background-color: rgb(49, 49, 174);
-            width: 100%;
-        }
+header{
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    width:100%;
+}
 
-        header nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 20px;
-        }
+/* NAV */
 
-        header nav > div:first-child {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
+header nav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 25px;
+}
 
-        nav a {
-            text-decoration: none;
-            color: white;
-            font-weight: bold;
-            font-size: 20px;
-            font-family: Arial, Helvetica, sans-serif;
-            padding: 10px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+/* LEFT SIDE */
 
-        .hoverable:hover {
-            background-color: aqua;
-        }
+header nav > div:first-child{
+    display:flex;
+    align-items:center;
+    gap:20px;
+}
 
-        nav img {
-            width: 40px;
-            height: 40px;
-        }
+/* LINKS */
 
-        .nav-right {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            height: 60px;
-        }
+nav a{
+    text-decoration:none;
+    color:var(--text);
+    font-weight:500;
+    font-size:16px;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:background .15s;
+}
 
-        .bell {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-        }
+.hoverable:hover{
+    background:var(--card);
+}
 
-        .perfil {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-        }
+/* LOGO */
 
-        .logo {
-            width: 60px;
-            height: 60px;
-        }
+.logo{
+    width:42px;
+    height:42px;
+}
 
-        .profile-options {
-            height: 60px;
-            background-color: rgb(49, 49, 113);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            border-radius: 20px;
-            padding: 5px 15px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+/* RIGHT SIDE */
 
-        .profile-options:hover {
-            background-color: rgb(60, 60, 140);
-        }
+.nav-right{
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
 
-        #usuario-name {
-            color: white;
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-        }
+/* BELL */
 
-        .profile-dropdown {
-            position: relative;
-            display: inline-block;
-        }
+.bell{
+    width:38px;
+    height:38px;
+}
 
-        .dropdown-menu {
-            position: absolute;
-            top: 70px;
-            right: 0;
-            background-color: rgb(49, 49, 113);
-            border-radius: 10px;
-            min-width: 150px;
-            display: none;
-            flex-direction: column;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            animation: dropdown 0.2s ease-out;
-            z-index: 9999;
-        }
+/* PROFILE */
 
-        .dropdown-menu a {
-            padding: 12px 15px;
-            color: white;
-            text-decoration: none;
-            font-size: 16px;
-            font-family: Arial, Helvetica, sans-serif;
-        }
+.perfil{
+    width:36px;
+    height:36px;
+    border-radius:8px;
+}
 
-        .dropdown-menu a:hover {
-            background-color: rgb(60, 60, 180);
-        }
+.profile-options{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:6px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:.15s;
+}
 
-        @keyframes dropdown {
-            from {
-                opacity: 0;
-                transform: translateY(-8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+.profile-options:hover{
+    background:var(--card);
+}
 
-        .notification-badge {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: #ff3b30;
-            color: white;
-            border-radius: 10px;
-            padding: 2px 6px;
-            font-size: 11px;
-            font-weight: bold;
-            min-width: 18px;
-            text-align: center;
-        }
+#usuario-name{
+    color:var(--text);
+    font-size:15px;
+}
 
-        .notification-link {
-            position: relative;
-        }
+/* DROPDOWN */
+
+.profile-dropdown{
+    position:relative;
+}
+
+.dropdown-menu{
+    position:absolute;
+    top:55px;
+    right:0;
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:10px;
+
+    min-width:150px;
+
+    display:none;
+    flex-direction:column;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.4);
+
+    overflow:hidden;
+
+    z-index:999;
+}
+
+.dropdown-menu a{
+    padding:10px 14px;
+    font-size:14px;
+}
+
+.dropdown-menu a:hover{
+    background:var(--surface);
+}
+
+/* BADGE */
+
+.notification-badge{
+    position:absolute;
+    top:2px;
+    right:2px;
+
+    background:#ff3b30;
+
+    color:white;
+
+    border-radius:10px;
+
+    padding:2px 6px;
+
+    font-size:11px;
+}
     </style>
 
     <nav>
