@@ -41,37 +41,128 @@
     <div class="settings-content">
 
         <!-- CUENTA -->
-        <div class="settings-panel active" id="account">
+<div id="account" class="settings-panel active">
 
-            <h1>Cuenta</h1>
+<div class="section">
 
-            <div class="option">
-                <div>
-                    <div class="option-title">Cambiar nombre</div>
-                    <div class="option-description">Actualiza tu nombre de usuario</div>
-                </div>
+<div class="section-title">👤 Profile</div>
 
-                <button>Editar</button>
-            </div>
+<div class="account-profile">
 
-            <div class="option">
-                <div>
-                    <div class="option-title">Cambiar contraseña</div>
-                    <div class="option-description">Actualiza tu contraseña</div>
-                </div>
+<img id="accountProfilePreview" class="profile-avatar" src="/default-avatar.png">
 
-                <button>Actualizar</button>
-            </div>
+<div class="profile-controls">
 
-            <div class="option">
-                <div>
-                    <div class="option-title">Cerrar sesión</div>
-                </div>
+<input type="file" id="accountProfileImage" accept="image/*">
 
-                <button onclick="logout()">Logout</button>
-            </div>
+<button id="uploadProfileBtn">Upload Image</button>
 
-        </div>
+</div>
+
+</div>
+
+</div>
+
+
+<div class="section">
+
+<div class="section-title">✏️ Change Name</div>
+
+<div class="option">
+
+<div>
+
+<div class="option-title">Display Name</div>
+
+<div class="option-description">
+This is the name other users will see
+</div>
+
+</div>
+
+<div class="account-input">
+
+<input type="text" id="accountNameInput" placeholder="New name">
+
+<button id="updateNameBtn">Save</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="section">
+
+<div class="section-title">📧 Change Email</div>
+
+<div class="option">
+
+<div>
+
+<div class="option-title">Email Address</div>
+
+<div class="option-description">
+Update the email associated with your account
+</div>
+
+</div>
+
+<div class="account-input">
+
+<input type="email" id="accountEmailInput" placeholder="New email">
+
+<button id="updateEmailBtn">Save</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="section">
+
+<div class="section-title">🔒 Change Password</div>
+
+<div class="option">
+
+<div>
+
+<div class="option-title">Password</div>
+
+<div class="option-description">
+Update your account password
+</div>
+
+</div>
+
+<div class="account-password">
+
+<input type="password" id="currentPassword" placeholder="Current password">
+<input type="password" id="newPassword" placeholder="New password">
+
+<button id="updatePasswordBtn">Update</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="section">
+
+<div class="section-title">🚪 Session</div>
+
+<button id="logoutBtn" class="logout-btn">
+Logout
+</button>
+
+</div>
+
+</div>
 
 
         <!-- VISUALIZACION -->
@@ -124,6 +215,6 @@
 </main>
 
     <script type="module" src="./../../js/headerLoader.js"></script>
-    <script src="./settings.js"></script>
+    <script type="module" src="./settings/mainsettings.js"></script>
 </body>
 </html>

@@ -345,3 +345,92 @@ display:none;
 .settings-panel.active{
 display:block;
 }
+
+/* ACCOUNT PROFILE */
+
+.account-profile{
+
+display:flex;
+align-items:center;
+gap:20px;
+
+}
+
+.profile-avatar{
+
+width:90px;
+height:90px;
+
+border-radius:50%;
+
+object-fit:cover;
+
+border:3px solid var(--border);
+
+}
+
+.profile-controls{
+
+display:flex;
+flex-direction:column;
+gap:8px;
+
+}
+
+
+/* ACCOUNT INPUT */
+
+.account-input{
+
+display:flex;
+gap:10px;
+align-items:center;
+
+}
+
+.account-input input{
+
+padding:8px 10px;
+border-radius:8px;
+border:1px solid var(--border);
+background:var(--surface);
+color:var(--text);
+
+}
+
+
+/* PASSWORD */
+
+.account-password{
+
+display:flex;
+flex-direction:column;
+gap:8px;
+
+}
+
+.account-password input{
+
+padding:8px 10px;
+border-radius:8px;
+border:1px solid var(--border);
+background:var(--surface);
+color:var(--text);
+
+}
+
+/* LOGOUT */
+
+.logout-btn{
+
+background:#ef4444;
+border:none;
+color:white;
+
+}
+
+.logout-btn:hover{
+
+background:#dc2626;
+
+}
