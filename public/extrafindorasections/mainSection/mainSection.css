@@ -1,9 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap');
+
 * {
     margin: 0;
     padding: 0;
 }
 
-body {
-    background-image: src();
+.about , .utilities{
+    text-align: center;
+    background-color: rgb(0, 166, 255);
+    width: 100%;
 }
 
+.title {
+    background-color: rgb(0, 166, 255);
+    padding-top: 200px;
+    text-align: center;
+    font-size: 48px;
+    font-family: "Archivo Black", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+
+.description {
+    line-height: 0.8;
+}
+
+.utilities {
+    padding-top: 25px;
+    place-items: center;
+    background-color: rgb(0, 166, 255);
+}
+
+.utilitiesContainers {
+    display: grid;
+    place-items: center;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    background-color: rgb(0, 110, 255);
+    width: 90%;
+    border-radius: 15px;
+}
+
+.container {
+    width: 90%;
+    height: 125px;
+    margin: 0;
+    padding: 0;
+    border-radius: 5px;
+    background-color: crimson;
+}
