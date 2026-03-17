@@ -1,6 +1,49 @@
 const { pool } = require("../database/initDB");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const multer = require("multer")
+
+const storage = multer.diskStorage({
+
+    destination: (req,file,cb)=>{
+    cb(null,"public/uploads/")
+    },
+
+    filename:(req,file,cb)=>{
+    cb(null,Date.now()+"_"+file.originalname)
+    }
+
+})
+
+const upload = multer({storage})
+
+exports.uploadProfile = [
+
+    upload.single("image"),
+    async (req,res)=>{
+
+        try{
+
+            const userId = req.user.id
+            const imagePath = "/uploads/" + req.file.filename
+
+            await db.query(
+                `UPDATE users SET profile_image=$1 WHERE id=$2`,
+                [imagePath,userId]
+            )
+
+            res.json({success:true,image:imagePath})
+
+        }catch(err){
+
+            console.error(err)
+            res.status(500).json({error:"upload failed"})
+
+        }
+
+    }
+
+]
 
 exports.register = async (req, res) => {
     const {
@@ -171,3 +214,27 @@ await pool.query(
 res.json({message:"Usuario eliminado"});
 
 };
+
+exports.me = async (req, res) => {
+
+try {
+
+const userId = req.user.id
+
+const result = await db.query(
+`SELECT id,name,email,profile_image
+FROM users
+WHERE id=$1`,
+[userId]
+)
+
+res.json(result.rows[0])
+
+} catch (err) {
+
+console.error(err)
+res.status(500).json({error:"server error"})
+
+}
+
+}

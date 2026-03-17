@@ -268,3 +268,169 @@ margin-top:20px;
 width:100%;
 
 }
+
+.settings-layout{
+display:flex;
+gap:30px;
+max-width:1200px;
+margin:auto;
+}
+
+/* SIDEBAR */
+
+.settings-sidebar{
+
+width:220px;
+background:var(--card);
+
+padding:20px;
+
+border-radius:16px;
+
+border:1px solid var(--border);
+
+height:fit-content;
+
+}
+
+.settings-sidebar h2{
+margin-bottom:20px;
+}
+
+.menu-item{
+
+padding:12px;
+border-radius:8px;
+
+cursor:pointer;
+
+margin-bottom:8px;
+
+transition:.15s;
+
+}
+
+.menu-item:hover{
+background:var(--surface);
+}
+
+.menu-item.active{
+background:var(--primary);
+color:white;
+}
+
+
+/* CONTENT */
+
+.settings-content{
+
+flex:1;
+
+background:var(--card);
+
+padding:30px;
+
+border-radius:16px;
+
+border:1px solid var(--border);
+
+}
+
+/* PANELS */
+
+.settings-panel{
+display:none;
+}
+
+.settings-panel.active{
+display:block;
+}
+
+/* ACCOUNT PROFILE */
+
+.account-profile{
+
+display:flex;
+align-items:center;
+gap:20px;
+
+}
+
+.profile-avatar{
+
+width:90px;
+height:90px;
+
+border-radius:50%;
+
+object-fit:cover;
+
+border:3px solid var(--border);
+
+}
+
+.profile-controls{
+
+display:flex;
+flex-direction:column;
+gap:8px;
+
+}
+
+
+/* ACCOUNT INPUT */
+
+.account-input{
+
+display:flex;
+gap:10px;
+align-items:center;
+
+}
+
+.account-input input{
+
+padding:8px 10px;
+border-radius:8px;
+border:1px solid var(--border);
+background:var(--surface);
+color:var(--text);
+
+}
+
+
+/* PASSWORD */
+
+.account-password{
+
+display:flex;
+flex-direction:column;
+gap:8px;
+
+}
+
+.account-password input{
+
+padding:8px 10px;
+border-radius:8px;
+border:1px solid var(--border);
+background:var(--surface);
+color:var(--text);
+
+}
+
+/* LOGOUT */
+
+.logout-btn{
+
+background:#ef4444;
+border:none;
+color:white;
+
+}
+
+.logout-btn:hover{
+
+background:#dc2626;
+
+}

@@ -9,164 +9,212 @@
     <link rel="stylesheet" href="./../../global.css">
 </head>
 <body>
-    <main>
-        <div class="settings-container">
-            <h1>Configuración</h1>
-            <p class="subtitle">Personaliza el comportamiento del sistema Findora</p>
+<main>
 
-            <!-- SECCIÓN 2: Visualización de Perfiles -->
-            <div class="section">
-                <div class="section-title">
-                    Visualización de Perfiles
-                </div>
+<div class="settings-layout">
 
-                <div class="option">
-                    <div class="option-content">
-                        <div class="option-title">Mostrar Miniaturas en Perfiles</div>
-                        <div class="option-description">
-                            Muestra las imágenes de los perfiles en la vista de lista (profiles.html)
-                        </div>
-                    </div>
-                    <label class="toggle" id="thumbnailsToggleContainer">
-                        <input type="checkbox" id="thumbnailsToggle" />
-                        <span class="slider"></span>
-                    </label>
-                </div>
+    <!-- SIDEBAR -->
+    <div class="settings-sidebar">
 
-                <div class="thumbnail-options" id="thumbnailsOptions">
-                    <div class="option-title" style="margin-bottom: 10px; font-size: 15px;">
-                        Calidad de Miniaturas
-                    </div>
-                    
-                    <div class="radio-group">
-                        <div class="radio-option" data-quality="low">
-                            <input type="radio" name="thumbnailQuality" value="low" id="quality-low">
-                            <label for="quality-low">Baja calidad (rápido) <span class="badge">Más rápido</span></label>
-                        </div>
-                        <div class="radio-option" data-quality="medium">
-                            <input type="radio" name="thumbnailQuality" value="medium" id="quality-medium">
-                            <label for="quality-medium">Calidad media <span class="badge">Recomendado</span></label>
-                        </div>
-                        <div class="radio-option" data-quality="high">
-                            <input type="radio" name="thumbnailQuality" value="high" id="quality-high">
-                            <label for="quality-high">Alta calidad (detallado)</label>
-                        </div>
-                    </div>
+        <h2>Configuración</h2>
 
-                    <div class="option-title" style="margin: 20px 0 10px 0; font-size: 15px;">
-                        Estilo de Visualización
-                    </div>
-                    
-                    <div class="radio-group">
-                        <div class="radio-option" data-style="grid">
-                            <input type="radio" name="thumbnailStyle" value="grid" id="style-grid">
-                            <label for="style-grid">Vista de cuadrícula <span class="badge">Recomendado</span></label>
-                        </div>
-                        <div class="radio-option" data-style="list">
-                            <input type="radio" name="thumbnailStyle" value="list" id="style-list">
-                            <label for="style-list">Vista de lista</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="info-box">
-                    <strong>Información:</strong> Cuando las miniaturas están deshabilitadas, la vista de perfiles mostrará solo nombres y edades, lo que puede mejorar el rendimiento en dispositivos lentos o con conexión limitada.
-                </div>
-            </div>
-
-            <!-- SECCIÓN 3: Background Detection -->
-            <div class="section">
-                <div class="section-title">
-                    Detección en Background
-                </div>
-
-                <div class="option">
-                    <div class="option-content">
-                        <div class="option-title">Activar Cámara Local en Todas las Páginas</div>
-                        <div class="option-description">
-                            Si está activado, tu cámara se encenderá y detectará rostros en cada página (perfiles, notificaciones, etc.)
-                        </div>
-                    </div>
-                    <label class="toggle" id="bgCameraToggleContainer">
-                        <input type="checkbox" id="bgCameraToggle" />
-                        <span class="slider"></span>
-                    </label>
-                </div>
-
-                <div class="warning-box" id="bg-warning" style="display: none;">
-                    <strong>Advertencia:</strong> Activar esta opción hará que tu cámara se encienda en todas las páginas del sistema. Esto consumirá más batería y recursos.
-                </div>
-
-                <div class="subsection" id="bg-options" style="display: none;">
-                    <div class="option-title" style="margin-bottom: 10px; font-size: 15px;">
-                        Mostrar Vista Previa
-                    </div>
-                    
-                    <div class="option">
-                        <div class="option-content">
-                            <div class="option-description">
-                                Muestra un mini preview flotante de las cámaras activas
-                            </div>
-                        </div>
-                        <label class="toggle" id="bgPreviewToggleContainer">
-                            <input type="checkbox" id="bgPreviewToggle" />
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-
-                    <div id="preview-options" style="display: none;">
-                        <div class="option-title" style="margin: 20px 0 10px 0; font-size: 14px;">
-                            Posición del Preview
-                        </div>
-                        <div class="radio-group">
-                            <div class="radio-option" data-position="bottom-right">
-                                <input type="radio" name="position" value="bottom-right" id="pos-br">
-                                <label for="pos-br">Abajo Derecha <span class="badge">Recomendado</span></label>
-                            </div>
-                            <div class="radio-option" data-position="bottom-left">
-                                <input type="radio" name="position" value="bottom-left" id="pos-bl">
-                                <label for="pos-bl">Abajo Izquierda</label>
-                            </div>
-                            <div class="radio-option" data-position="top-right">
-                                <input type="radio" name="position" value="top-right" id="pos-tr">
-                                <label for="pos-tr">Arriba Derecha</label>
-                            </div>
-                            <div class="radio-option" data-position="top-left">
-                                <input type="radio" name="position" value="top-left" id="pos-tl">
-                                <label for="pos-tl">Arriba Izquierda</label>
-                            </div>
-                        </div>
-
-                        <div class="option-title" style="margin: 20px 0 10px 0; font-size: 14px;">
-                            Tamaño del Preview
-                        </div>
-                        <div class="radio-group">
-                            <div class="radio-option" data-size="small">
-                                <input type="radio" name="size" value="small" id="size-s">
-                                <label for="size-s">Pequeño (200px) <span class="badge">Recomendado</span></label>
-                            </div>
-                            <div class="radio-option" data-size="medium">
-                                <input type="radio" name="size" value="medium" id="size-m">
-                                <label for="size-m">Mediano (300px)</label>
-                            </div>
-                            <div class="radio-option" data-size="large">
-                                <input type="radio" name="size" value="large" id="size-l">
-                                <label for="size-l">Grande (400px)</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="info-box">
-                    <strong>Recomendación:</strong> Deja esta opción <strong>desactivada</strong> para ahorrar recursos. El modo background solo monitoreará feeds remotos de otras cámaras del sistema sin activar tu cámara local.
-                </div>
-            </div>
-
-            <button onclick="saveSettings()">Guardar Configuración</button>
+        <div class="menu-item active" data-section="account">
+            Cuenta
         </div>
-    </main>
+
+        <div class="menu-item" data-section="profiles">
+            Visualización
+        </div>
+
+        <div class="menu-item" data-section="background">
+            Background Detection
+        </div>
+
+        <div class="menu-item" data-section="style">
+            Estilo
+        </div>
+
+    </div>
+
+
+    <!-- PANEL DERECHO -->
+    <div class="settings-content">
+
+        <!-- CUENTA -->
+<div id="account" class="settings-panel active">
+
+<div class="section">
+
+<div class="section-title">👤 Profile</div>
+
+<div class="account-profile">
+
+<img id="accountProfilePreview" class="profile-avatar" src="/default-avatar.png">
+
+<div class="profile-controls">
+
+<input type="file" id="accountProfileImage" accept="image/*">
+
+<button id="uploadProfileBtn">Upload Image</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="section">
+
+<div class="section-title">✏️ Change Name</div>
+
+<div class="option">
+
+<div>
+
+<div class="option-title">Display Name</div>
+
+<div class="option-description">
+This is the name other users will see
+</div>
+
+</div>
+
+<div class="account-input">
+
+<input type="text" id="accountNameInput" placeholder="New name">
+
+<button id="updateNameBtn">Save</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="section">
+
+<div class="section-title">📧 Change Email</div>
+
+<div class="option">
+
+<div>
+
+<div class="option-title">Email Address</div>
+
+<div class="option-description">
+Update the email associated with your account
+</div>
+
+</div>
+
+<div class="account-input">
+
+<input type="email" id="accountEmailInput" placeholder="New email">
+
+<button id="updateEmailBtn">Save</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="section">
+
+<div class="section-title">🔒 Change Password</div>
+
+<div class="option">
+
+<div>
+
+<div class="option-title">Password</div>
+
+<div class="option-description">
+Update your account password
+</div>
+
+</div>
+
+<div class="account-password">
+
+<input type="password" id="currentPassword" placeholder="Current password">
+<input type="password" id="newPassword" placeholder="New password">
+
+<button id="updatePasswordBtn">Update</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="section">
+
+<div class="section-title">🚪 Session</div>
+
+<button id="logoutBtn" class="logout-btn">
+Logout
+</button>
+
+</div>
+
+</div>
+
+
+        <!-- VISUALIZACION -->
+        <div class="settings-panel" id="profiles">
+
+            <h1>Visualización de perfiles</h1>
+
+            <!-- aquí puedes pegar TODO lo que ya tienes -->
+            <!-- thumbnails, quality, style, etc -->
+
+        </div>
+
+
+        <!-- BACKGROUND -->
+        <div class="settings-panel" id="background">
+
+            <h1>Background Detection</h1>
+
+            <!-- aquí pega tu sección de cámara -->
+
+        </div>
+
+
+        <!-- STYLE -->
+        <div class="settings-panel" id="style">
+
+            <h1>Estilo</h1>
+
+            <div class="option">
+                <div>
+                    <div class="option-title">Modo Oscuro</div>
+                    <div class="option-description">
+                        Cambiar tema del sistema
+                    </div>
+                </div>
+
+                <label class="toggle">
+                    <input type="checkbox">
+                    <span class="slider"></span>
+                </label>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</main>
 
     <script type="module" src="./../../js/headerLoader.js"></script>
-    <script src="./settings.js"></script>
+    <script type="module" src="./settings_js/MainSettings.js"></script>
 </body>
 </html>
