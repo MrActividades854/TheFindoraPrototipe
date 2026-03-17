@@ -27,5 +27,6 @@ app.use("/api", require("./routes/profiles.routes"));
 app.use("/api", require("./routes/notifications.routes"));
 app.use("/api", require("./routes/locations.routes"));
 app.use("/api", require("./routes/users.routes"));
+app.use("/uploads", express.static("public/uploads"))
 
 module.exports = app;

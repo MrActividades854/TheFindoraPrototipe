@@ -36,7 +36,7 @@ export default class AccountSettings {
 
         try{
 
-            const res = await fetch(`${this.api}/me`,{
+            const res = await fetch(`https://thefindoraprototipe.onrender.com/api/me`,{
                 headers:{
                     Authorization:`Bearer ${this.token}`
                 }
@@ -64,7 +64,7 @@ export default class AccountSettings {
 
         const name = document.getElementById("accountNameInput").value
 
-        const res = await fetch(`${this.api}/user/update_name`,{
+        const res = await fetch(`https://thefindoraprototipe.onrender.com/api/user/update_name`,{
 
             method:"PUT",
 
@@ -93,7 +93,7 @@ export default class AccountSettings {
 
         const email = document.getElementById("accountEmailInput").value
 
-        const res = await fetch(`${this.api}/user/update_email`,{
+        const res = await fetch(`https://thefindoraprototipe.onrender.com/api/user/update_email`,{
 
             method:"PUT",
 
@@ -123,7 +123,7 @@ export default class AccountSettings {
         const currentPassword = document.getElementById("currentPassword").value
         const newPassword = document.getElementById("newPassword").value
 
-        const res = await fetch(`${this.api}/user/update_password`,{
+        const res = await fetch(`https://thefindoraprototipe.onrender.com/api/user/update_password`,{
 
             method:"PUT",
 
@@ -160,7 +160,7 @@ export default class AccountSettings {
         const form = new FormData()
         form.append("image",file)
 
-        const res = await fetch(`${this.api}/user/upload_profile`,{
+        const res = await fetch(`https://thefindoraprototipe.onrender.com/api`,{
 
             method:"POST",
 
