@@ -218,16 +218,12 @@ nav a{
 
     loadHeader() {
         if (this.headerLoaded) {
-            console.log('⚠️ Header ya fue cargado previamente');
             return;
         }
-
-        console.log('🚀 Cargando header (versión inline)...');
 
         try {
             // Obtener HTML
             const html = this.getHeaderHTML();
-            console.log('📄 HTML del header obtenido');
 
             // Parsear
             const tempDiv = document.createElement('div');
@@ -238,34 +234,27 @@ nav a{
                 throw new Error('No se encontró elemento <header>');
             }
 
-            console.log('🔍 Header parseado correctamente');
-
             // Remover loading
             const loading = document.querySelector('.header-loading');
             if (loading) {
-                console.log('🗑️ Removiendo placeholder');
                 loading.remove();
             }
 
             // Insertar en DOM
             document.body.insertBefore(header, document.body.firstChild);
-            console.log('✅ Header insertado en el DOM');
 
             this.headerLoaded = true;
 
             // Inicializar funcionalidad
             this._initializeHeader();
 
-            console.log('🎉 Header completamente cargado e inicializado');
-
         } catch (error) {
-            console.error('❌ Error cargando header:', error);
+            console.error('Error cargando header:', error);
             this._showFallbackHeader();
         }
     }
 
     _initializeHeader() {
-        console.log('⚙️ Inicializando funcionalidad...');
         
         this._loadImages();
         this._setupNavigation();
@@ -273,8 +262,6 @@ nav a{
         this._loadUserName();
         this._markActivePage();
         this._setupNotificationBadge();
-        
-        console.log('✅ Funcionalidad inicializada');
     }
 
     _loadImages() {
@@ -289,7 +276,7 @@ nav a{
             if (images[key]) {
                 img.src = images[key];
                 img.onerror = () => {
-                    console.warn(`⚠️ Imagen no encontrada: ${images[key]}`);
+                    console.warn(`Imagen no encontrada: ${images[key]}`);
                     img.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23ddd'/%3E%3Ctext x='50%25' y='50%25' font-size='20' text-anchor='middle' dy='.3em'%3E?%3C/text%3E%3C/svg%3E`;
                 };
             }
@@ -299,8 +286,6 @@ nav a{
     _setupNavigation() {
         const getNavPath = (relativePath) => {
             const currentPath = window.location.pathname;
-            console.log('🧭 Calculando ruta para:', relativePath);
-            console.log('📍 Desde:', currentPath);
             
             // Determinar en qué nivel estamos
             let depth = 0;
@@ -310,12 +295,10 @@ nav a{
                 const afterPublic = currentPath.split('/public/')[1] || '';
                 const segments = afterPublic.split('/').filter(s => s && !s.endsWith('.html'));
                 depth = segments.length;
-                console.log('📊 Profundidad (desde /public/):', depth, 'Segmentos:', segments);
             } else {
                 // Modo producción o raíz directa
                 const segments = currentPath.split('/').filter(s => s && !s.endsWith('.html'));
                 depth = Math.max(0, segments.length - 1);
-                console.log('📊 Profundidad (desde raíz):', depth, 'Segmentos:', segments);
             }
             
             // Construir ruta absoluta desde la raíz de /public/
@@ -401,12 +384,44 @@ nav a{
         console.log('📋 Dropdown configurado');
     }
 
-    _loadUserName() {
-        const userName = localStorage.getItem('findora_user_name') || 'Admin';
+    async _loadUserName() {
+
         const userNameEl = document.getElementById('usuario-name');
-        
-        if (userNameEl) {
-            userNameEl.textContent = userName;
+    
+        if (!userNameEl) return;
+    
+        const token = localStorage.getItem("token");
+    
+        if (!token) {
+            userNameEl.textContent = "Invitado";
+            return;
+        }
+    
+        try {
+    
+            const res = await fetch("https://thefindoraprototipe.onrender.com/api/me", {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+    
+            if (!res.ok) {
+                throw new Error("No autorizado");
+            }
+    
+            const user = await res.json();
+    
+            userNameEl.textContent = user.name || "Usuario";
+    
+            // (opcional) guardar para uso rápido
+            localStorage.setItem("findora_user_name", user.name);
+    
+        } catch (err) {
+    
+            console.error("Error cargando usuario:", err);
+    
+            userNameEl.textContent = "Error";
+    
         }
     }
 
