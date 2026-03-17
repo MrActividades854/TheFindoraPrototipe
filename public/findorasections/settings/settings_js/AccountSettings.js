@@ -160,7 +160,7 @@ export default class AccountSettings {
         const form = new FormData()
         form.append("image",file)
 
-        const res = await fetch(`https://thefindoraprototipe.onrender.com/api`,{
+        const res = await fetch(`https://thefindoraprototipe.onrender.com/user/upload_profile`,{
 
             method:"POST",
 
