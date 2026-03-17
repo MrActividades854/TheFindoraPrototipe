@@ -27,8 +27,8 @@ exports.uploadProfile = [
             const userId = req.user.id
             const imagePath = "/uploads/" + req.file.filename
 
-            await db.query(
-                `UPDATE users SET profile_image=$1 WHERE id=$2`,
+            await pool.query(
+                `UPDATE usuarios SET profile_image=$1 WHERE id=$2`,
                 [imagePath,userId]
             )
 
@@ -219,21 +219,24 @@ exports.me = async (req, res) => {
 
 try {
 
+console.log("USER FROM TOKEN:", req.user)
+
 const userId = req.user.id
 
-const result = await db.query(
-`SELECT id,name,email,profile_image
-FROM users
-WHERE id=$1`,
+const result = await pool.query(
+"SELECT id,name,email,profile_image FROM usuarios WHERE id=$1",
 [userId]
 )
+
+console.log("DB RESULT:", result.rows)
 
 res.json(result.rows[0])
 
 } catch (err) {
 
-console.error(err)
-res.status(500).json({error:"server error"})
+console.error("ME ERROR:", err)
+
+res.status(500).json({ error: "Server error" })
 
 }
 
