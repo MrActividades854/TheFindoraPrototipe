@@ -236,7 +236,9 @@ res.json(result.rows[0])
 
 console.error("ME ERROR:", err)
 
-res.status(500).json({ error: "Server error" })
+res.status(500).json({ error: err.message })
+console.log("USER ID:", userId)
+console.log("QUERY EXECUTING...")
 
 }
 
