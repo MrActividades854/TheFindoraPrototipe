@@ -159,87 +159,89 @@ exports.login = async (req, res) => {
 
 exports.listUsers = async (req,res)=>{
 
-const result = await pool.query(`
-SELECT id,name,email,role,registration_date
-FROM usuarios
-ORDER BY registration_date DESC
-`);
+    const result = await pool.query(`
+        SELECT id,name,email,role,registration_date
+        FROM usuarios
+        ORDER BY registration_date DESC
+    `);
 
-res.json(result.rows);
+    res.json(result.rows);
 };
 
 exports.getUser = async (req,res)=>{
 
-const {id}=req.params;
+    const {id}=req.params;
 
-const result = await pool.query(
-"SELECT id,name,email,age,gender,birthday,role,registration_date FROM usuarios WHERE id=$1",
-[id]
-);
+    const result = await pool.query(
+        "SELECT id,name,email,age,gender,birthday,role,registration_date FROM usuarios WHERE id=$1",
+        [id]
+    );
 
-if(result.rows.length===0){
-return res.status(404).json({error:"Usuario no encontrado"});
-}
+    if(result.rows.length===0){
+        return res.status(404).json({error:"Usuario no encontrado"});
+    }
 
-res.json(result.rows[0]);
+    res.json(result.rows[0]);
 
 };
 
 exports.updateUser = async (req,res)=>{
 
-const {id}=req.params;
+    const {id}=req.params;
+    const {name,email,age,gender,birthday,role}=req.body;
 
-const {name,email,age,gender,birthday,role}=req.body;
+    await pool.query(`
+        UPDATE usuarios
+        SET name=$1,email=$2,age=$3,gender=$4,birthday=$5,role=$6
+        WHERE id=$7
+        `,
+        [name,email,age,gender,birthday,role,id]
+    );
 
-await pool.query(`
-UPDATE usuarios
-SET name=$1,email=$2,age=$3,gender=$4,birthday=$5,role=$6
-WHERE id=$7
-`,
-[name,email,age,gender,birthday,role,id]);
-
-res.json({message:"Usuario actualizado"});
+    res.json({message:"Usuario actualizado"});
 
 };
 
 exports.deleteUser = async (req,res)=>{
 
-const {id}=req.params;
+    const {id}=req.params;
 
-await pool.query(
-"DELETE FROM usuarios WHERE id=$1",
-[id]
-);
+    await pool.query(
+        "DELETE FROM usuarios WHERE id=$1",
+        [id]
+    );
 
-res.json({message:"Usuario eliminado"});
+    res.json({message:"Usuario eliminado"});
 
 };
 
 exports.me = async (req, res) => {
 
-try {
+    try {
 
-console.log("USER FROM TOKEN:", req.user)
+        console.log("USER FROM TOKEN:", req.user)
+        console.log("HEADERS:", req.headers);
+        console.log("TOKEN:", req.headers.authorization);
 
-const userId = req.user.id
+        const userId = req.user.id
 
-const result = await pool.query(
-"SELECT id,name,email,profile_image FROM usuarios WHERE id=$1",
-[userId]
-)
+        const result = await pool.query(
+        "SELECT id,name,email,profile_image FROM usuarios WHERE id=$1",
+        [userId]
+        )
 
-console.log("DB RESULT:", result.rows)
+        console.log("DB RESULT:", result.rows)
 
-res.json(result.rows[0])
+        res.json(result.rows[0])
 
-} catch (err) {
+    } catch (err) {
 
-console.error("ME ERROR:", err)
+        console.error("ME ERROR:", err)
 
-res.status(500).json({ error: err.message })
-console.log("USER ID:", userId)
-console.log("QUERY EXECUTING...")
+        res.status(500).json({ error: err.message })
+        console.log("USER ID:", userId)
+        console.log("QUERY EXECUTING...")
 
-}
+    }
 
 }
