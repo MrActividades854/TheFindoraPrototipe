@@ -55,7 +55,6 @@ module.exports = async (pool) => {
             profile_id INTEGER UNIQUE REFERENCES perfiles(id) ON DELETE SET NULL,
             profile_image TEXT
         )
-    )
-`);
+    `);
 };
 
