@@ -1,49 +1,63 @@
 const { pool } = require("../database/initDB");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const multer = require("multer")
+const multer = require("multer");
 
-const storage = multer.diskStorage({
-
-    destination: (req,file,cb)=>{
-    cb(null,"public/uploads/")
-    },
-
-    filename:(req,file,cb)=>{
-    cb(null,Date.now()+"_"+file.originalname)
-    }
-
-})
-
-const upload = multer({storage})
+const upload = multer({storage: multer.memoryStorage()});
 
 exports.uploadProfile = [
 
     upload.single("image"),
-    async (req,res)=>{
 
-        try{
+    async (req, res) => {
 
-            const userId = req.user.id
-            const imagePath = "/uploads/" + req.file.filename
+        try {
+
+            const userId = req.user.id;
+
+            if (!req.file) {
+                return res.status(400).json({ error: "No file uploaded" });
+            }
+
+            const imageUrl = await uploadUserImage(userId, req.file);
 
             await pool.query(
                 `UPDATE usuarios SET profile_image=$1 WHERE id=$2`,
-                [imagePath,userId]
-            )
+                [imageUrl, userId]
+            );
 
-            res.json({success:true,image:imagePath})
+            res.json({ success: true, image: imageUrl });
 
-        }catch(err){
+        } catch (err) {
 
-            console.error(err)
-            res.status(500).json({error:"upload failed"})
+            console.error(err);
+            res.status(500).json({ error: "upload failed" });
 
         }
 
     }
 
-]
+];
+
+const supabase = require("../config/supabase");
+
+async function uploadUserImage(userId, file) {
+    const fileName = `usuarios/${userId}/${Date.now()}-${file.originalname}`;
+
+    const { error } = await supabase.storage
+        .from("usuarios") // puedes crear este bucket o usar "perfiles"
+        .upload(fileName, file.buffer, {
+            contentType: file.mimetype
+        });
+
+    if (error) throw error;
+
+    const { data } = supabase.storage
+        .from("usuarios")
+        .getPublicUrl(fileName);
+
+    return data.publicUrl;
+}
 
 exports.register = async (req, res) => {
     const {
