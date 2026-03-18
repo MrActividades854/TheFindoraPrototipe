@@ -52,7 +52,10 @@ module.exports = async (pool) => {
             birthday DATE,
             role VARCHAR(20) DEFAULT 'staff', -- admin o staff
             registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            profile_id INTEGER UNIQUE REFERENCES perfiles(id) ON DELETE SET NULL
+            profile_id INTEGER UNIQUE REFERENCES perfiles(id) ON DELETE SET NULL,
+            profile_image TEXT
+        )
     )
 `);
 };
+

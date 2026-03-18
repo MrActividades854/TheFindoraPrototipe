@@ -67,7 +67,14 @@ deccar/
 │   │   └── settings
 │   │       ├── settings.css
 │   │       ├── settings.html
-│   │       └── settings.js
+│   │       ├── settings_js
+│   │       │   ├── AccountSettings.js
+│   │       │   ├── FDSettings.js
+│   │       │   ├── MainSettings.js
+│   │       │   ├── NotificationsSettings.js
+│   │       │   ├── ProfilesSettings.js
+│   │       │   └── StyleSettings.js
+│   │       └── settings_old.js
 │   ├── global.css
 │   ├── js
 │   │   ├── background-init.js

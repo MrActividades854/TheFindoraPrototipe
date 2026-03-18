@@ -28,4 +28,16 @@ module.exports = async (pool) => {
         ADD COLUMN IF NOT EXISTS last_seen TIMESTAMP
     `);
 
+    // Modificar tabla usuarios
+    await pool.query(`
+        ALTER TABLE usuarios
+        ADD COLUMN IF NOT EXISTS age INTEGER NOT NULL,
+        ADD COLUMN IF NOT EXISTS gender VARCHAR(10),
+        ADD COLUMN IF NOT EXISTS birthday DATE,
+        ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'staff',
+        ADD COLUMN IF NOT EXISTS registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS profile_id INTEGER UNIQUE REFERENCES perfiles(id) ON DELETE SET NULL,
+        ADD COLUMN IF NOT EXISTS profile_image TEXT
+    `);
+
 };
