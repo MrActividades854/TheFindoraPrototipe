@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
-    res.redirect("/findorasections/mainPage/Page.html");
+    res.redirect("/extrafindorasections/mainSection/mainSection.html");
 });
 
 // Rutas
