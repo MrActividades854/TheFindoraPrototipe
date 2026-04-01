@@ -238,18 +238,31 @@ export default class FaceRecognitionManager {
 }
 
 _restorePresenceFromStorage() {
+    if (!this.peopleState) this.peopleState = {};
+
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key.startsWith("presence_")) continue;
 
-        const name = key.replace("presence_", "");
-        const data = JSON.parse(localStorage.getItem(key));
+        try {
+            const raw = localStorage.getItem(key);
+            const data = JSON.parse(raw);
 
-        if (data.present) {
-            this.peopleState[name] = {
-                present: true,
-                lastSeen: data.timestamp
-            };
+            // Validación extra (MUY importante)
+            if (!data || typeof data !== "object") continue;
+
+            const name = key.replace("presence_", "");
+
+            if (data.present) {
+                this.peopleState[name] = {
+                    present: true,
+                    lastSeen: data.timestamp || Date.now()
+                };
+            }
+
+        } catch (err) {
+            console.warn(`⚠️ JSON corrupto en ${key}, eliminando...`);
+            localStorage.removeItem(key); // 🔥 limpiar basura
         }
     }
 }
