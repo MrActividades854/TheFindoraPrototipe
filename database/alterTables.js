@@ -40,14 +40,4 @@ module.exports = async (pool) => {
         ADD COLUMN IF NOT EXISTS profile_image TEXT
     `);
 
-    // Modificar tabla camaras
-    await pool.query(`
-        ALTER TABLE camaras (
-            ADD COLUMN IF NOT EXISTS device_id TEXT PRIMARY KEY,
-            ADD COLUMN IF NOT EXISTS name TEXT NOT NULL,
-            ADD COLUMN IF NOT EXISTS location TEXT,
-            ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-     `);
-
 };
