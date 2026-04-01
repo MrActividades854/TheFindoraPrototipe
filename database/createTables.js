@@ -56,5 +56,16 @@ module.exports = async (pool) => {
             profile_image TEXT
         )
     `);
+
+    await pool.query(`
+    CREATE TABLE IF NOT EXISTS camaras (
+        id SERIAL PRIMARY KEY,
+        device_id TEXT UNIQUE NOT NULL, -- ID real de la cámara
+        name TEXT,
+        location TEXT,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`);
 };
 

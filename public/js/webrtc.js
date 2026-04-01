@@ -141,7 +141,11 @@ export default class WebRTCManager {
       const s = pc.connectionState || pc.iceConnectionState;
       this.onLog(`[WebRTC] estado PC ${senderId}: ${s}`);
       if (s === 'failed' || s === 'disconnected' || s === 'closed') {
-        // opcional: limpiar resources aquí o esperar a closeRemote
+        this.closeRemote(senderId);
+
+        if (this.onRemoteDisconnect){
+          this.onRemoteDisconnect(senderId);
+        }
       }
     };
 
@@ -154,6 +158,7 @@ export default class WebRTCManager {
   async _handleOffer(msg) {
     const senderId = msg.from;
     const offer = msg.offer;
+    const senderDeviceId = msg.deviceId || msg.from;
     if (!senderId || !offer) return;
 
     // límite de feeds
@@ -280,6 +285,21 @@ export default class WebRTCManager {
       videoEl.play().catch(e => this.onLog('Video play error: ' + e));
     };
   }
+
+  // -------------------------
+  // Manejo de etiquetas de cámaras (opcional, para UI)
+  // -------------------------
+
+  _getCameraLabel(deviceId) {
+    const labels = JSON.parse(localStorage.getItem("cameraLabels") || "{}");
+    return labels[deviceId] || `Cámara ${deviceId.slice(0, 4)}`;
+}
+
+_setCameraLabel(deviceId, label) {
+    const labels = JSON.parse(localStorage.getItem("cameraLabels") || "{}");
+    labels[deviceId] = label;
+    localStorage.setItem("cameraLabels", JSON.stringify(labels));
+}
 
   // -------------------------
   // Cerrar feed y limpiar

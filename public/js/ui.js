@@ -98,6 +98,8 @@ export default class UIManager {
                 // NO lanzar error, continuar sin perfiles
             }
 
+            await this._loadCameraLabelsFromBackend();
+
             // 5. Thumbnails (solo si hay remoteList)
             if (this.remoteList) {
                 console.log("🖼️ Paso 5/7: Cargando miniaturas");
@@ -257,7 +259,7 @@ export default class UIManager {
 
         for (let i = 0; i < this.videoDevices.length; i++) {
             const device = this.videoDevices[i];
-            const id = `local-${i + 1}`;
+            const id = device.deviceId;
             
             console.log(`  Configurando ${id}: ${device.label}`);
             
@@ -275,6 +277,47 @@ export default class UIManager {
             }
         }
     }
+
+    async _syncCameraWithBackend(deviceId, name) {
+        try {
+            await fetch(`https://thefindoraprototipe.onrender.com/api/cameras`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                device_id: deviceId,
+                name: name
+                })
+            });
+
+            console.log(`☁️ Cámara sincronizada: ${deviceId}`);
+
+        } catch (err) {
+            console.warn("⚠️ Error sincronizando cámara:", err.message);
+        }
+    }
+
+    async _loadCameraLabelsFromBackend() {
+    try {
+        const res = await fetch(`https://thefindoraprototipe.onrender.com/api/cameras`);
+        if (!res.ok) return;
+
+        const cameras = await res.json();
+
+        cameras.forEach(cam => {
+            localStorage.setItem(
+                `camera_label_${cam.device_id}`,
+                cam.name
+            );
+        });
+
+        console.log(`☁️ ${cameras.length} cámaras cargadas desde backend`);
+
+    } catch (err) {
+        console.warn("⚠️ Error cargando cámaras:", err.message);
+    }
+}
 
     _createVideoCanvasPair(id, stream, opts = {}) {
         // ✅ VALIDACIÓN: Solo crear si hay container
@@ -309,6 +352,27 @@ export default class UIManager {
         wrapper.appendChild(frame);
         this.container.appendChild(wrapper);
 
+        const label = document.createElement('div');
+        label.className = 'camera-label';
+
+        const deviceId = id; // o el real si es remoto
+        label.textContent = this._getCameraLabel(deviceId);
+
+        const labelName = this._getCameraLabel(deviceId);
+
+        this._syncCameraWithBackend(deviceId, labelName);
+
+        label.addEventListener('click', () => {
+            const newName = prompt("Nuevo nombre de cámara:", label.textContent);
+            if (newName) {
+                this._setCameraLabel(deviceId, newName);
+                label.textContent = newName;
+                this._syncCameraWithBackend(deviceId, newName);
+            }
+        });
+
+        wrapper.appendChild(label);
+
         wrapper.addEventListener('click', () => {
             localStorage.setItem('selectedFeed', video.dataset.feedId);
             const allIds = this.videos.map(v => v.dataset.feedId);
@@ -328,6 +392,7 @@ export default class UIManager {
 
     _onRemoteFeed(senderId, stream) {
         console.log(`📡 Feed remoto recibido de: ${senderId}`);
+        const deviceId = senderId; // mejor: usar el real desde WS
         
         const existing = this.videos.find(v => v.dataset.feedId === senderId);
 
@@ -360,6 +425,19 @@ export default class UIManager {
             console.log(`✅ Video oculto creado para ${senderId}`);
         }
     }
+
+    _onRemoteDisconnect(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    _getCameraLabel(deviceId) {
+        return localStorage.getItem(`camera_label_${deviceId}`) || deviceId;
+    }
+
+    _setCameraLabel(deviceId, name) {
+        localStorage.setItem(`camera_label_${deviceId}`, name);
+}
 
     _resizeCanvasToVideoElement(vid) {
         if (!vid || !vid._canvas) return;
