@@ -11,12 +11,13 @@ export default class FaceRecognitionManager {
         this.modelPath = modelPath;
         this.getActiveVideo = getActiveVideo;
         this.onNotification = onNotification;
-        this._restorePresenceFromStorage();
 
         this.labeledDescriptors = [];
         this.faceMatcher = null;
         this.profileMap = {};
         this.peopleState = {};
+
+        this._restorePresenceFromStorage();
 
         this.detecting = false;
         this.showDebugPoint = false;
