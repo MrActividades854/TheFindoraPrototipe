@@ -87,11 +87,19 @@ export default class FaceRecognitionManager {
             const cached = localStorage.getItem(CONFIG.PROFILES_KEY);
 
             if (cached) {
-                const profiles = JSON.parse(cached);
-                console.log(`Cargando ${profiles.length} perfil(es) desde caché local`)
-                await this._loadProfilesFromData(profiles);
-                return profiles;
-            };
+                const cacheData = JSON.parse(cached);
+
+                const profiles = cacheData.data || cacheData;
+
+                if (!cacheData.timestamp || Date.now() - cacheData.timestamp < 3600000) {
+                    console.log(`Usando caché (${profiles.length} perfiles)`);
+                    await this._loadProfilesFromData(profiles);
+                    return profiles;
+                } else {
+                    console.log("Caché expirado");
+                    localStorage.removeItem(CONFIG.PROFILES_KEY);
+                }
+            }
 
             console.log("📡 Solicitando perfiles del servidor...");
             const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles_full`);
@@ -107,7 +115,10 @@ export default class FaceRecognitionManager {
             const profiles = await res.json();
             console.log("Perfiles recibidos:", profiles.length);
 
-            localStorage.setItem(CONFIG.PROFILES_KEY, JSON.stringify(profiles));
+            localStorage.setItem(CONFIG.PROFILES_KEY, JSON.stringify({
+                data: profiles,
+                timestamp: Date.now()
+            }));
 
             // CRÍTICO: Verificar si hay perfiles
 
@@ -290,10 +301,14 @@ _restorePresenceFromStorage() {
         this.detecting = true;
         console.log("✅ Detección iniciada");
 
+        let frameCount = 0;
+
         const loop = async () => {
-            let frameCount = 0;
+                if (!this.detecting) {
+                    console.log("Loop realmente detenido");
+                    return;
+                }
             
-            while (this.detecting) {
                 frameCount++;
                 
                 if (frameCount === 1 || frameCount % 100 === 0) {
@@ -342,7 +357,14 @@ _restorePresenceFromStorage() {
 
                             const room = getRoomByVideo ? getRoomByVideo(vid) : "unknown";
 
-                            // ✅ Verificar que no sea el dummy profile
+                            // Verificar que no sea el dummy profile
+                            if (!this.faceMatcher) {
+                                console.warn("FaceMatcher no disponible, saltando detección");
+                                continue;
+                            }
+
+                            if (!det.descriptor) continue;
+
                             const match = this.faceMatcher.findBestMatch(det.descriptor);
                             let label = "Desconocido";
                             
@@ -366,10 +388,8 @@ _restorePresenceFromStorage() {
                     }
                 }
 
-                await this._sleep(40);
-            }
-            
-            console.log("🛑 Loop detenido");
+                requestAnimationFrame(loop);
+
         };
 
         loop();
@@ -428,6 +448,9 @@ _restorePresenceFromStorage() {
         };
 
         this.tracked.push(newT);
+
+        this.tracked = this.tracked.filter(t => Date.now() - t.lastSeen < 2000);
+
         return newT;
     }
 
@@ -435,11 +458,11 @@ _restorePresenceFromStorage() {
         const useWS = localStorage.getItem("useWebSocket") === "true";
 
         if (!useWS) {
-            this.updateTrackedPersonDetection(track, label);
+            this.updateTrackedPersonDetection(track, label, room);
             return;
         }
 
-        this.updateTrackedPersonDetection(track, label);
+        this.updateTrackedPersonDetection(track, label, room);
 
         if (label !== "Desconocido") {
             this.updatePersonLocation(label, room);
@@ -448,7 +471,7 @@ _restorePresenceFromStorage() {
         this.checkAllGone();
     }
 
-    updateTrackedPersonDetection(track, label) {
+    updateTrackedPersonDetection(track, label, room) {
         const now = Date.now();
 
         // BLOQUEAR CAMBIO DE IDENTIDAD EN MISMA POSICIÓN
@@ -491,6 +514,10 @@ _restorePresenceFromStorage() {
 
 
             return;
+        }
+
+        if (label === "Desconocido") {
+            track.unknownFrames++;
         }
 
         if (label === track.lastLabel) {
