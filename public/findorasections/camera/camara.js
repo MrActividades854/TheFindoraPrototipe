@@ -25,7 +25,9 @@
         // ============================================================
         // CONFIGURACIÓN
         // ============================================================
-        const selectedId = localStorage.getItem("selectedFeed");
+        const selectedData = JSON.parse(localStorage.getItem("selectedFeed") || "null" || '{}');
+        const selectedId = selectedData.id;
+        const selectedType = selectedData.type;
         const feedList = JSON.parse(localStorage.getItem("feedList") || "[]");
 
         console.log('📊 Feed seleccionado:', selectedId);
@@ -167,7 +169,7 @@
         async function connectToRemoteFeed() {
             console.log('connectToRemoteFeed llamado, selectedId:', selectedId);
 
-            const forceRemote = !selectedId.includes('local');
+            const forceRemote = !selectedType === "local";
             const useWS = forceRemote || localStorage.getItem("useWebSocket") === "true";
             
             if (!useWS) {
@@ -227,7 +229,7 @@
                     if (!feedReceived) {
                         console.warn('⚠️ Timeout');
                         
-                        if (selectedId.includes('local')) {
+                        if (selectedType === "local") {
                             connectToLocalFeed();
                         } else {
                             showStatus('❌ No se recibió el feed', true);
@@ -238,7 +240,7 @@
             } catch (error) {
                 console.error('❌ Error:', error);
                 
-                if (selectedId.includes('local')) {
+                if (selectedType === "local") {
                     await connectToLocalFeed();
                 } else {
                     showStatus('❌ Error: ' + error.message, true);
@@ -378,7 +380,7 @@
                 await initManagers();
 
                 // Conectar a feed
-                const isLocalFeed = selectedId && selectedId.includes('local');
+                const isLocalFeed = selectedId && selectedType === "local";
                 
                 if (isLocalFeed) {
                     console.log('📹 Feed local');

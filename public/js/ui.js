@@ -374,7 +374,10 @@ export default class UIManager {
         wrapper.appendChild(label);
 
         wrapper.addEventListener('click', () => {
-            localStorage.setItem('selectedFeed', video.dataset.feedId);
+            localStorage.setItem('selectedFeed', JSON.stringify({
+                id : video.dataset.feedId,
+                type: video.dataset.type
+            }));
             const allIds = this.videos.map(v => v.dataset.feedId);
             localStorage.setItem('feedList', JSON.stringify(allIds));
             
