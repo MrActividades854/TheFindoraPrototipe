@@ -238,6 +238,7 @@ export default class FaceRecognitionManager {
 }
 
 _restorePresenceFromStorage() {
+    const ONE_DAY = 24 * 60 * 60 * 1000;
     if (!this.peopleState) this.peopleState = {};
 
     for (let i = 0; i < localStorage.length; i++) {
@@ -252,6 +253,15 @@ _restorePresenceFromStorage() {
             if (!data || typeof data !== "object") continue;
 
             const name = key.replace("presence_", "");
+
+            const now = Date.now();
+            const lastSeen = data.timestamp || 0;
+
+            if (now - lastSeen > ONE_DAY) {
+                console.warn(`Presencia de ${name} expirada, eliminando...`);
+                localStorage.removeItem(key);
+                continue;
+            }
 
             if (data.present) {
                 this.peopleState[name] = {
