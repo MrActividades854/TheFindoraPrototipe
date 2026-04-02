@@ -558,7 +558,7 @@ _restorePresenceFromStorage() {
 
         if (track.unknownFrames >= this.confirmUnknownAfter && !track.unknownShown) {
             track.unknownShown = true;
-            this.onNotification(`Desconocido detectado`, "warning");
+            this.onNotification(`Desconocido detectado en ${room}`, "warning");
         }
     }
 
