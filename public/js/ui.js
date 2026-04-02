@@ -66,6 +66,10 @@ export default class UIManager {
             );
             console.log("✅ Notificaciones listas");
 
+            setTimeout(() => {
+                this.notifier.show("🔥 TEST NOTIFICACIÓN", "success");
+            }, 3000);
+
             // 2. Face Recognition Manager
             console.log("🤖 Paso 2/7: Creando FaceRecognitionManager");
             this._updateStatus('Inicializando reconocimiento facial...');
