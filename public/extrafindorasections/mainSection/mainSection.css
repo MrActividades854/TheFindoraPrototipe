@@ -33,7 +33,7 @@
 }
 
 .benefits {
-    padding-top: 20px;
+    padding-top: 100px;
     background-color: rgb(0, 166, 255);
 }
 
@@ -43,10 +43,14 @@
 
 .informationLeft {
     text-align: left;
+    padding-bottom: 50px;
+    padding-left: 25px;
 }
 
 .informationRight {
     text-align: right;
+    padding-bottom: 50px;
+    padding-right: 25px;
 }
 
 .utilities {
