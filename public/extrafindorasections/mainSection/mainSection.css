@@ -96,3 +96,12 @@ a {
     height: 50%;
     width: 100%;
 }
+
+.titleContainer {
+    padding-top: 7px;
+}
+
+.Pcontainer {
+    text-align: left;
+    padding: 20px;
+}
