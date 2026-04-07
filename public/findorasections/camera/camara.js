@@ -430,9 +430,12 @@ function enableEditLabel() {
                 },
                 body: JSON.stringify({
                     device_id: selectedId,
-                    label: newLabel
+                    name: newLabel
                 })
                 });
+
+                const data = await res.json();
+                console.log("Respuesta del servidor:", data);
 
                 if (!res.ok) throw new Error("Error guardando");
 
