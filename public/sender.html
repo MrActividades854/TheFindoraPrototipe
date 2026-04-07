@@ -46,6 +46,14 @@ import { CONFIG } from './js/config.js';
 const ws = new WebSocket(CONFIG.WS_URL);
 
 
+let deviceId = localStorage.getItem("deviceId");
+
+if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem("deviceId", deviceId);
+}
+
+
 const senderId = Math.random().toString(36).slice(2, 9);
 let pc = null;
 let localStream = null;
@@ -106,6 +114,7 @@ async function startSender() {
 
     ws.send(JSON.stringify({
         type: "offer",
+        deviceId: deviceId,
         from: senderId,
         offer: { type: offer.type, sdp: offer.sdp }
     }));

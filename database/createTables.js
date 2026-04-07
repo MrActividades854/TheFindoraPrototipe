@@ -50,11 +50,22 @@ module.exports = async (pool) => {
             age INTEGER NOT NULL,
             gender VARCHAR(10),
             birthday DATE,
-            role VARCHAR(20) DEFAULT 'staff', -- admin o staff
+            role VARCHAR(20) DEFAULT 'staff',
             registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             profile_id INTEGER UNIQUE REFERENCES perfiles(id) ON DELETE SET NULL,
             profile_image TEXT
         )
     `);
+
+    await pool.query(`
+    CREATE TABLE IF NOT EXISTS camaras (
+        id SERIAL PRIMARY KEY,
+        device_id TEXT UNIQUE NOT NULL,
+        name TEXT,
+        location TEXT,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`);
 };
 

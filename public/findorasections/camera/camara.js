@@ -12,7 +12,6 @@
         // ============================================================
         const videoEl = document.getElementById("bigFeed");
         const canvasEl = document.getElementById("detectionCanvas");
-        const titleEl = document.getElementById("cameraTitle");
         const statusOverlay = document.getElementById("statusOverlay");
         const statusText = document.getElementById("statusText");
         const prevBtn = document.getElementById("prevBtn");
@@ -22,10 +21,14 @@
         const panelContent = document.getElementById("panelContent");
         const togglePanelBtn = document.getElementById("togglePanelBtn");
 
+        let titleEl = document.getElementById("cameraTitle");
+
         // ============================================================
         // CONFIGURACIÓN
         // ============================================================
-        const selectedId = localStorage.getItem("selectedFeed");
+        const selectedData = JSON.parse(localStorage.getItem("selectedFeed") || "null" || '{}');
+        const selectedId = selectedData.id;
+        const selectedType = selectedData.type;
         const feedList = JSON.parse(localStorage.getItem("feedList") || "[]");
 
         console.log('📊 Feed seleccionado:', selectedId);
@@ -36,7 +39,16 @@
             setTimeout(() => window.history.back(), 2000);
         }
 
-        titleEl.textContent = selectedId || "Cámara";
+                // Botón de editar etiqueta
+
+        const editLabelBtn = document.getElementById("editLabelBtn");
+        let currentLabel = selectedData.label || selectedId;
+
+        editLabelBtn.addEventListener("click", () => {
+            enableEditLabel();
+        });
+
+        titleEl.textContent = currentLabel || "Cámara";
 
         // Variables de estado
         let webrtc = null;
@@ -167,7 +179,7 @@
         async function connectToRemoteFeed() {
             console.log('connectToRemoteFeed llamado, selectedId:', selectedId);
 
-            const forceRemote = !selectedId.includes('local');
+            const forceRemote = !selectedType === "local";
             const useWS = forceRemote || localStorage.getItem("useWebSocket") === "true";
             
             if (!useWS) {
@@ -227,7 +239,7 @@
                     if (!feedReceived) {
                         console.warn('⚠️ Timeout');
                         
-                        if (selectedId.includes('local')) {
+                        if (selectedType === "local") {
                             connectToLocalFeed();
                         } else {
                             showStatus('❌ No se recibió el feed', true);
@@ -238,7 +250,7 @@
             } catch (error) {
                 console.error('❌ Error:', error);
                 
-                if (selectedId.includes('local')) {
+                if (selectedType === "local") {
                     await connectToLocalFeed();
                 } else {
                     showStatus('❌ Error: ' + error.message, true);
@@ -267,6 +279,11 @@
                 }
 
                 const selectedDevice = videoDevices[cameraIndex] || videoDevices[0];
+
+                if (videoEl.srcObject) {
+                    videoEl.srcObject.getTracks().forEach(t => t.stop());
+                    videoEl.srcObject = null;
+                }
 
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
@@ -370,6 +387,88 @@
         });
 
         // ============================================================
+        // EDICIÓN DE ETIQUETA
+        // ============================================================
+
+function enableEditLabel() {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = currentLabel;
+
+    let alreadySaved = false; // 🔥 clave
+
+    titleEl.replaceWith(input);
+    input.focus();
+
+    async function handleSave() {
+        if (alreadySaved) return;
+        alreadySaved = true;
+
+        await saveLabel(input.value);
+        restoreTitle(input.value);
+    }
+
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            handleSave();
+        }
+    });
+
+    input.addEventListener("blur", handleSave);
+}
+
+        async function saveLabel(newLabel) {
+            if (!newLabel || newLabel.trim() === "") return;
+
+            try {
+                console.log("💾 Guardando label:", newLabel);
+
+                const res = await fetch(`https://thefindoraprototipe.onrender.com/api/cameras`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    device_id: selectedId,
+                    name: newLabel
+                })
+                });
+
+                const data = await res.json();
+                console.log("Respuesta del servidor:", data);
+
+                if (!res.ok) throw new Error("Error guardando");
+
+                currentLabel = newLabel;
+
+                // 🔥 actualizar localStorage
+                const updated = {
+                    ...selectedData,
+                    label: newLabel
+                };
+                localStorage.setItem("selectedFeed", JSON.stringify(updated));
+
+                console.log("✅ Label actualizado");
+
+            } catch (err) {
+                console.error("❌ Error guardando label:", err);
+            }
+        }
+
+        function restoreTitle(newLabel) {
+            const input = document.querySelector("input");
+
+            if (!input) return; // 🛑 evita el error
+
+            const newTitle = document.createElement("h2");
+            newTitle.id = "cameraTitle";
+            newTitle.textContent = newLabel;
+
+            input.replaceWith(newTitle);
+            titleEl = newTitle;
+        }
+
+        // ============================================================
         // INICIALIZACIÓN
         // ============================================================
         async function init() {
@@ -378,7 +477,7 @@
                 await initManagers();
 
                 // Conectar a feed
-                const isLocalFeed = selectedId && selectedId.includes('local');
+                const isLocalFeed = selectedId && selectedType === "local";
                 
                 if (isLocalFeed) {
                     console.log('📹 Feed local');
