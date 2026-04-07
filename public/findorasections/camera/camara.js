@@ -390,31 +390,32 @@
         // EDICIÓN DE ETIQUETA
         // ============================================================
 
-        function enableEditLabel() {
-            const input = document.createElement("input");
-            input.type = "text";
-            input.value = currentLabel;
-            input.style.fontSize = "18px";
-            input.style.padding = "5px";
+function enableEditLabel() {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = currentLabel;
 
-            // Reemplazar título por input
-            titleEl.replaceWith(input);
-            input.focus();
+    let alreadySaved = false; // 🔥 clave
 
-            // Guardar al presionar Enter
-            input.addEventListener("keydown", async (e) => {
-                if (e.key === "Enter") {
-                    await saveLabel(input.value);
-                    restoreTitle(input.value);
-                }
-            });
+    titleEl.replaceWith(input);
+    input.focus();
 
-            // Guardar si pierde foco
-            input.addEventListener("blur", async () => {
-                await saveLabel(input.value);
-                restoreTitle(input.value);
-            });
+    async function handleSave() {
+        if (alreadySaved) return;
+        alreadySaved = true;
+
+        await saveLabel(input.value);
+        restoreTitle(input.value);
+    }
+
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            handleSave();
         }
+    });
+
+    input.addEventListener("blur", handleSave);
+}
 
         async function saveLabel(newLabel) {
             if (!newLabel || newLabel.trim() === "") return;
@@ -452,14 +453,15 @@
         }
 
         function restoreTitle(newLabel) {
+            const input = document.querySelector("input");
+
+            if (!input) return; // 🛑 evita el error
+
             const newTitle = document.createElement("h2");
             newTitle.id = "cameraTitle";
             newTitle.textContent = newLabel;
 
-            const input = document.querySelector("input");
             input.replaceWith(newTitle);
-
-            // volver a asignar referencia
             titleEl = newTitle;
         }
 
