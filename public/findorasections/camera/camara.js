@@ -12,7 +12,6 @@
         // ============================================================
         const videoEl = document.getElementById("bigFeed");
         const canvasEl = document.getElementById("detectionCanvas");
-        const titleEl = document.getElementById("cameraTitle");
         const statusOverlay = document.getElementById("statusOverlay");
         const statusText = document.getElementById("statusText");
         const prevBtn = document.getElementById("prevBtn");
@@ -21,6 +20,8 @@
         const detectionPanel = document.getElementById("detectionPanel");
         const panelContent = document.getElementById("panelContent");
         const togglePanelBtn = document.getElementById("togglePanelBtn");
+
+        let titleEl = document.getElementById("cameraTitle");
 
         // ============================================================
         // CONFIGURACIÓN
@@ -38,7 +39,16 @@
             setTimeout(() => window.history.back(), 2000);
         }
 
-        titleEl.textContent = selectedId || "Cámara";
+                // Botón de editar etiqueta
+
+        const editLabelBtn = document.getElementById("editLabelBtn");
+        let currentLabel = selectedData.label || selectedId;
+
+        editLabelBtn.addEventListener("click", () => {
+            enableEditLabel();
+        });
+
+        titleEl.textContent = currentLabel || "Cámara";
 
         // Variables de estado
         let webrtc = null;
@@ -270,6 +280,11 @@
 
                 const selectedDevice = videoDevices[cameraIndex] || videoDevices[0];
 
+                if (videoEl.srcObject) {
+                    videoEl.srcObject.getTracks().forEach(t => t.stop());
+                    videoEl.srcObject = null;
+                }
+
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         deviceId: selectedDevice.deviceId ? 
@@ -370,6 +385,83 @@
             if (e.key === 'ArrowRight') goTo(1);
             if (e.key === 'Escape') window.history.back();
         });
+
+        // ============================================================
+        // EDICIÓN DE ETIQUETA
+        // ============================================================
+
+        function enableEditLabel() {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = currentLabel;
+            input.style.fontSize = "18px";
+            input.style.padding = "5px";
+
+            // Reemplazar título por input
+            titleEl.replaceWith(input);
+            input.focus();
+
+            // Guardar al presionar Enter
+            input.addEventListener("keydown", async (e) => {
+                if (e.key === "Enter") {
+                    await saveLabel(input.value);
+                    restoreTitle(input.value);
+                }
+            });
+
+            // Guardar si pierde foco
+            input.addEventListener("blur", async () => {
+                await saveLabel(input.value);
+                restoreTitle(input.value);
+            });
+        }
+
+        async function saveLabel(newLabel) {
+            if (!newLabel || newLabel.trim() === "") return;
+
+            try {
+                console.log("💾 Guardando label:", newLabel);
+
+                const res = await fetch(`https://thefindoraprototipe.onrender.com/api/cameras`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    device_id: selectedId,
+                    label: newLabel
+                })
+                });
+
+                if (!res.ok) throw new Error("Error guardando");
+
+                currentLabel = newLabel;
+
+                // 🔥 actualizar localStorage
+                const updated = {
+                    ...selectedData,
+                    label: newLabel
+                };
+                localStorage.setItem("selectedFeed", JSON.stringify(updated));
+
+                console.log("✅ Label actualizado");
+
+            } catch (err) {
+                console.error("❌ Error guardando label:", err);
+            }
+        }
+
+        function restoreTitle(newLabel) {
+            const newTitle = document.createElement("h2");
+            newTitle.id = "cameraTitle";
+            newTitle.textContent = newLabel;
+
+            const input = document.querySelector("input");
+            input.replaceWith(newTitle);
+
+            // volver a asignar referencia
+            titleEl = newTitle;
+        }
 
         // ============================================================
         // INICIALIZACIÓN

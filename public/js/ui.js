@@ -599,7 +599,7 @@ export default class UIManager {
 
             const img = document.createElement("img");
             img.className = "person-thumb";
-            img.src = this.profileThumbs[normalized] || "/default-avatar.png";
+            img.src = this.profileThumbs[normalized] || "./../../src/profile.png";
 
             const label = document.createElement("span");
             label.textContent = name;
