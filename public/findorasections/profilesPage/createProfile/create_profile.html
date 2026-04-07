@@ -50,6 +50,12 @@
             <button id="saveProfileBtn">Guardar Perfil</button>
             <button onclick="history.back()">Cancelar</button>
           </section>
+          <hr>
+
+          <h3>Subir perfiles masivamente</h3>
+
+          <input type="file" id="excelInput" accept=".xlsx, .csv" />
+          <button id="uploadExcelBtn">Subir Excel</button>
     </main>
     <script type="module">
       import { CONFIG } from './../../../js/config.js';
@@ -105,6 +111,7 @@ function initBG() {
 
 initBG();
 </script>
-    <script type="module" src="./../../../js/headerLoader.js"></script>
+<script type="module" src="./../../../js/headerLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </body>
 </html>
