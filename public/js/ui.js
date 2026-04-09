@@ -125,7 +125,7 @@ export default class UIManager {
             console.log("🌐 Paso 7/7: Configurando WebRTC");
             this._updateStatus('Conectando señalización...');
             
-            const useWS = localStorage.getItem("useWebSocket") === "true";
+            const useWS = localStorage.getItem("useWebSocket") !== "false";
             console.log("  WebSocket habilitado:", useWS);
             
             if (useWS) {
