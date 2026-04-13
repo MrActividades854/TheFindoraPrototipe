@@ -5,6 +5,7 @@ module.exports = async (pool) => {
         ALTER TABLE perfiles
         ADD COLUMN IF NOT EXISTS gender VARCHAR(10),
         ADD COLUMN IF NOT EXISTS status VARCHAR(20),
+        ADD COLUMN IF NOT EXISTS grade VARCHAR(20),
         ADD COLUMN IF NOT EXISTS birthday DATE
     `);
 
@@ -38,6 +39,15 @@ module.exports = async (pool) => {
         ADD COLUMN IF NOT EXISTS registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         ADD COLUMN IF NOT EXISTS profile_id INTEGER UNIQUE REFERENCES perfiles(id) ON DELETE SET NULL,
         ADD COLUMN IF NOT EXISTS profile_image TEXT
+    `);
+
+    //
+    await pool.query(`
+        ALTER TABLE camaras
+        ADD COLUMN IF NOT EXISTS name TEXT,
+        ADD COLUMN IF NOT EXISTS location TEXT,
+        ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true,
+        ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     `);
 
 };

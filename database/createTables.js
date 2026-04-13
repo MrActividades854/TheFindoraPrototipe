@@ -8,6 +8,7 @@ module.exports = async (pool) => {
             age INTEGER NOT NULL,
             gender VARCHAR(10),
             status VARCHAR(20),
+            grade VARCHAR(20),
             birthday DATE
         )
     `);
@@ -65,7 +66,9 @@ module.exports = async (pool) => {
         location TEXT,
         is_active BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-`);
+        )
+    `);
+
+    
 };
 
