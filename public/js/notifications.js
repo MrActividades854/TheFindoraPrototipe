@@ -24,10 +24,43 @@ export default class NotificationManager {
     }
 }
 
+    _getCameraLabel(deviceId) {
+    return localStorage.getItem(`camera_label_${deviceId}`) || deviceId;
+    }
+
+    _formatMessage(message) {
+    // Detectar "se movió a X"
+    const moveMatch = message.match(/(.+?) se movió a (.+)/);
+
+    if (moveMatch) {
+        const name = moveMatch[1];
+        const deviceId = moveMatch[2];
+
+        const label = this._getCameraLabel(deviceId);
+
+        return `${name} se movió a ${label}`;
+    }
+
+    // Detectar "ha entrado en X"
+    const enterMatch = message.match(/(.+?) ha entrado en (.+)/);
+
+    if (enterMatch) {
+        const name = enterMatch[1];
+        const deviceId = enterMatch[2];
+
+        const label = this._getCameraLabel(deviceId);
+
+        return `${name} ha entrado en ${label}`;
+    }
+
+    return message;
+    }
+
 
     async show(message, type = 'success', duration = 2500) {
-        this._renderPopup(message, type, duration);
-        this._saveNotification(message, type);
+        const formattedMessage = this._formatMessage(message);
+        this._renderPopup(formattedMessage, type, duration);
+        await this._saveNotification(formattedMessage, type);
     }
 
     _renderPopup(message, type, duration) {
@@ -71,7 +104,7 @@ export default class NotificationManager {
     }, duration);
 }
 
-async _saveNotification(message, type) {
+async _saveNotification(message, type, meta = {}) {
     const now = new Date();
 
     // LocalStorage (rápido)
@@ -87,6 +120,7 @@ async _saveNotification(message, type) {
             body: JSON.stringify({
                 message,
                 type,
+                camera: meta.camera || 'unknown',
                 timestamp: now
             })
         });

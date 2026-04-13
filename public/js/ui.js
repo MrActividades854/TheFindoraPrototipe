@@ -32,17 +32,24 @@ export default class UIManager {
         this.thresholdInput = document.getElementById('threshold');
         this.thVal = document.getElementById('thVal');
 
+        // Configuración
         this.wsUrl = wsUrl;
         this.modelPath = modelPath;
         this.notificationsMode = notificationsMode;
 
+        // Estado
         this.videos = [];
         this.profileThumbs = {};
 
+        // Tracker de personas detectadas (nombre -> última sala)
+        this.personTracker = new Map();
+
+        // Managers
         this.notifier = null;
         this.webrtc = null;
         this.faceRec = null;
 
+        // Bindings
         this._onRemoteFeed = this._onRemoteFeed.bind(this);
         this._resizeCanvasToVideoElement = this._resizeCanvasToVideoElement.bind(this);
         
@@ -509,6 +516,64 @@ export default class UIManager {
         await this._startDetectionLoop();
     }
 
+    _identifyUnknown(cameraId) {
+    if (!this.unknownCounter) this.unknownCounter = 0;
+    if (!this.unknownMap) this.unknownMap = new Map();
+
+    const key = `unknown_${cameraId}`;
+
+    if (!this.unknownMap.has(key)) {
+        this.unknownCounter++;
+        this.unknownMap.set(key, `Desconocido ${this.unknownCounter}`);
+    }
+
+    return this.unknownMap.get(key);
+}
+
+    _handleDetection(name, cameraId, cameraLabel) {
+    const now = Date.now();
+
+    // 🔥 Identidad única
+    let personId = name;
+
+    // Manejo de desconocidos
+    if (name === "Desconocido") {
+        personId = this._identifyUnknown(cameraId);
+    }
+
+    const prev = this.personTracker.get(personId);
+
+    if (!prev) {
+        // 🟢 Primera vez que aparece
+        this.personTracker.set(personId, {
+            lastCamera: cameraId,
+            lastLabel: cameraLabel,
+            lastSeen: now
+        });
+
+        this.notifier.show(
+            `${personId} ha entrado a ${cameraLabel}`,
+            "info"
+        );
+        return;
+    }
+
+    // 🔄 Cambio de cámara
+    if (prev.lastCamera !== cameraId) {
+        this.notifier.show(
+            `${personId} se movió de ${prev.lastLabel} a ${cameraLabel}`,
+            "warning"
+        );
+    }
+
+    // 🔄 Actualizar estado
+    this.personTracker.set(personId, {
+        lastCamera: cameraId,
+        lastLabel: cameraLabel,
+        lastSeen: now
+    });
+}
+
     async _startDetectionLoop() {
         console.log("⏳ Esperando que videos estén listos...");
         const readiness = this.videos.map(v => this._waitVideoReady(v));
@@ -529,6 +594,11 @@ export default class UIManager {
                 return vid.dataset.feedId.includes('local') ? 'local' : 'remote';
             },
             onDetect: (name, room) => {
+                const cameraId = video?.dataset?.feedId || 'unknown';
+                const cameraLabel = this._getCameraLabel(cameraId);
+
+                this._handleDetection(name, room, cameraLabel);
+
                 if (name !== "Desconocido" && this.remoteList) {
                     this._updateList(name);
                 }
