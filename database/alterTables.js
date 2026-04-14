@@ -42,6 +42,11 @@ module.exports = async (pool) => {
         ADD COLUMN IF NOT EXISTS profile_image TEXT
     `);
 
+    await pool.query(`
+        ALTER TABLE usuarios
+        DROP COLUMN grade
+    `);
+
     //
     await pool.query(`
         ALTER TABLE camaras
