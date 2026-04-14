@@ -21,7 +21,7 @@ exports.createOrUpdate = async (req, res) => {
         res.json({ success: true });
 
     } catch (err) {
-        console.error("❌ Error guardando cámara:", err.message);
+        console.error("Error guardando cámara:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
@@ -36,7 +36,7 @@ exports.list = async (req, res) => {
         res.json(result.rows);
 
     } catch (err) {
-        console.error("❌ Error obteniendo cámaras:", err.message);
+        console.error("Error obteniendo cámaras:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
@@ -54,7 +54,7 @@ exports.getOne = async (req, res) => {
         res.json(result.rows[0] || null);
 
     } catch (err) {
-        console.error("❌ Error obteniendo cámara:", err.message);
+        console.error("Error obteniendo cámara:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
@@ -72,7 +72,7 @@ exports.delete = async (req, res) => {
         res.json({ success: true });
 
     } catch (err) {
-        console.error("❌ Error eliminando cámara:", err.message);
+        console.error("Error eliminando cámara:", err.message);
         res.status(500).json({ error: err.message });
     }
 };

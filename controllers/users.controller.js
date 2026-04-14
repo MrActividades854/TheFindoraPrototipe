@@ -133,7 +133,7 @@ exports.register = async (req, res) => {
         res.json({ success: true });
 
     } catch (err) {
-        console.error("❌ Error registrando usuario:", err.message);
+        console.error("Error registrando usuario:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
@@ -172,7 +172,7 @@ exports.login = async (req, res) => {
         res.json({ token });
 
     } catch (err) {
-        console.error("❌ Error login:", err.message);
+        console.error("Error login:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
