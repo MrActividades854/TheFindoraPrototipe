@@ -116,12 +116,12 @@ exports.getOne = async (req, res) => {
 };
 
 exports.update = async (req, res) => {
-    const { name, age, gender, status, birthday } = req.body;
+    const { name, age, gender, status, birthday, grade } = req.body;
 
     try {
         await pool.query(
-            "UPDATE perfiles SET name = $1, age = $2, gender = $3, status = $4, birthday = $5 WHERE id = $6",
-            [name, age, gender, status, birthday, req.params.id]
+            "UPDATE perfiles SET name = $1, age = $2, gender = $3, status = $4, birthday = $5, grade = $6 WHERE id = $7",
+            [name, age, gender, status, birthday, grade, req.params.id]
         );
 
         res.json({ success: true });
