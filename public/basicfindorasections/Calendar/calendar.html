@@ -16,27 +16,29 @@ body {
 }
 
 main {
-  display:flex;
-  gap:20px;
-  padding:20px;
-  height:calc(100vh - 80px); /* espacio para header */
-  box-sizing:border-box;
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  height: calc(100vh - 80px);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* CONTENEDOR IZQUIERDO */
 .calendar-container {
-  width:350px;
-  display:flex;
-  flex-direction:column;
+  flex: 0 0 380px; /* ancho fijo REAL */
+  display: flex;
+  flex-direction: column;
 }
 
 /* CALENDARIO */
 .calendar {
   flex:1;
+  min-height: 0;
   display:grid;
   grid-template-columns: repeat(7, 1fr);
   gap:6px;
-  overflow-y:auto; /* 🔥 scroll si crece */
+  overflow-y:auto; /* scroll si crece */
   padding-right:5px;
 }
 
@@ -59,12 +61,15 @@ main {
 
 /* PANEL DERECHO */
 .side-panel {
-  flex:1;
-  background:#161b22;
-  border-radius:10px;
-  padding:20px;
-  overflow-y:auto; /* 🔥 scroll interno */
-  box-sizing:border-box;
+  flex: 1; /* ocupa el resto */
+  min-width: 300px; /* evita que rompa el layout */
+  max-width: 600px; /* límite para que no se coma todo */
+  
+  background: #161b22;
+  border-radius: 10px;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .person {
@@ -90,7 +95,15 @@ main {
 
   <div>
     <h2>Calendario</h2>
-    <div class="calendar" id="calendar"></div>
+    <div class="calendar-container">
+
+  <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+
+  </div>
+
+  <div class="calendar" id="calendar"></div>
+
+</div>
   </div>
 
   <div class="side-panel">
@@ -100,80 +113,7 @@ main {
 
 </main>
 
-<script>
-
-// 📦 Obtener notificaciones guardadas
-function getNotifications() {
-  return JSON.parse(localStorage.getItem("findora_notifications") || "[]");
-}
-
-// 🧠 Extraer personas detectadas por día
-function getPeopleByDate(day) {
-  const notifications = getNotifications();
-
-  return notifications
-    .filter(n => {
-      const d = new Date(n.time || n.timestamp);
-      return d.getDate() === day;
-    })
-    .map(n => n.message); // 👈 aquí depende de cómo guardas el nombre
-}
-
-// 🎯 Mostrar personas en panel
-function showPeople(day) {
-  const list = document.getElementById("peopleList");
-  const title = document.getElementById("selectedDate");
-
-  title.textContent = "Día " + day;
-  list.innerHTML = "";
-
-  const people = getPeopleByDate(day);
-
-  if (people.length === 0) {
-    list.innerHTML = "<p>No hay registros</p>";
-    return;
-  }
-
-  // evitar duplicados
-  const unique = [...new Set(people)];
-
-  unique.forEach(name => {
-    const div = document.createElement("div");
-    div.className = "person";
-
-    const img = document.createElement("img");
-    img.src = "./../../src/profile.png";
-
-    const span = document.createElement("span");
-    span.textContent = name;
-
-    div.appendChild(img);
-    div.appendChild(span);
-
-    list.appendChild(div);
-  });
-}
-
-// 📅 Crear calendario
-const calendar = document.getElementById("calendar");
-const today = new Date().getDate();
-
-for (let i = 1; i <= 30; i++) {
-  const day = document.createElement("div");
-  day.className = "day";
-  day.textContent = i;
-
-  if (i === today) {
-    day.classList.add("today");
-  }
-
-  // 🔥 CLICK
-  day.onclick = () => showPeople(i);
-
-  calendar.appendChild(day);
-}
-
-</script>
+<script type="module" src="./calendar.js"></script>
 
 <script type="module" src="./../../js/headerLoaderUser.js"></script>
 </body>

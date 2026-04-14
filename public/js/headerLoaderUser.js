@@ -288,7 +288,7 @@ nav a{
         }
 
         try {
-            const res = await fetch(CONFIG.API_URL + "api/me", {
+            const res = await fetch("https://thefindoraprototipe.onrender.com/api/me", {
                 headers: { Authorization: "Bearer " + token }
             });
 
