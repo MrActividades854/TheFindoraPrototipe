@@ -37,10 +37,14 @@ module.exports = async (pool) => {
         ADD COLUMN IF NOT EXISTS birthday DATE,
         ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'staff',
         ADD CCOLUMN IF NOT EXISTS grade VARCHAR(20),
-        ALTER COLUMN grade TYPE VARCHAR(20),
         ADD COLUMN IF NOT EXISTS registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         ADD COLUMN IF NOT EXISTS profile_id INTEGER UNIQUE REFERENCES perfiles(id) ON DELETE SET NULL,
         ADD COLUMN IF NOT EXISTS profile_image TEXT
+    `);
+
+    await pool.query(`
+        ALTER TABLE usuarios
+        ALTER COLUMN grade TYPE VARCHAR(2O)
     `);
 
     //
