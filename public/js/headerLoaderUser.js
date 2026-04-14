@@ -288,7 +288,7 @@ nav a{
         }
 
         try {
-            const res = await fetch(CONFIG.API_URL + "/me", {
+            const res = await fetch(CONFIG.API_URL + "api/me", {
                 headers: { Authorization: "Bearer " + token }
             });
 
