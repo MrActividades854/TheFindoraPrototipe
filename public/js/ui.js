@@ -593,10 +593,10 @@ export default class UIManager {
                 if (!vid) return 'unknown';
                 return vid.dataset.feedId.includes('local') ? 'local' : 'remote';
             },
-            onDetect: (name, room) => {
+            onDetect: (name, room, video) => {
                 const cameraId = video?.dataset?.feedId || 'unknown';
                 const cameraLabel = this._getCameraLabel(cameraId);
-
+                
                 this._handleDetection(name, room, cameraLabel);
 
                 if (name !== "Desconocido" && this.remoteList) {
