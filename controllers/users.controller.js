@@ -67,7 +67,8 @@ exports.register = async (req, res) => {
         age,
         gender,
         birthday,
-        role
+        role,
+        grade
     } = req.body;
 
     try {
@@ -99,6 +100,10 @@ exports.register = async (req, res) => {
             return res.status(400).json({ error: "Faltan datos" });
         }
 
+        if (role === "staff" && !grade) {
+            return res.status(400).json({ error: "El staff debe tener grado asignado" });
+        }
+
         const existing = await pool.query(
             "SELECT id FROM usuarios WHERE email = $1",
             [email]
@@ -112,8 +117,8 @@ exports.register = async (req, res) => {
 
         await pool.query(`
             INSERT INTO usuarios
-            (name, email, password, age, gender, birthday, role)
-            VALUES ($1,$2,$3,$4,$5,$6,$7)
+            (name, email, password, age, gender, birthday, role, grade)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
         `, [
             name,
             email,
@@ -121,7 +126,8 @@ exports.register = async (req, res) => {
             age,
             gender,
             birthday,
-            role || "staff"
+            role || "staff",
+            grade || null
         ]);
 
         res.json({ success: true });

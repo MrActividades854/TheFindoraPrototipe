@@ -60,11 +60,36 @@ button {
   <option value="admin">Admin</option>
 </select>
 
+<div id="gradeContainer" style="display:none;">
+  <select id="grade">
+    <option value="">Selecciona un grado</option>
+    <option value="11A">11A</option>
+    <option value="11B">11B</option>
+  </select>
+</div>
+
 <button id="registerBtn">Registrar</button>
 </div>
 
 <script>
 document.getElementById("registerBtn").onclick = async () => {
+
+  const roleSelect = document.getElementById("role");
+const gradeContainer = document.getElementById("gradeContainer");
+
+function toggleGrade() {
+  if (roleSelect.value === "staff") {
+    gradeContainer.style.display = "block";
+  } else {
+    gradeContainer.style.display = "none";
+    document.getElementById("grade").value = "";
+  }
+}
+
+roleSelect.addEventListener("change", toggleGrade);
+
+// inicial
+toggleGrade();
 
   const token = localStorage.getItem("token");
 
@@ -75,7 +100,8 @@ document.getElementById("registerBtn").onclick = async () => {
     age: parseInt(document.getElementById("age").value),
     gender: document.getElementById("gender").value,
     birthday: document.getElementById("birthday").value,
-    role: document.getElementById("role").value
+    role: document.getElementById("role").value,
+    grade: document.getElementById("grade").value || null
   };
 
   const res = await fetch("https://thefindoraprototipe.onrender.com/api/register_user", {

@@ -50,6 +50,7 @@ module.exports = async (pool) => {
             password TEXT NOT NULL,
             age INTEGER NOT NULL,
             gender VARCHAR(10),
+            grade VARCHAR(20),
             birthday DATE,
             role VARCHAR(20) DEFAULT 'staff',
             registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
