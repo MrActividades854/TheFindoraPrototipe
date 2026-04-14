@@ -20,17 +20,21 @@ async function uploadImage(profileId, file) {
 }
 
 exports.create = async (req, res) => {
-    const { name, age } = req.body;
+    const { name, age, gender, status, grade, birthday } = req.body;
     const files = req.files;
 
     if (!name || !age || !files?.length) {
         return res.status(400).json({ error: "Faltan datos" });
     }
 
+    if (status === 'estudiante' && !grade) {
+        return res.status(400).json({ error: "El estudiante debe tener grado" });
+    }
+
     try {
         const result = await pool.query(
-            "INSERT INTO perfiles (name, age) VALUES ($1, $2) RETURNING id",
-            [name, age]
+            "INSERT INTO perfiles (name, age, gender, status, birthday, grade) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+            [name, age, gender, status, birthday, grade]
         );
 
         const profileId = result.rows[0].id;

@@ -10,7 +10,7 @@
 <body>
     <main>
       <button onclick="location.href='./../profiles.html'">Volver</button>
-        <section class="new-profile-form">
+      <section class="new-profile-form">
             <h2>Crear nuevo perfil</h2>
             <label>Nombre:
               <input type="text" id="nameInput" />
@@ -20,8 +20,7 @@
               <input type="number" id="ageInput" />
             </label>
 
-            <label>
-              Género:
+            <label>Género:
               <select id="genderInput">
                 <option value="">Selecciona un Género</option>
                 <option value="masculino">Masculino</option>
@@ -39,6 +38,16 @@
               </select>
             </label>
 
+            <label id="gradeLabel" style="display:none;">Grado:
+              <select id="gradeInput">
+                <option value="">Selecciona un grado</option>
+                <option value="11A">11A</option>
+                <option value="11B">11B</option>
+                <option value="10A">10A</option>
+                <option value="10B">10B</option>
+              </select>
+            </label>
+
             <label>Cumpleaños:
               <input type="date" id="birthdayInput" />
             </label>
@@ -49,8 +58,8 @@
         
             <button id="saveProfileBtn">Guardar Perfil</button>
             <button onclick="history.back()">Cancelar</button>
-          </section>
-          <hr>
+      </section>
+      <hr>
 
           <h3>Subir perfiles masivamente</h3>
 
