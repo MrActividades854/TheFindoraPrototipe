@@ -324,7 +324,7 @@ nav a{
 
     _logout() {
         localStorage.clear();
-        window.location.href = CONFIG.ROOT_PATH + "extrafindora/login/login.html";
+        window.location.href = CONFIG.ROOT_PATH + "extrafindorasections/login/login.html";
     }
 }
 

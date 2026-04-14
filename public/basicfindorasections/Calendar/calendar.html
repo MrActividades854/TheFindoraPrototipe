@@ -10,36 +10,151 @@ body {
   background:#0d1117;
   color:white;
   font-family: Arial;
-  text-align:center;
+  margin:0;
+  height:100vh;
+  overflow:hidden; /* evita scroll raro */
 }
 
+main {
+  display:flex;
+  gap:20px;
+  padding:20px;
+  height:calc(100vh - 80px); /* espacio para header */
+  box-sizing:border-box;
+}
+
+/* CONTENEDOR IZQUIERDO */
+.calendar-container {
+  width:350px;
+  display:flex;
+  flex-direction:column;
+}
+
+/* CALENDARIO */
 .calendar {
-  margin:40px auto;
-  width:300px;
+  flex:1;
   display:grid;
   grid-template-columns: repeat(7, 1fr);
-  gap:5px;
+  gap:6px;
+  overflow-y:auto; /* 🔥 scroll si crece */
+  padding-right:5px;
 }
 
 .day {
   padding:15px;
   background:#22395a;
   border-radius:6px;
+  cursor:pointer;
+  text-align:center;
+  transition:0.2s;
+}
+
+.day:hover {
+  background:#2ea043;
 }
 
 .today {
   background:#2ecc71;
 }
+
+/* PANEL DERECHO */
+.side-panel {
+  flex:1;
+  background:#161b22;
+  border-radius:10px;
+  padding:20px;
+  overflow-y:auto; /* 🔥 scroll interno */
+  box-sizing:border-box;
+}
+
+.person {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:#22395a;
+  padding:10px;
+  border-radius:8px;
+  margin-bottom:8px;
+}
+
+.person img {
+  width:40px;
+  height:40px;
+  border-radius:50%;
+}
 </style>
 </head>
 
 <body>
+<main>
 
-<h1>Calendario</h1>
+  <div>
+    <h2>Calendario</h2>
+    <div class="calendar" id="calendar"></div>
+  </div>
 
-<div class="calendar" id="calendar"></div>
+  <div class="side-panel">
+    <h2 id="selectedDate">Selecciona un día</h2>
+    <div id="peopleList"></div>
+  </div>
+
+</main>
 
 <script>
+
+// 📦 Obtener notificaciones guardadas
+function getNotifications() {
+  return JSON.parse(localStorage.getItem("findora_notifications") || "[]");
+}
+
+// 🧠 Extraer personas detectadas por día
+function getPeopleByDate(day) {
+  const notifications = getNotifications();
+
+  return notifications
+    .filter(n => {
+      const d = new Date(n.time || n.timestamp);
+      return d.getDate() === day;
+    })
+    .map(n => n.message); // 👈 aquí depende de cómo guardas el nombre
+}
+
+// 🎯 Mostrar personas en panel
+function showPeople(day) {
+  const list = document.getElementById("peopleList");
+  const title = document.getElementById("selectedDate");
+
+  title.textContent = "Día " + day;
+  list.innerHTML = "";
+
+  const people = getPeopleByDate(day);
+
+  if (people.length === 0) {
+    list.innerHTML = "<p>No hay registros</p>";
+    return;
+  }
+
+  // evitar duplicados
+  const unique = [...new Set(people)];
+
+  unique.forEach(name => {
+    const div = document.createElement("div");
+    div.className = "person";
+
+    const img = document.createElement("img");
+    img.src = "./../../src/profile.png";
+
+    const span = document.createElement("span");
+    span.textContent = name;
+
+    div.appendChild(img);
+    div.appendChild(span);
+
+    list.appendChild(div);
+  });
+}
+
+// 📅 Crear calendario
 const calendar = document.getElementById("calendar");
 const today = new Date().getDate();
 
@@ -52,9 +167,14 @@ for (let i = 1; i <= 30; i++) {
     day.classList.add("today");
   }
 
+  // 🔥 CLICK
+  day.onclick = () => showPeople(i);
+
   calendar.appendChild(day);
 }
+
 </script>
 
+<script type="module" src="./../../js/headerLoaderUser.js"></script>
 </body>
 </html>
