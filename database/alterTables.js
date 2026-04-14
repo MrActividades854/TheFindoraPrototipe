@@ -42,11 +42,6 @@ module.exports = async (pool) => {
         ADD COLUMN IF NOT EXISTS profile_image TEXT
     `);
 
-    await pool.query(`
-        ALTER TABLE usuarios
-        ALTER COLUMN grade TYPE VARCHAR(2O)
-    `);
-
     //
     await pool.query(`
         ALTER TABLE camaras
