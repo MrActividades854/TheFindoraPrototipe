@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mi Clase</title>
+  <link rel="shortcut icon" href="./../../src/favicon.ico">
+  <link rel="stylesheet" href="./../../global.css">
+</head>
+
+<body>
+
+<main>
+  <h1>Mi Clase</h1>
+
+  <section class="profile-list">
+    <h2>Estudiantes de mi grado</h2>
+    <div id="profilesContainer" class="profiles-grid">Cargando...</div>
+  </section>
+</main>
+
+<script type="module">
+import { CONFIG } from "../../js/config.js";
+
+const token = localStorage.getItem("token");
+
+if (!token) {
+  window.location.href = "./../../extrafindorasections/loginPage/login.html";
+}
+
+// ⚡ CONFIG VISUAL
+const showThumbnails = localStorage.getItem('showThumbnails') !== 'false';
+const thumbnailStyle = localStorage.getItem('thumbnailStyle') || 'grid';
+
+let myGrade = "";
+
+// ======================
+// 🔹 OBTENER MI GRADO (desde backend)
+// ======================
+async function loadMyGrade() {
+  try {
+    const res = await fetch(
+      "https://thefindoraprototipe.onrender.com/api/me",
+      {
+        headers: {
+          "Authorization": "Bearer " + token
+        }
+      }
+    );
+
+    const data = await res.json();
+
+    if (res.ok) {
+      myGrade = String(data.grade).trim();
+      console.log("✅ Mi grado:", myGrade);
+    } else {
+      console.warn("⚠️ No se pudo obtener grado");
+    }
+
+  } catch (err) {
+    console.error("❌ Error obteniendo grado:", err);
+  }
+}
+
+// ======================
+// 🔹 FETCH PERFILES
+// ======================
+async function fetchProfiles() {
+  const res = await fetch(
+    "https://thefindoraprototipe.onrender.com/api/profiles",
+    {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    }
+  );
+
+  const list = await res.json();
+
+  const container = document.getElementById('profilesContainer');
+  container.innerHTML = '';
+
+  // FILTRAR SOLO MI GRADO
+function normalizeGrade(g) {
+  return String(g)
+    .toLowerCase()
+    .replace(/\s+/g, "") // quita espacios
+    .replace(/[^a-z0-9]/g, ""); // quita símbolos
+}
+
+const filtered = list.filter(p => {
+  const profileGrade = normalizeGrade(p.grade);
+  const myGradeClean = normalizeGrade(myGrade);
+
+  return profileGrade.includes(myGradeClean);
+});
+
+console.log("Mi grado limpio:", normalizeGrade(myGrade));
+
+list.forEach(p => {
+  console.log(
+    p.name,
+    "→",
+    normalizeGrade(p.grade)
+  );
+});
+
+console.log(list);
+
+  console.log("👥 Perfiles filtrados:", filtered.length);
+
+  // estilo
+  if (thumbnailStyle === 'list') {
+    container.classList.remove('profiles-grid');
+    container.style.display = 'block';
+  } else {
+    container.classList.add('profiles-grid');
+    container.style.display = 'grid';
+  }
+
+  // sin thumbnails
+  if (!showThumbnails) {
+    renderWithoutImages(filtered, container);
+    return;
+  }
+
+  // con thumbnails
+  const fullProfiles = await Promise.all(
+    filtered.map(async (p) => {
+      try {
+        const res = await fetch(
+          `https://thefindoraprototipe.onrender.com/api/profile/${p.id}`,
+          {
+            headers: {
+              "Authorization": "Bearer " + token
+            }
+          }
+        );
+
+        const data = await res.json();
+
+        return {
+          ...p,
+          references: data.references || []
+        };
+
+      } catch {
+        return { ...p, references: [] };
+      }
+    })
+  );
+
+  renderWithImages(fullProfiles, container);
+}
+
+// ======================
+// 🔹 RENDER SIN IMÁGENES
+// ======================
+function renderWithoutImages(profiles, container) {
+  profiles.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'profile-card no-thumbnail';
+
+    const name = document.createElement('div');
+    name.textContent = p.name;
+
+    const age = document.createElement('div');
+    age.textContent = `${p.age} años`;
+
+    card.appendChild(name);
+    card.appendChild(age);
+
+    card.onclick = () => {
+      location.href = `profile_view.html?id=${p.id}`;
+    };
+
+    container.appendChild(card);
+  });
+}
+
+// ======================
+// 🔹 RENDER CON IMÁGENES
+// ======================
+function renderWithImages(profiles, container) {
+  profiles.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'profile-card';
+
+    const img = document.createElement('img');
+    img.src = p.references?.[0]?.file_path || './../../src/profile.png';
+
+    img.onerror = () => {
+      img.src = './../../src/profile.png';
+    };
+
+    const info = document.createElement('div');
+    info.className = 'info';
+
+    const name = document.createElement('div');
+    name.textContent = p.name;
+
+    const age = document.createElement('div');
+    age.textContent = `${p.age} años`;
+
+    info.appendChild(name);
+    info.appendChild(age);
+
+    card.appendChild(img);
+    card.appendChild(info);
+
+    card.onclick = () => {
+      location.href = `profile_view.html?id=${p.id}`;
+    };
+
+    container.appendChild(card);
+  });
+}
+
+// ======================
+// 🔹 INIT
+// ======================
+(async () => {
+  await loadMyGrade();   // 🔥 IMPORTANTE
+  await fetchProfiles(); // 🔥 ya filtra por grado
+})();
+</script>
+
+<script type="module" src="./../../js/headerLoader.js"></script>
+
+</body>
+</html>
