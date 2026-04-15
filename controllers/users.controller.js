@@ -246,7 +246,7 @@ exports.me = async (req, res) => {
         const userId = req.user.id
 
         const result = await pool.query(
-        "SELECT id,name,email,profile_image FROM usuarios WHERE id=$1",
+        "SELECT id,name,email,profile_image,grade FROM usuarios WHERE id=$1",
         [userId]
         )
 

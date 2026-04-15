@@ -2,6 +2,12 @@ let notificationsCache = [];
 
 let profilesCache = [];
 
+let my_grade = "";
+
+// ======================
+// 🔹 CARGAR PERFILES
+// ======================
+
 async function loadProfiles() {
   const res = await fetch("https://thefindoraprototipe.onrender.com/api/profiles_full");
   const data = await res.json();
@@ -12,7 +18,49 @@ async function loadProfiles() {
   }
 }
 
-const MY_GRADE = "11B";
+async function loadMyGrade() {
+  const token = localStorage.getItem("token");
+
+  try {
+    const res = await fetch("https://thefindoraprototipe.onrender.com/api/me", {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      my_grade = data.grade; // 🔥 AQUÍ ESTÁ LA CLAVE
+      console.log("✅ Mi grado:", my_grade);
+    } else {
+      console.warn("⚠️ Error obteniendo grado:", data);
+    }
+
+  } catch (err) {
+    console.error("❌ Error obteniendo grado:", err);
+  }
+}
+
+function isValidStudent(name) {
+  if (!name || name.toLowerCase().includes("desconocido")) return false;
+
+  const profile = profilesCache.find(p =>
+    p.name.toLowerCase() === name.toLowerCase()
+  );
+
+  if (!profile) return false;
+
+  return profile.grade === my_grade;
+}
+
+function cleanName(text) {
+  return text
+    .toLowerCase()
+    .replace(" detectado", "")
+    .replace(/\s+/g, " ") // quita espacios dobles
+    .trim();
+}
 
 // ======================
 // 🔹 CARGAR NOTIFICACIONES
@@ -141,7 +189,30 @@ function getPeopleByDate(day) {
         d.getFullYear() === year
       );
     })
-    .map(n => (n.message || "").split(" detectado")[0]);
+    .map(n => cleanName(n.message || ""))
+.filter(name => {
+
+  // ❌ quitar desconocidos
+  if (name.includes("desconocido")) return false;
+
+  if (!profilesCache.length) return false;
+
+  // 🔥 buscar coincidencia parcial
+  const profile = profilesCache.find(p => {
+    const profileName = p.name.toLowerCase().trim();
+
+    return (
+      profileName.includes(name) || 
+      name.includes(profileName)
+    );
+  });
+
+  // ❌ si no encuentra perfil → no mostrar
+  if (!profile) return false;
+
+  // ✅ filtrar por grado
+  return String(profile.grade).trim() === String(my_grade).trim();
+});
 }
 
 // ======================
@@ -217,6 +288,8 @@ yearInput.onchange = () => {
 // 🔹 INIT
 // ======================
 (async () => {
+  await loadMyGrade();
+  await loadProfiles();
   await loadNotifications();
   syncControls();
   renderCalendar();
