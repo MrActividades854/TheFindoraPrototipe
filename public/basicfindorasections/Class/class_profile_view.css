@@ -1,0 +1,64 @@
+.container{
+max-width:900px;
+margin:auto;
+padding:40px 20px;
+}
+
+.card{
+padding:25px;
+}
+
+/* TITLES */
+
+h1{
+margin-bottom:15px;
+}
+
+h2{
+margin-top:20px;
+}
+
+/* REFERENCES */
+
+.refs{
+display:flex;
+flex-wrap:wrap;
+gap:15px;
+margin-top:15px;
+}
+
+.refs img{
+
+width:180px;
+height:180px;
+
+object-fit:cover;
+
+border-radius:10px;
+
+border:1px solid var(--border);
+
+}
+
+/* EDIT SECTION */
+
+#editSection label{
+display:block;
+margin-top:12px;
+}
+
+#editSection input,
+#editSection select{
+width:100%;
+margin-top:6px;
+}
+
+/* BUTTONS */
+
+.danger{
+background:#dc2626;
+}
+
+.danger:hover{
+background:#ef4444;
+}

@@ -14,6 +14,7 @@
       <h1 id="name"></h1>
       <h2 id="age"></h2>
       <p id="gender"></p>
+      <p id="grade"></p>
       <p id="schoolstatus"></p>
       <p id="birthday"></p>
 
@@ -46,6 +47,15 @@
     <option value="personal">Personal</option>
   </select>
 </label>
+
+<label id="gradeLabel" style="display:none;">
+  Grado:
+  <select id="editGrade">
+    <option value="">Selecciona un grado</option>
+    <option value="11A">11A</option>
+    <option value="11B">11B</option>
+  </select>
+</label>
         
         <label>Fecha de nacimiento:
           <input type="date" id="editBirthday">
@@ -74,9 +84,25 @@
       window.location.href = "login.html";
     }
 
+    const editStatus = document.getElementById("editStatus");
+const gradeLabel = document.getElementById("gradeLabel");
+
+function toggleGradeField() {
+  if (editStatus.value === "estudiante") {
+    gradeLabel.style.display = "block";
+  } else {
+    gradeLabel.style.display = "none";
+    document.getElementById("editGrade").value = "";
+  }
+}
+
+editStatus.addEventListener("change", toggleGradeField);
+
     let ProfileData = null;
 
     let IsEditing = false;
+
+    
 
     async function loadProfile() {
       const res = await fetch(
@@ -93,6 +119,7 @@
       document.getElementById('age').textContent = data.age + ' años';
       document.getElementById('gender').textContent = data.gender ? `${data.gender}`: '';
       document.getElementById('schoolstatus').textContent = data.status ? `Estatus: ${data.status}` : '';
+      document.getElementById('grade').textContent = data.grade ? `Grado: ${data.grade}` : '';
       document.getElementById('birthday').textContent = data.birthday ? `Cumpleaños: ${data.birthday.split('T')[0]}` : '';
 
       const refsContainer = document.getElementById('refs');
@@ -122,10 +149,14 @@ document.getElementById("editBtn").onclick = () => {
 
   document.getElementById("editSection").style.display = "block";
 
+  
+
   document.getElementById("editName").value = ProfileData.name;
   document.getElementById("editAge").value = ProfileData.age;
   document.getElementById("editGender").value = ProfileData.gender || "";
   document.getElementById("editStatus").value = ProfileData.status || "";
+  document.getElementById("editGrade").value = ProfileData.grade || "";
+  toggleGradeField(); // 🔥 importante
   document.getElementById("editBirthday").value =
     ProfileData.birthday ? ProfileData.birthday.split("T")[0] : "";
 };
@@ -138,6 +169,7 @@ const payload = {
   age: parseInt(document.getElementById("editAge").value, 10),
   gender: document.getElementById("editGender").value,
   status: document.getElementById("editStatus").value,
+  grade: document.getElementById("editGrade").value,
   birthday: document.getElementById("editBirthday").value || null
 };
 

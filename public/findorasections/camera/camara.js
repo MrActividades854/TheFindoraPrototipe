@@ -179,7 +179,7 @@
         async function connectToRemoteFeed() {
             console.log('connectToRemoteFeed llamado, selectedId:', selectedId);
 
-            const forceRemote = !selectedType === "local";
+            const forceRemote = selectedType !== "local";
             const useWS = forceRemote || localStorage.getItem("useWebSocket") === "true";
             
             if (!useWS) {

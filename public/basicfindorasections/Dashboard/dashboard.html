@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Staff</title>
+
+<link rel="stylesheet" href="./../../global.css">
+<link rel="icon" href="./../../../src/favicon.ico" type="image/x-icon">
+
+<style>
+
+h1 {
+  color: white;
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.main {
+  display:flex;
+  gap:40px;
+  flex-wrap:wrap;
+  justify-content:center;
+  padding:40px;
+}
+
+.boxes {
+  width:260px;
+  height:360px;
+  background:#22395a;
+  border-radius:12px;
+  padding:10px;
+  cursor:pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.boxes:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.bImg {
+  width:100%;
+  height:65%;
+  object-fit:cover;
+  border-radius:8px;
+}
+
+h3 {
+  margin-top:10px;
+  color:white;
+  text-align:center;
+}
+
+.subtext {
+  text-align:center;
+  font-size:14px;
+  color:#ccc;
+}
+</style>
+</head>
+
+<body>
+
+<h1 id="welcomeText">Bienvenido</h1>
+
+<div class="main">
+
+  <!-- NOTIFICACIONES -->
+  <div class="boxes" onclick="goToNotifications()">
+    <img class="bImg" src="./../../src/notificacion.webp">
+    <h3>Notificaciones</h3>
+  </div>
+
+  <!-- PERFILES -->
+  <div class="boxes" onclick="goToProfiles()">
+    <img class="bImg" src="./../../src/clase.webp">
+    <h3>Mi Clase</h3>
+  </div>
+
+  <!-- CALENDARIO -->
+  <div class="boxes" onclick="goToCalendar()">
+    <img class="bImg" src="./../../src/calendario.webp">
+    <h3>Calendario</h3>
+  </div>
+
+</div>
+
+<script>
+// 🔐 Verificar login
+const token = localStorage.getItem("token");
+if (!token) {
+  window.location.href = "./../../login/login.html";
+}
+
+// 🧠 Decodificar usuario
+const payload = JSON.parse(atob(token.split('.')[1]));
+
+// Mostrar nombre + grado
+const grade = payload.grade ? ` (${payload.grade})` : "";
+document.getElementById("welcomeText").textContent =
+  `Bienvenido ${payload.name || ''}${grade}`;
+
+
+// 🔗 Navegación
+function goToNotifications() {
+  window.location.href = "./../Notifications/notifications.html";
+}
+
+function goToProfiles() {
+  // 👉 puedes luego filtrar por grado
+  window.location.href = "./../Class/class.html";
+}
+
+function goToCalendar() {
+  window.location.href = "./../Calendar/calendar.html";
+}
+</script>
+
+<script type="module">
+import { initBackgroundDetection } from '../../js/background-init.js';
+
+function start() {
+    const allowWS = localStorage.getItem("useWebSocket") === "true";
+
+    if (!allowWS) return;
+
+    initBackgroundDetection();
+}
+
+start();
+</script>
+
+<script type="module" src="./../../js/headerLoaderUser.js"></script>
+
+</body>
+</html>

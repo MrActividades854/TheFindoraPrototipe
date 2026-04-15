@@ -10,7 +10,7 @@
 <body>
     <main>
       <button onclick="location.href='./../profiles.html'">Volver</button>
-        <section class="new-profile-form">
+      <section class="new-profile-form">
             <h2>Crear nuevo perfil</h2>
             <label>Nombre:
               <input type="text" id="nameInput" />
@@ -20,8 +20,7 @@
               <input type="number" id="ageInput" />
             </label>
 
-            <label>
-              Género:
+            <label>Género:
               <select id="genderInput">
                 <option value="">Selecciona un Género</option>
                 <option value="masculino">Masculino</option>
@@ -39,6 +38,16 @@
               </select>
             </label>
 
+            <label id="gradeLabel" style="display:none;">Grado:
+              <select id="gradeInput">
+                <option value="">Selecciona un grado</option>
+                <option value="11A">11A</option>
+                <option value="11B">11B</option>
+                <option value="10A">10A</option>
+                <option value="10B">10B</option>
+              </select>
+            </label>
+
             <label>Cumpleaños:
               <input type="date" id="birthdayInput" />
             </label>
@@ -49,46 +58,15 @@
         
             <button id="saveProfileBtn">Guardar Perfil</button>
             <button onclick="history.back()">Cancelar</button>
-          </section>
+      </section>
+      <hr>
+
+          <h3>Subir perfiles masivamente</h3>
+
+          <input type="file" id="excelInput" accept=".xlsx, .csv" />
+          <button id="uploadExcelBtn">Subir Excel</button>
     </main>
-    <script type="module">
-      import { CONFIG } from './../../../js/config.js';
-      document.getElementById('saveProfileBtn').onclick = async () => {
-        const name = document.getElementById('nameInput').value.trim();
-        const age = parseInt(document.getElementById('ageInput').value.trim());
-        const gender = document.getElementById('genderInput').value;
-        const status = document.getElementById('statusInput').value;
-        const birthday = document.getElementById('birthdayInput').value;
-        const files = document.getElementById('refFiles').files;
-
-        if (!name || !age || !gender || !status || !birthday || files.length === 0) {
-            alert('Completa todos los campos y agrega entre 1 y 5 imágenes.');
-            return;
-        }
-
-      const form = new FormData();
-      form.append('name', name);
-      form.append('age', age);
-      form.append('gender', gender);
-      form.append('status', status);
-      form.append('birthday', birthday);
-      for (let f of files) form.append('refs', f);
-
-      const res = await fetch(`https://thefindoraprototipe.onrender.com/api/new_profile`, {
-        method: 'POST',
-        body: form
-      });
-
-      if (res.ok) {
-        alert('Perfil guardado correctamente');
-        localStorage.removeItem(CONFIG.PROFILES_KEY);
-        fetchProfiles();
-        location.href = './../profiles.html';
-      } else {
-        alert('Error guardando perfil');
-      }
-    };
-    </script>
+    <script type="module" src="./create_profile.js"></script>
     <script type="module">
 import { initBackgroundDetection } from '../../js/background-init.js';
 
@@ -105,6 +83,7 @@ function initBG() {
 
 initBG();
 </script>
-    <script type="module" src="./../../../js/headerLoader.js"></script>
+<script type="module" src="./../../../js/headerLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </body>
 </html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Perfil de Estudiante</title>
+  <link rel="stylesheet" href="./class_profile_view.css">
+  <link rel="stylesheet" href="./../../global.css">
+</head>
+
+<body>
+<div class="container">
+
+  <button onclick="history.back()">⬅ Volver</button>
+
+  <div class="card">
+
+    <h1 id="name"></h1>
+    <h2 id="age"></h2>
+    <p id="gender"></p>
+    <p id="grade"></p>
+    <p id="status"></p>
+    <p id="birthday"></p>
+
+    <!-- 🔥 NUEVA SECCIÓN -->
+    <h3>Asistencia</h3>
+    <p id="attendance" style="font-weight:bold;"></p>
+
+    <h3>Imágenes</h3>
+    <div class="refs" id="refs"></div>
+
+  </div>
+</div>
+
+<script type="module">
+const token = localStorage.getItem("token");
+const urlParams = new URLSearchParams(window.location.search);
+const profileId = urlParams.get("id");
+
+if (!token) {
+  window.location.href = "./../../extrafindorasections/loginPage/login.html";
+}
+
+let profileData = null;
+let notifications = [];
+
+// ======================
+// 🔹 CARGAR PERFIL
+// ======================
+async function loadProfile() {
+  const res = await fetch(
+    `https://thefindoraprototipe.onrender.com/api/profile/${profileId}`,
+    {
+      headers: { Authorization: "Bearer " + token }
+    }
+  );
+
+  const data = await res.json();
+  profileData = data;
+
+  document.getElementById("name").textContent = data.name;
+  document.getElementById("age").textContent = data.age + " años";
+  document.getElementById("gender").textContent = data.gender || "";
+  document.getElementById("grade").textContent = "Grado: " + data.grade;
+  document.getElementById("status").textContent = "Estatus: " + data.status;
+  document.getElementById("birthday").textContent =
+    data.birthday ? data.birthday.split("T")[0] : "";
+
+  const refs = document.getElementById("refs");
+  refs.innerHTML = "";
+
+  (data.references || []).forEach(r => {
+    const img = document.createElement("img");
+    img.src = r.file_path;
+    refs.appendChild(img);
+  });
+}
+
+// ======================
+// 🔹 CARGAR NOTIFICACIONES
+// ======================
+async function loadNotifications() {
+  const res = await fetch(
+    "https://thefindoraprototipe.onrender.com/api/notifications",
+    {
+      headers: { Authorization: "Bearer " + token }
+    }
+  );
+
+  const data = await res.json();
+  if (res.ok) {
+    notifications = data;
+  }
+}
+
+// ======================
+// 🔹 NORMALIZAR TEXTO
+// ======================
+function clean(text) {
+  return text
+    .toLowerCase()
+    .replace(" detectado", "")
+    .trim();
+}
+
+// ======================
+// 🔹 VERIFICAR ASISTENCIA
+// ======================
+function checkAttendance() {
+  const today = new Date();
+  const name = clean(profileData.name);
+
+  const found = notifications.some(n => {
+    if (!n.created_at) return false;
+
+    const d = new Date(n.created_at);
+
+    const sameDay =
+      d.getDate() === today.getDate() &&
+      d.getMonth() === today.getMonth() &&
+      d.getFullYear() === today.getFullYear();
+
+    if (!sameDay) return false;
+
+    const msgName = clean(n.message || "");
+
+    return msgName.includes(name);
+  });
+
+  const attendanceEl = document.getElementById("attendance");
+
+  if (found) {
+    attendanceEl.textContent = "🟢 Presente (ya llegó)";
+    attendanceEl.style.color = "#2ecc71";
+  } else {
+    attendanceEl.textContent = "🔴 Ausente";
+    attendanceEl.style.color = "#e74c3c";
+  }
+}
+
+// ======================
+// 🔹 INIT
+// ======================
+(async () => {
+  await loadProfile();
+  await loadNotifications();
+  checkAttendance();
+})();
+</script>
+
+<script type="module" src="./../../js/headerLoaderUser.js"></script>
+
+</body>
+</html>

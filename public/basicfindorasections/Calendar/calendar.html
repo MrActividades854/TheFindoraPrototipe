@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Calendario</title>
+<link rel="stylesheet" href="./../../global.css">
+
+<style>
+body {
+  background:#0d1117;
+  color:white;
+  font-family: Arial;
+  margin:0;
+  height:100vh;
+  overflow:hidden; /* evita scroll raro */
+}
+
+main {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  height: calc(100vh - 80px);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* CONTENEDOR IZQUIERDO */
+.calendar-container {
+  flex: 0 0 380px; /* ancho fijo REAL */
+  display: flex;
+  flex-direction: column;
+}
+
+/* CALENDARIO */
+.calendar {
+  flex:1;
+  min-height: 0;
+  display:grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap:6px;
+  overflow-y:auto; /* scroll si crece */
+  padding-right:5px;
+}
+
+.day {
+  padding:15px;
+  background:#22395a;
+  border-radius:6px;
+  cursor:pointer;
+  text-align:center;
+  transition:0.2s;
+}
+
+.day:hover {
+  background:#2ea043;
+}
+
+.today {
+  background:#2ecc71;
+}
+
+/* PANEL DERECHO */
+.side-panel {
+  flex: 1; /* ocupa el resto */
+  min-width: 300px; /* evita que rompa el layout */
+  max-width: 600px; /* límite para que no se coma todo */
+  
+  background: #161b22;
+  border-radius: 10px;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.person {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:#22395a;
+  padding:10px;
+  border-radius:8px;
+  margin-bottom:8px;
+}
+
+.person img {
+  width:40px;
+  height:40px;
+  border-radius:50%;
+}
+</style>
+</head>
+
+<body>
+<main>
+
+  <div>
+    <h2>Calendario</h2>
+    <div class="calendar-container">
+
+  <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+
+  </div>
+
+  <div class="calendar" id="calendar"></div>
+
+</div>
+  </div>
+
+  <div class="side-panel">
+    <h2 id="selectedDate">Selecciona un día</h2>
+    <div id="peopleList"></div>
+  </div>
+
+</main>
+
+<script type="module" src="./calendar.js"></script>
+
+<script type="module" src="./../../js/headerLoaderUser.js"></script>
+</body>
+</html>
