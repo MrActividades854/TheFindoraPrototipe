@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Configuración Usuario</title>
+
+<link rel="stylesheet" href="./../../global.css">
+
+<style>
+body {
+  background:#0d1117;
+  color:white;
+  font-family:Arial;
+  margin:0;
+}
+
+main {
+  display:flex;
+  height:100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width:220px;
+  background:#161b22;
+  padding:20px;
+}
+
+.menu-item {
+  padding:10px;
+  margin-bottom:8px;
+  cursor:pointer;
+  border-radius:6px;
+}
+
+.menu-item:hover { background:#22395a; }
+.menu-item.active { background:#2ea043; }
+
+/* CONTENIDO */
+.content {
+  flex:1;
+  padding:30px;
+  overflow-y:auto;
+}
+
+.panel { display:none; }
+.panel.active { display:block; }
+
+input {
+  padding:8px;
+  border-radius:5px;
+  border:none;
+  margin-top:5px;
+  width:250px;
+}
+
+button {
+  margin-top:10px;
+  padding:8px 12px;
+  border:none;
+  border-radius:6px;
+  background:#2ea043;
+  color:white;
+  cursor:pointer;
+}
+
+.logout {
+  background:#da3633;
+}
+
+.profile-img {
+  width:80px;
+  height:80px;
+  border-radius:50%;
+}
+</style>
+
+</head>
+
+<body>
+<main>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <h3>⚙️ Configuración</h3>
+
+  <div class="menu-item active" data="account">Cuenta</div>
+  <div class="menu-item" data="preferences">Preferencias</div>
+</div>
+
+<!-- CONTENIDO -->
+<div class="content">
+
+  <!-- CUENTA -->
+  <div id="account" class="panel active">
+
+    <h2>👤 Cuenta</h2>
+
+    <img id="profileImg" class="profile-img" src="./../../src/profile.png">
+
+    <input type="file" id="imgInput">
+    <button onclick="uploadImage()">Subir imagen</button>
+
+    <h3>Nombre</h3>
+    <input id="nameInput">
+    <button onclick="updateName()">Guardar</button>
+
+    <h3>Email</h3>
+    <input id="emailInput">
+    <button onclick="updateEmail()">Guardar</button>
+
+    <h3>Contraseña</h3>
+    <input type="password" id="currentPass" placeholder="Actual">
+    <input type="password" id="newPass" placeholder="Nueva">
+    <button onclick="updatePassword()">Actualizar</button>
+
+    <h3>Sesión</h3>
+    <button class="logout" onclick="logout()">Cerrar sesión</button>
+
+  </div>
+
+  <!-- PREFERENCIAS -->
+  <div id="preferences" class="panel">
+
+    <h2>🎨 Preferencias</h2>
+
+    <label>
+      <input type="checkbox" id="darkMode">
+      Modo oscuro
+    </label>
+
+    <br><br>
+
+    <label>
+      <input type="checkbox" id="showThumbs">
+      Mostrar miniaturas
+    </label>
+
+    <br><br>
+
+    <button onclick="savePreferences()">Guardar</button>
+
+  </div>
+
+</div>
+
+</main>
+
+<script type="module" src="./user_settings.js"></script>
+<script type="module" src="./../../js/headerLoaderUser.js"></script>
+
+</body>
+</html>

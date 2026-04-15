@@ -253,7 +253,7 @@ nav a{
             profiles: 'basicfindorasections/Class/class.html',
             calendar: 'basicfindorasections/Calendar/calendar.html',
             notifications: 'basicfindorasections/Notifications/notifications.html',
-            settings: 'basicfindorasections/settings/settings.html',
+            settings: 'basicfindorasections/Settings/user_settings.html',
             logout: this._logout.bind(this)
         };
 
