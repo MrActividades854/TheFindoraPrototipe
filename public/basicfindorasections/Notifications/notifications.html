@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notificaciones de mi grado</title>
+
+<link rel="shortcut icon" href="./../../src/favicon.ico">
+<link rel="stylesheet" href="notifications.css">
+<link rel="stylesheet" href="./../../global.css">
+
+</head>
+<body>
+
+<div class="principal">
+  <button onclick="clearHistory()" class="clear-btn">
+    Borrar historial
+  </button>
+
+  <div class="dropdown-container">
+    <button class="dropdown-toggle" onclick="toggleDropdown()">
+      Filtrar por fecha ▼
+    </button>
+
+    <div class="dropdown-menu" id="filterDropdown">
+      <button onclick="filterNotifications('all')" class="dropdown-item">Todas</button>
+      <button onclick="filterNotifications('today')" class="dropdown-item">Hoy</button>
+      <button onclick="filterNotifications('week')" class="dropdown-item">Semana</button>
+      <button onclick="filterNotifications('month')" class="dropdown-item">Mes</button>
+    </div>
+  </div>
+
+  <h1>Notificaciones de mi grado</h1>
+</div>
+
+<div id="logContainer">
+  <ul id="logList"></ul>
+</div>
+
+<script type="module" src="./notifications.js"></script>
+<script type="module" src="./../../js/headerLoaderUser.js"></script>
+
+</body>
+</html>
