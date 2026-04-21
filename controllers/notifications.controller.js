@@ -15,7 +15,7 @@ exports.create = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
-        console.error("❌ Error guardando notificación:", err.message);
+        console.error("Error guardando notificación:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
@@ -31,7 +31,7 @@ exports.list = async (req, res) => {
 
         res.json(result.rows);
     } catch (err) {
-        console.error("❌ Error obteniendo notificaciones:", err.message);
+        console.error("Error obteniendo notificaciones:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
@@ -44,7 +44,7 @@ exports.cleanup = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
-        console.error("❌ Error limpiando notificaciones:", err.message);
+        console.error("Error limpiando notificaciones:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
@@ -54,7 +54,7 @@ exports.clearall = async (req, res) => {
         await pool.query("DELETE FROM notificaciones");
         res.json({ success: true });
     } catch (err) {
-        console.error("❌ Error clearing all notifications:", err.message);
+        console.error("Error clearing all notifications:", err.message);
         res.status(500).json({ error: err.message });
     }
 };

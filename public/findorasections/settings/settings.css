@@ -434,3 +434,8 @@ color:white;
 background:#dc2626;
 
 }
+
+body.dark-mode {
+    background-color: #121212;
+    color: #ffffff;
+}

@@ -6,7 +6,7 @@ import { CONFIG } from "./config.js";
 // CONFIGURACIÓN - LEER DESDE LOCALSTORAGE
 // ============================================================
 const BACKGROUND_CONFIG = {
-    // ✅ Leer configuración guardada por el usuario
+    // Leer configuración guardada por el usuario
     enableLocalCamera: localStorage.getItem('bg_enableLocalCamera') === 'true',
     showMiniPreview: localStorage.getItem('bg_showMiniPreview') !== 'false',
     previewPosition: localStorage.getItem('bg_previewPosition') || 'bottom-right',
@@ -86,7 +86,7 @@ export async function initBackgroundDetection() {
             await window.__uiManagerBG.init();
             
             const mode = BACKGROUND_CONFIG.enableLocalCamera ? "con cámara local" : "solo feeds remotos";
-            console.log(`[BG] ✅ Background detection inicializada (${mode})`);
+            console.log(`[BG] Background detection inicializada (${mode})`);
         } else {
             console.log("[BG] UIManager ya existía.");
         }
@@ -244,7 +244,7 @@ function createBackgroundContainer() {
     // Estilos para feeds
     addBackgroundStyles();
 
-    console.log("[BG] ✅ Container creado (click en 📹 para mostrar)");
+    console.log("[BG] Container creado (click en 📹 para mostrar)");
 }
 
 function addBackgroundStyles() {
@@ -311,7 +311,7 @@ export function setBackgroundConfig(key, value) {
         
         // Si cambia enableLocalCamera, recargar
         if (key === 'enableLocalCamera') {
-            console.log("[BG] ⚠️ Cambio de configuración requiere recargar la página");
+            console.log("[BG] Cambio de configuración requiere recargar la página");
         }
     }
 }
