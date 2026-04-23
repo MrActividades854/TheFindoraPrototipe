@@ -23,7 +23,7 @@ async function loadMyGrade() {
 
     if (res.ok) {
       myGrade = data.grade;
-      console.log("🎓 Mi grado:", myGrade);
+      console.log("Mi grado:", myGrade);
     }
 
   } catch (err) {
@@ -40,7 +40,7 @@ async function loadProfiles() {
 
   if (res.ok) {
     profilesCache = data;
-    console.log("👥 Perfiles:", profilesCache.length);
+    console.log("Perfiles:", profilesCache.length);
   }
 }
 
@@ -63,7 +63,7 @@ async function loadNotifications() {
 
   if (res.ok) {
     allNotifications = data;
-    console.log("🔔 Notificaciones:", data.length);
+    console.log("Notificaciones:", data.length);
   }
 }
 
@@ -86,10 +86,10 @@ function filterByGrade(notifications) {
     const raw = n.message || "";
     const name = cleanName(raw);
 
-    // ❌ eliminar desconocidos
+    // eliminar desconocidos
     if (name.includes("desconocido")) return false;
 
-    // 🔥 buscar coincidencia flexible
+    // buscar coincidencia flexible
     const profile = profilesCache.find(p => {
       const profileName = p.name.toLowerCase().trim();
 
@@ -99,10 +99,10 @@ function filterByGrade(notifications) {
       );
     });
 
-    // ❌ si no hay perfil → descartar
+    // si no hay perfil → descartar
     if (!profile) return false;
 
-    // ✅ filtrar por grado
+    // filtrar por grado
     return String(profile.grade).trim() === String(myGrade).trim();
   });
 }
@@ -138,7 +138,7 @@ function filterByDate(list, type) {
 }
 
 // ======================
-// 🔹 RENDER
+// RENDER
 // ======================
 function render(list) {
   const container = document.getElementById("logList");
@@ -163,7 +163,7 @@ function render(list) {
 }
 
 // ======================
-// 🔹 FILTRO GENERAL
+// FILTRO GENERAL
 // ======================
 function applyFilter(type) {
   currentFilter = type;
@@ -178,7 +178,7 @@ function applyFilter(type) {
 }
 
 // ======================
-// 🔹 UI
+// UI
 // ======================
 window.filterNotifications = applyFilter;
 
@@ -198,12 +198,12 @@ window.clearHistory = async () => {
 };
 
 // ======================
-// 🔹 INIT
+// INIT
 // ======================
 (async () => {
-  await loadMyGrade();       // 🔥 importante
-  await loadProfiles();      // 🔥 importante
-  await loadNotifications(); // 🔥 importante
+  await loadMyGrade();      
+  await loadProfiles();     
+  await loadNotifications();
 
   applyFilter("all");
 })();

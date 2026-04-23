@@ -47,7 +47,7 @@ async function clearHistory() {
     allNotifications = [];
     loadNotifications();
 
-    console.log('🧹 Historial borrado en frontend y backend');
+    console.log('Historial borrado en frontend y backend');
   } catch (err) {
     console.error('Error borrando notificaciones:', err);
     alert('No se pudo borrar el historial en el servidor');
@@ -186,11 +186,11 @@ function filterByDate(notifications, filterType) {
 // Mensaje cuando no hay notificaciones
 function getEmptyMessage(filterType) {
     const messages = {
-        'all': '📭 No hay notificaciones en el historial',
-        'today': '☀️ No hay notificaciones hoy',
-        'yesterday': '📅 No hay notificaciones ayer',
-        'week': '📆 No hay notificaciones esta semana',
-        'month': '🗓️ No hay notificaciones este mes'
+        'all': 'No hay notificaciones en el historial',
+        'today': 'No hay notificaciones hoy',
+        'yesterday': 'No hay notificaciones ayer',
+        'week': 'No hay notificaciones esta semana',
+        'month': 'No hay notificaciones este mes'
     };
     return messages[filterType] || '📭 No hay notificaciones';
 }
@@ -229,7 +229,7 @@ function applyCustomFilter(filteredList, dateRange) {
     if (filteredList.length === 0) {
         const emptyMsg = document.createElement("div");
         emptyMsg.className = "empty-message";
-        emptyMsg.textContent = `📭 No hay notificaciones entre ${dateRange}`;
+        emptyMsg.textContent = `No hay notificaciones entre ${dateRange}`;
         container.appendChild(emptyMsg);
         return;
     }

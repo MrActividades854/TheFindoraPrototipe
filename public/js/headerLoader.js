@@ -21,7 +21,7 @@ class HeaderManager {
         return '../'.repeat(depth - 1) + 'src';
     }
 
-    // ✅ HTML del header directamente en el código
+    // HTML del header directamente en el código
     getHeaderHTML() {
         return `
 <header>
@@ -318,7 +318,7 @@ nav a{
                 finalPath = '../'.repeat(depth) + relativePath;
             }
             
-            console.log('➡️ Ruta final:', finalPath);
+            console.log('Ruta final:', finalPath);
             return finalPath;
         };
 
@@ -343,10 +343,10 @@ nav a{
                 if (typeof route === 'function') {
                     route();
                 } else if (route) {
-                    console.log('🔗 Navegando a:', route);
+                    console.log('Navegando a:', route);
                     window.location.href = route;
                 } else {
-                    console.warn('⚠️ Ruta no definida:', page);
+                    console.warn('Ruta no definida:', page);
                 }
             });
         });
@@ -359,7 +359,7 @@ nav a{
         const dropdown = document.querySelector('.dropdown-menu');
 
         if (!profileBtn || !dropdown) {
-            console.warn('⚠️ No se encontró dropdown');
+            console.warn('No se encontró dropdown');
             return;
         }
 
@@ -381,7 +381,7 @@ nav a{
             });
         });
 
-        console.log('📋 Dropdown configurado');
+        console.log('Dropdown configurado');
     }
 
     async _loadUserName() {
@@ -483,7 +483,7 @@ nav a{
             }
         });
 
-        console.log('🔔 Notificaciones configuradas');
+        console.log('Notificaciones configuradas');
     }
 
     _handleLogout() {
@@ -527,11 +527,11 @@ console.log('📍 header-loader-inline.js cargado');
 const headerManager = new HeaderManager();
 
 function initHeader() {
-    console.log('🎬 Ejecutando initHeader()');
+    console.log('Ejecutando initHeader()');
     try {
         headerManager.loadHeader();
     } catch (error) {
-        console.error('❌ Error crítico:', error);
+        console.error('Error crítico:', error);
     }
 }
 

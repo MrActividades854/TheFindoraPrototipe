@@ -5,7 +5,7 @@ let profilesCache = [];
 let my_grade = "";
 
 // ======================
-// 🔹 CARGAR PERFILES
+// CARGAR PERFILES
 // ======================
 
 async function loadProfiles() {
@@ -14,7 +14,7 @@ async function loadProfiles() {
 
   if (res.ok) {
     profilesCache = data;
-    console.log("✅ Perfiles cargados:", data.length);
+    console.log("Perfiles cargados:", data.length);
   }
 }
 
@@ -31,14 +31,14 @@ async function loadMyGrade() {
     const data = await res.json();
 
     if (res.ok) {
-      my_grade = data.grade; // 🔥 AQUÍ ESTÁ LA CLAVE
-      console.log("✅ Mi grado:", my_grade);
+      my_grade = data.grade;
+      console.log("Mi grado:", my_grade);
     } else {
-      console.warn("⚠️ Error obteniendo grado:", data);
+      console.warn("Error obteniendo grado:", data);
     }
 
   } catch (err) {
-    console.error("❌ Error obteniendo grado:", err);
+    console.error("Error obteniendo grado:", err);
   }
 }
 
@@ -79,13 +79,13 @@ async function loadNotifications() {
 
     if (res.ok) {
       notificationsCache = data;
-      console.log("✅ Notificaciones cargadas:", data.length);
+      console.log("Notificaciones cargadas:", data.length);
     } else {
-      console.warn("⚠️ Error:", data);
+      console.warn("Error:", data);
     }
 
   } catch (err) {
-    console.error("❌ Error:", err);
+    console.error("Error:", err);
   }
 }
 

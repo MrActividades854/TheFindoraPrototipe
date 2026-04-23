@@ -221,7 +221,7 @@ function createBackgroundContainer() {
         border-bottom: 1px solid rgba(255,255,255,0.2);
         font-family: Arial, sans-serif;
     `;
-    header.textContent = '🎥 Detección Activa';
+    header.textContent = 'Detección Activa';
     container.appendChild(header);
 
     // Agregar al DOM
