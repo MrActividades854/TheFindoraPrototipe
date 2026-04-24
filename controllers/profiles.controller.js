@@ -49,7 +49,7 @@ exports.create = async (req, res) => {
 
         res.json({ success: true, id: profileId });
     } catch (err) {
-        console.error("❌ Error creando perfil:", err.message);
+        console.error("Error creando perfil:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
@@ -61,7 +61,7 @@ exports.list = async (req, res) => {
     );
     res.json(result.rows);
     } catch (err) {
-        console.error("❌ Error listando perfiles:", err.message);
+        console.error("Error listando perfiles:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
@@ -87,7 +87,7 @@ exports.listFull = async (req, res) => {
         res.json(final);
 
     } catch (err) {
-        console.error("❌ Error listando perfiles completos:", err.message);
+        console.error("Error listando perfiles completos:", err.message);
         res.status(500).json({ error: err.message });
 };
 };
@@ -126,7 +126,7 @@ exports.update = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
-        console.error("❌ Error actualizando perfil:", err.message);
+        console.error("Error actualizando perfil:", err.message);
         res.status(500).json({ error: err.message });
     }
 };

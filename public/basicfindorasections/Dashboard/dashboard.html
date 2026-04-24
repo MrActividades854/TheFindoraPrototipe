@@ -88,13 +88,13 @@ h3 {
 </div>
 
 <script>
-// 🔐 Verificar login
+// Verificar login
 const token = localStorage.getItem("token");
 if (!token) {
   window.location.href = "./../../login/login.html";
 }
 
-// 🧠 Decodificar usuario
+// Decodificar usuario
 const payload = JSON.parse(atob(token.split('.')[1]));
 
 // Mostrar nombre + grado
@@ -103,13 +103,13 @@ document.getElementById("welcomeText").textContent =
   `Bienvenido ${payload.name || ''}${grade}`;
 
 
-// 🔗 Navegación
+// Navegación
 function goToNotifications() {
   window.location.href = "./../Notifications/notifications.html";
 }
 
 function goToProfiles() {
-  // 👉 puedes luego filtrar por grado
+  // puedes luego filtrar por grado
   window.location.href = "./../Class/class.html";
 }
 

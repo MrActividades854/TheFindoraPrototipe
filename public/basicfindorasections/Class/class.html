@@ -28,14 +28,14 @@ if (!token) {
   window.location.href = "./../../extrafindorasections/loginPage/login.html";
 }
 
-// ⚡ CONFIG VISUAL
+// CONFIG VISUAL
 const showThumbnails = localStorage.getItem('showThumbnails') !== 'false';
 const thumbnailStyle = localStorage.getItem('thumbnailStyle') || 'grid';
 
 let myGrade = "";
 
 // ======================
-// 🔹 OBTENER MI GRADO (desde backend)
+// OBTENER MI GRADO (desde backend)
 // ======================
 async function loadMyGrade() {
   try {
@@ -52,13 +52,13 @@ async function loadMyGrade() {
 
     if (res.ok) {
       myGrade = String(data.grade).trim();
-      console.log("✅ Mi grado:", myGrade);
+      console.log("Mi grado:", myGrade);
     } else {
-      console.warn("⚠️ No se pudo obtener grado");
+      console.warn("No se pudo obtener grado");
     }
 
   } catch (err) {
-    console.error("❌ Error obteniendo grado:", err);
+    console.error("Error obteniendo grado:", err);
   }
 }
 
@@ -107,7 +107,7 @@ list.forEach(p => {
 
 console.log(list);
 
-  console.log("👥 Perfiles filtrados:", filtered.length);
+  console.log("Perfiles filtrados:", filtered.length);
 
   // estilo
   if (thumbnailStyle === 'list') {
@@ -220,8 +220,8 @@ function renderWithImages(profiles, container) {
 // 🔹 INIT
 // ======================
 (async () => {
-  await loadMyGrade();   // 🔥 IMPORTANTE
-  await fetchProfiles(); // 🔥 ya filtra por grado
+  await loadMyGrade();  
+  await fetchProfiles(); 
 })();
 </script>
 

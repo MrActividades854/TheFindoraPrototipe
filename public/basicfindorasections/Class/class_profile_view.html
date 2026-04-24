@@ -21,7 +21,7 @@
     <p id="status"></p>
     <p id="birthday"></p>
 
-    <!-- 🔥 NUEVA SECCIÓN -->
+    <!-- NUEVA SECCIÓN -->
     <h3>Asistencia</h3>
     <p id="attendance" style="font-weight:bold;"></p>
 
@@ -44,7 +44,7 @@ let profileData = null;
 let notifications = [];
 
 // ======================
-// 🔹 CARGAR PERFIL
+// CARGAR PERFIL
 // ======================
 async function loadProfile() {
   const res = await fetch(
@@ -76,7 +76,7 @@ async function loadProfile() {
 }
 
 // ======================
-// 🔹 CARGAR NOTIFICACIONES
+// CARGAR NOTIFICACIONES
 // ======================
 async function loadNotifications() {
   const res = await fetch(
@@ -93,7 +93,7 @@ async function loadNotifications() {
 }
 
 // ======================
-// 🔹 NORMALIZAR TEXTO
+// NORMALIZAR TEXTO
 // ======================
 function clean(text) {
   return text
@@ -103,7 +103,7 @@ function clean(text) {
 }
 
 // ======================
-// 🔹 VERIFICAR ASISTENCIA
+// VERIFICAR ASISTENCIA
 // ======================
 function checkAttendance() {
   const today = new Date();
@@ -138,7 +138,7 @@ function checkAttendance() {
 }
 
 // ======================
-// 🔹 INIT
+// INIT
 // ======================
 (async () => {
   await loadProfile();

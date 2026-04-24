@@ -31,11 +31,11 @@
         const selectedType = selectedData.type;
         const feedList = JSON.parse(localStorage.getItem("feedList") || "[]");
 
-        console.log('📊 Feed seleccionado:', selectedId);
+        console.log('Feed seleccionado:', selectedId);
         console.log('📊 Lista de feeds:', feedList);
 
         if (!selectedId) {
-            showStatus('❌ No se seleccionó ninguna cámara', true);
+            showStatus('No se seleccionó ninguna cámara', true);
             setTimeout(() => window.history.back(), 2000);
         }
 
@@ -73,7 +73,7 @@
             faceRec = new FaceRecognitionManager({
                 modelPath: CONFIG.MODEL_PATH,
                 onNotification: (msg, type) => {
-                    console.log(`📢 [${type}] ${msg}`);
+                    console.log(`[${type}] ${msg}`);
                     notifier.show(msg, type);
                     updateDetectionPanel(msg, type);
                 }
@@ -82,15 +82,15 @@
             try {
                 showStatus('⏳ Cargando modelos de IA...');
                 await faceRec.loadModels();
-                console.log('✅ Modelos cargados');
+                console.log('Modelos cargados');
 
                 showStatus('⏳ Cargando perfiles...');
                 await faceRec.loadProfilesFromServer();
-                console.log('✅ Perfiles cargados');
+                console.log('Perfiles cargados');
 
             } catch (error) {
-                console.error('❌ Error cargando modelos:', error);
-                showStatus('⚠️ Detección no disponible', false);
+                console.error('Error cargando modelos:', error);
+                showStatus('Detección no disponible', false);
             }
         }
 
@@ -183,13 +183,13 @@
             const useWS = forceRemote || localStorage.getItem("useWebSocket") === "true";
             
             if (!useWS) {
-                console.log('⚠️ WebSocket deshabilitado, usando cámara local...');
+                console.log('WebSocket deshabilitado, usando cámara local...');
                 await connectToLocalFeed();
                 return;
             }
 
-            console.log('🌐 Conectando a feed remoto:', selectedId);
-            showStatus('🔄 Conectando a feed remoto...');
+            console.log('Conectando a feed remoto:', selectedId);
+            showStatus('Conectando a feed remoto...');
             cameraContainer.classList.add('loading');
 
             if (webrtc) {
@@ -233,7 +233,7 @@
                 });
 
                 await webrtc.init();
-                console.log('✅ WebRTC inicializado');
+                console.log('WebRTC inicializado');
 
                 connectionTimeout = setTimeout(() => {
                     if (!feedReceived) {
@@ -262,8 +262,8 @@
         // CONECTAR A CÁMARA LOCAL
         // ============================================================
         async function connectToLocalFeed() {
-            console.log('📹 Accediendo a cámara local...');
-            showStatus('📹 Iniciando cámara local...');
+            console.log('Accediendo a cámara local...');
+            showStatus('Iniciando cámara local...');
             cameraContainer.classList.add('loading');
 
             try {
@@ -272,7 +272,7 @@
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoDevices = devices.filter(d => d.kind === 'videoinput');
                 
-                console.log(`📹 ${videoDevices.length} cámara(s) disponible(s)`);
+                console.log(`${videoDevices.length} cámara(s) disponible(s)`);
 
                 if (videoDevices.length === 0) {
                     throw new Error('No se encontraron cámaras');
@@ -295,20 +295,20 @@
                     audio: false
                 });
 
-                console.log('✅ Stream obtenido');
+                console.log('Stream obtenido');
 
                 videoEl.srcObject = stream;
                 hideStatus();
 
                 await videoEl.play();
-                console.log('▶️ Video reproduciéndose');
+                console.log('▶Video reproduciéndose');
                 
                 // Iniciar detección
                 startDetection();
 
             } catch (error) {
-                console.error('❌ Error:', error);
-                showStatus('❌ No se pudo acceder a la cámara', true);
+                console.error('Error:', error);
+                showStatus('No se pudo acceder a la cámara', true);
             }
         }
 
@@ -317,20 +317,20 @@
         // ============================================================
         async function startDetection() {
             if (!faceRec) {
-                console.warn('⚠️ Face Recognition no disponible');
+                console.warn('Face Recognition no disponible');
                 return;
             }
 
             // Esperar a que el video esté listo
             await waitForVideo();
 
-            console.log('🎬 Iniciando detección facial...');
+            console.log('Iniciando detección facial...');
 
             // Ajustar canvas al tamaño del video
             canvasEl.width = videoEl.videoWidth;
             canvasEl.height = videoEl.videoHeight;
 
-            console.log('📐 Canvas:', canvasEl.width, 'x', canvasEl.height);
+            console.log('Canvas:', canvasEl.width, 'x', canvasEl.height);
 
             // Iniciar detección
             faceRec.startMultiDetection({
@@ -338,12 +338,12 @@
                 getRoomByVideo: () => selectedId,
                 onDetect: (name, room) => {
                     if (name !== "Desconocido") {
-                        console.log('👤 Detectado:', name, 'en', room);
+                        console.log('Detectado:', name, 'en', room);
                     }
                 }
             });
 
-            console.log('✅ Detección iniciada');
+            console.log('Detección iniciada');
         }
 
         function waitForVideo() {
@@ -395,7 +395,7 @@ function enableEditLabel() {
     input.type = "text";
     input.value = currentLabel;
 
-    let alreadySaved = false; // 🔥 clave
+    let alreadySaved = false; 
 
     titleEl.replaceWith(input);
     input.focus();
@@ -421,7 +421,7 @@ function enableEditLabel() {
             if (!newLabel || newLabel.trim() === "") return;
 
             try {
-                console.log("💾 Guardando label:", newLabel);
+                console.log("Guardando label:", newLabel);
 
                 const res = await fetch(`https://thefindoraprototipe.onrender.com/api/cameras`, {
                 method: "POST",
@@ -441,24 +441,24 @@ function enableEditLabel() {
 
                 currentLabel = newLabel;
 
-                // 🔥 actualizar localStorage
+                // actualizar localStorage
                 const updated = {
                     ...selectedData,
                     label: newLabel
                 };
                 localStorage.setItem("selectedFeed", JSON.stringify(updated));
 
-                console.log("✅ Label actualizado");
+                console.log("Label actualizado");
 
             } catch (err) {
-                console.error("❌ Error guardando label:", err);
+                console.error("Error guardando label:", err);
             }
         }
 
         function restoreTitle(newLabel) {
             const input = document.querySelector("input");
 
-            if (!input) return; // 🛑 evita el error
+            if (!input) return; // evita el error
 
             const newTitle = document.createElement("h2");
             newTitle.id = "cameraTitle";
@@ -480,10 +480,10 @@ function enableEditLabel() {
                 const isLocalFeed = selectedId && selectedType === "local";
                 
                 if (isLocalFeed) {
-                    console.log('📹 Feed local');
+                    console.log('Feed local');
                     await connectToLocalFeed();
                 } else {
-                    console.log('📡 Feed remoto');
+                    console.log('Feed remoto');
                     await connectToRemoteFeed();
                 }
 
@@ -491,8 +491,8 @@ function enableEditLabel() {
                 setInterval(renderDetectionPanel, 5000);
 
             } catch (error) {
-                console.error('❌ Error:', error);
-                showStatus('❌ Error: ' + error.message, true);
+                console.error('Error:', error);
+                showStatus('Error: ' + error.message, true);
             }
         }
 

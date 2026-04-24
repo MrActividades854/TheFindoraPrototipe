@@ -2,7 +2,7 @@ const API = "https://thefindoraprototipe.onrender.com/api";
 const token = localStorage.getItem("token");
 
 // ======================
-// 🔹 MENU
+// MENU
 // ======================
 document.querySelectorAll(".menu-item").forEach(item => {
   item.onclick = () => {
@@ -21,7 +21,7 @@ document.querySelectorAll(".menu-item").forEach(item => {
 });
 
 // ======================
-// 🔹 CARGAR USUARIO
+// CARGAR USUARIO
 // ======================
 async function loadUser() {
   const res = await fetch(`${API}/me`, {
@@ -39,7 +39,7 @@ async function loadUser() {
 }
 
 // ======================
-// 🔹 ACTUALIZAR DATOS
+// ACTUALIZAR DATOS
 // ======================
 window.updateName = async () => {
   const name = document.getElementById("nameInput").value;
@@ -88,7 +88,7 @@ window.updatePassword = async () => {
 };
 
 // ======================
-// 🔹 IMAGEN
+// IMAGEN
 // ======================
 window.uploadImage = async () => {
   const file = document.getElementById("imgInput").files[0];
@@ -110,7 +110,7 @@ window.uploadImage = async () => {
 };
 
 // ======================
-// 🔹 PREFERENCIAS
+// PREFERENCIAS
 // ======================
 window.savePreferences = () => {
   localStorage.setItem("darkMode",
@@ -123,7 +123,7 @@ window.savePreferences = () => {
 };
 
 // ======================
-// 🔹 LOGOUT
+// LOGOUT
 // ======================
 window.logout = () => {
   localStorage.removeItem("token");
@@ -131,6 +131,6 @@ window.logout = () => {
 };
 
 // ======================
-// 🔹 INIT
+// INIT
 // ======================
 loadUser();

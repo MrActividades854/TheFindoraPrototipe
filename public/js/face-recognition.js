@@ -5,8 +5,8 @@ import * as faceapi from 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist
 
 export default class FaceRecognitionManager {
     constructor({ modelPath = CONFIG.MODEL_PATH, getActiveVideo = () => null, onNotification = () => {} } = {}) {
-        console.log("🔧 FaceRecognitionManager constructor");
-        console.log("📁 ModelPath:", modelPath);
+        console.log("FaceRecognitionManager constructor");
+        console.log("ModelPath:", modelPath);
 
         this.modelPath = modelPath;
         this.getActiveVideo = getActiveVideo;
@@ -46,35 +46,35 @@ export default class FaceRecognitionManager {
 
         this.personLastRoom = {};
         
-        console.log("✅ FaceRecognitionManager creado");
+        console.log("FaceRecognitionManager creado");
     }
 
     async loadModels() {
-        console.log("🔄 Iniciando carga de modelos...");
-        console.log("📍 Ruta de modelos:", this.modelPath);
+        console.log("Iniciando carga de modelos...");
+        console.log("Ruta de modelos:", this.modelPath);
         
         try {
             console.log("⏳ Cargando TinyFaceDetector...");
             await faceapi.nets.tinyFaceDetector.loadFromUri(this.modelPath);
-            console.log("✅ TinyFaceDetector cargado");
+            console.log("TinyFaceDetector cargado");
             
-            console.log("⏳ Cargando FaceLandmark68Net...");
+            console.log("Cargando FaceLandmark68Net...");
             await faceapi.nets.faceLandmark68Net.loadFromUri(this.modelPath);
-            console.log("✅ FaceLandmark68Net cargado");
+            console.log("FaceLandmark68Net cargado");
             
-            console.log("⏳ Cargando FaceRecognitionNet...");
+            console.log("Cargando FaceRecognitionNet...");
             await faceapi.nets.faceRecognitionNet.loadFromUri(this.modelPath);
-            console.log("✅ FaceRecognitionNet cargado");
+            console.log("FaceRecognitionNet cargado");
             
-            console.log("⏳ Cargando SsdMobilenetv1...");
+            console.log("Cargando SsdMobilenetv1...");
             await faceapi.nets.ssdMobilenetv1.loadFromUri(this.modelPath);
-            console.log("✅ SsdMobilenetv1 cargado");
+            console.log("SsdMobilenetv1 cargado");
             
-            console.log("🎉 TODOS LOS MODELOS CARGADOS EXITOSAMENTE");
+            console.log("TODOS LOS MODELOS CARGADOS EXITOSAMENTE");
             return true;
             
         } catch (error) {
-            console.error("\n❌ ERROR CRÍTICO cargando modelos:");
+            console.error("\n ERROR CRÍTICO cargando modelos:");
             console.error("Tipo:", error.constructor.name);
             console.error("Mensaje:", error.message);
             throw error;
@@ -82,7 +82,7 @@ export default class FaceRecognitionManager {
     }
 
     async loadProfilesFromServer() {
-        console.log("🔄 Iniciando carga de perfiles...");
+        console.log("Iniciando carga de perfiles...");
 
         try {
             const cached = localStorage.getItem(CONFIG.PROFILES_KEY);
@@ -102,12 +102,12 @@ export default class FaceRecognitionManager {
                 }
             }
 
-            console.log("📡 Solicitando perfiles del servidor...");
+            console.log("Solicitando perfiles del servidor...");
             const res = await fetch(`https://thefindoraprototipe.onrender.com/api/profiles_full`);
-            console.log("📥 Respuesta recibida - Status:", res.status);
+            console.log("Respuesta recibida - Status:", res.status);
 
             if (!res.ok) {
-                console.error("❌ Error HTTP:", res.status, res.statusText);
+                console.error("Error HTTP:", res.status, res.statusText);
                 this._initEmptyMatcher();
                 this.onNotification("Error cargando perfiles del servidor", "error");
                 return [];
@@ -124,7 +124,7 @@ export default class FaceRecognitionManager {
             // CRÍTICO: Verificar si hay perfiles
 
             if (!Array.isArray(profiles) || profiles.length === 0) {
-                console.warn("⚠️ No hay perfiles en el servidor");
+                console.warn("No hay perfiles en el servidor");
                 this._initEmptyMatcher();
                 this.onNotification("No hay perfiles registrados aún", "info");
                 return [];
@@ -137,7 +137,7 @@ export default class FaceRecognitionManager {
 
             for (const p of profiles) {
                 if (!p.images || p.images.length === 0) {
-                    console.warn(`⚠️ Perfil ${p.name} sin imágenes`);
+                    console.warn(`Perfil ${p.name} sin imágenes`);
                     continue;
                 }
 
@@ -154,10 +154,10 @@ export default class FaceRecognitionManager {
                         if (det) {
                             descriptors.push(det.descriptor);
                         } else {
-                            console.warn(`  ⚠️ No se detectó rostro en: ${imgUrl}`);
+                            console.warn(`  No se detectó rostro en: ${imgUrl}`);
                         }
                     } catch (err) {
-                        console.warn(`  ❌ Error procesando imagen:`, err.message);
+                        console.warn(`  Error procesando imagen:`, err.message);
                     }
                 }
 
@@ -167,28 +167,28 @@ export default class FaceRecognitionManager {
                     );
                     this.profileMap[p.name] = p.id;
                     processedCount++;
-                    console.log(`✅ Perfil ${p.name}: ${descriptors.length} descriptores`);
+                    console.log(`Perfil ${p.name}: ${descriptors.length} descriptores`);
                 } else {
-                    console.warn(`⚠️ Perfil ${p.name}: Sin descriptores válidos`);
+                    console.warn(`Perfil ${p.name}: Sin descriptores válidos`);
                 }
             }
 
             // ✅ CRÍTICO: Verificar que tengamos al menos un perfil válido
             if (this.labeledDescriptors.length === 0) {
-                console.warn("⚠️ No se pudo procesar ningún perfil con descriptores válidos");
+                console.warn("No se pudo procesar ningún perfil con descriptores válidos");
                 this._initEmptyMatcher();
                 this.onNotification("No hay perfiles válidos para reconocimiento", "warning");
                 return [];
             }
 
-            // ✅ Crear FaceMatcher solo si hay perfiles
+            // Crear FaceMatcher solo si hay perfiles
             this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors, this.threshold);
             console.log(`🎉 ${processedCount} perfil(es) procesado(s) correctamente`);
             
             return profiles;
             
         } catch (error) {
-            console.error("❌ Error en loadProfilesFromServer:", error.message);
+            console.error("Error en loadProfilesFromServer:", error.message);
             console.error("Stack:", error.stack);
             
             this._initEmptyMatcher();
@@ -271,8 +271,8 @@ _restorePresenceFromStorage() {
             }
 
         } catch (err) {
-            console.warn(`⚠️ JSON corrupto en ${key}, eliminando...`);
-            localStorage.removeItem(key); // 🔥 limpiar basura
+            console.warn(`JSON corrupto en ${key}, eliminando...`);
+            localStorage.removeItem(key); // limpiar basura
         }
     }
 }
@@ -281,7 +281,7 @@ _restorePresenceFromStorage() {
 
     // ✅ NUEVO: Inicializar FaceMatcher vacío
     _initEmptyMatcher() {
-        console.log("🔧 Inicializando FaceMatcher vacío (sin perfiles)");
+        console.log("Inicializando FaceMatcher vacío (sin perfiles)");
         
         // Crear un descriptor dummy para poder inicializar el matcher
         const dummyDescriptor = new Float32Array(128); // 128 dimensiones
@@ -297,33 +297,33 @@ _restorePresenceFromStorage() {
         this.labeledDescriptors = [dummyLabeled];
         this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors, 0.9); // Threshold alto para que nunca matchee
         
-        console.log("✅ FaceMatcher vacío inicializado");
+        console.log("FaceMatcher vacío inicializado");
     }
 
     startMultiDetection({ videos, getRoomByVideo, onDetect }) {
-        console.log("🎬 Iniciando detección múltiple");
-        console.log("📹 Videos:", videos.length);
+        console.log("Iniciando detección múltiple");
+        console.log("Videos:", videos.length);
         
         const useWS = localStorage.getItem("useWebSocket") === "true";
 
         if (!useWS) {
             const before = videos.length;
             videos = videos.filter(v => v.dataset.type !== "remote");
-            console.log(`🔍 Modo local: ${before} → ${videos.length} videos`);
+            console.log(`Modo local: ${before} → ${videos.length} videos`);
         }
 
         if (this.detecting) {
-            console.warn("⚠️ Detección ya activa");
+            console.warn("Detección ya activa");
             return;
         }
 
         if (!this.faceMatcher) {
-            console.error("❌ FaceMatcher no inicializado");
+            console.error("FaceMatcher no inicializado");
             this._initEmptyMatcher(); // Inicializar vacío si no existe
         }
 
         this.detecting = true;
-        console.log("✅ Detección iniciada");
+        console.log("Detección iniciada");
 
         let frameCount = 0;
 
@@ -336,7 +336,7 @@ _restorePresenceFromStorage() {
                 frameCount++;
                 
                 if (frameCount === 1 || frameCount % 100 === 0) {
-                    console.log(`📊 Frame ${frameCount}`);
+                    console.log(`Frame ${frameCount}`);
                 }
 
                 for (const vid of videos) {
@@ -353,7 +353,7 @@ _restorePresenceFromStorage() {
                         c.style.width = "100%";
                         c.style.height = "100%";
                         
-                        console.log(`🎨 Canvas creado: ${vid.dataset.feedId}`);
+                        console.log(`Canvas creado: ${vid.dataset.feedId}`);
                     }
 
                     const canvas = vid._canvas;
@@ -366,7 +366,7 @@ _restorePresenceFromStorage() {
                             .withFaceDescriptors();
 
                         if (results.length > 0 && frameCount % 50 === 0) {
-                            console.log(`👤 ${results.length} rostro(s) en ${vid.dataset.feedId}`);
+                            console.log(`${results.length} rostro(s) en ${vid.dataset.feedId}`);
                         }
 
                         const displaySize = { width: vid.videoWidth, height: vid.videoHeight };
@@ -407,7 +407,7 @@ _restorePresenceFromStorage() {
 
                     } catch (e) {
                         if (frameCount % 100 === 0) {
-                            console.warn("⚠️ Error frame:", e.message);
+                            console.warn("Error frame:", e.message);
                         }
                     }
                 }
@@ -420,7 +420,7 @@ _restorePresenceFromStorage() {
     }
 
     stopDetection() {
-        console.log("🛑 Deteniendo detección...");
+        console.log("Deteniendo detección...");
         this.detecting = false;
         this.tracked = [];
         this.peopleLastSeen = {};
@@ -428,7 +428,7 @@ _restorePresenceFromStorage() {
         this.knownPeople = new Set();
         this.unconfirmedUnknownFrames = 0;
         this.personLastRoom = {};
-        console.log("✅ Detección detenida");
+        console.log("Detección detenida");
     }
 
     _applyTracking(det) {
@@ -590,7 +590,7 @@ _restorePresenceFromStorage() {
                 body: JSON.stringify({ profile_id, last_room: room })
             });
         } catch (error) {
-            console.warn("⚠️ Error actualizando ubicación:", error.message);
+            console.warn("Error actualizando ubicación:", error.message);
         }
     }
 

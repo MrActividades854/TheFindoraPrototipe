@@ -170,7 +170,7 @@ export default class WebRTCManager {
 
     // si ya tenemos PC para este sender, devolvemos log y no creamos duplicado
     if (this.receiverPCs[senderId]) {
-      this.onLog(`♻️ Nueva offer recibida, reiniciando PC para ${senderId}`);
+      this.onLog(` Nueva offer recibida, reiniciando PC para ${senderId}`);
       this.closeRemote(senderId);
     }
 
@@ -255,7 +255,7 @@ export default class WebRTCManager {
     // manejar fin de tracks
     stream.getTracks().forEach(track => {
   track.onended = () => {
-    this.onLog(`⚠️ Track terminado de ${senderId}`);
+    this.onLog(` Track terminado de ${senderId}`);
   };
 });
 

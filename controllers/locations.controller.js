@@ -21,7 +21,7 @@ exports.update = async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
-        console.error("❌ Error actualizando ubicación:", err.message);
+        console.error("Error actualizando ubicación:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
@@ -39,7 +39,7 @@ exports.get = async (req, res) => {
 
         res.json(result.rows[0]);
     } catch (err) {
-        console.error("❌ Error obteniendo ubicación:", err.message);
+        console.error("Error obteniendo ubicación:", err.message);
         res.status(500).json({ error: err.message });
     }
 };

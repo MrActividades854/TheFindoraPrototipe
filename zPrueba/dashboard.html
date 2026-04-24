@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Findora Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <h2>Findora</h2>
+    <nav>
+      <button onclick="showSection('camaras')">Cámaras</button>
+      <button onclick="showSection('perfiles')">Perfiles</button>
+      <button onclick="showSection('usuarios')">Usuarios</button>
+      <button onclick="showSection('historial')">Historial</button>
+    </nav>
+  </aside>
+
+  <!-- CONTENIDO -->
+  <main class="content">
+
+    <!-- CAMARAS -->
+    <section id="camaras" class="section active">
+      <h1>Cámaras en tiempo real</h1>
+      <div class="grid">
+        <video autoplay muted></video>
+        <video autoplay muted></video>
+      </div>
+    </section>
+
+    <!-- PERFILES -->
+    <section id="perfiles" class="section">
+      <h1>Perfiles (IA reconocimiento)</h1>
+      <button>Agregar perfil</button>
+      <div class="cards">
+        <div class="card">Nombre: Juan Pérez</div>
+      </div>
+    </section>
+
+    <!-- USUARIOS -->
+    <section id="usuarios" class="section">
+      <h1>Gestión de usuarios</h1>
+      <table>
+        <tr><th>Nombre</th><th>Rol</th></tr>
+        <tr><td>Admin</td><td>Administrador</td></tr>
+      </table>
+    </section>
+
+    <!-- HISTORIAL -->
+    <section id="historial" class="section">
+      <h1>Historial de detecciones</h1>
+
+      <input type="date">
+
+      <table>
+        <tr>
+          <th>Nombre</th>
+          <th>Estado</th>
+          <th>Fecha</th>
+          <th>Ubicación</th>
+        </tr>
+        <tr>
+          <td>Juan</td>
+          <td>Entró</td>
+          <td>2026-04-14</td>
+          <td>Aula 1</td>
+        </tr>
+      </table>
+
+      <button class="admin-only">Exportar datos</button>
+    </section>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
