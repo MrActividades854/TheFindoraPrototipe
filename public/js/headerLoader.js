@@ -495,7 +495,7 @@ nav a{
                 }
             });
 
-            window.location.href = CONFIG.ROOT_PATH + 'extrafindorasections/mainSection/mainSection.html';
+            window.location.href = CONFIG.ROOT_PATH + 'extrafindorasections/LoginPage/login.html';
         }
     }
 
