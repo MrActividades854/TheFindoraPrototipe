@@ -249,7 +249,7 @@ nav a{
         const go = (path) => window.location.href = CONFIG.ROOT_PATH + path;
 
         const routes = {
-            dashboard: 'basicfindorasections/dashboard/dashboard.html',
+            dashboard: 'basicfindorasections/Dashboard/dashboard.html',
             profiles: 'basicfindorasections/Class/class.html',
             calendar: 'basicfindorasections/Calendar/calendar.html',
             notifications: 'basicfindorasections/Notifications/notifications.html',
