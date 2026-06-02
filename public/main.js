@@ -6,6 +6,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     console.log('🚀 [MAIN] Iniciando aplicación principal...');
 
+    localStorage.setItem("useWebSocket", true);
+
     // Prevenir que background-init interfiera
     window.__backgroundInit = true; // Marcar como ya inicializado
     
